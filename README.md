@@ -7,7 +7,7 @@ pip3 install -U python-dotenv
 ```
 
 ## Making changes
-**Do all testing in your local branch until the changes are ready for production**
+**Do all testing in a branch until the changes are ready for production**
 
 Start by checking out a new branch
 ```
@@ -18,9 +18,12 @@ Then make your changes and commit them using
 ```
 git commit -am "Commit Message"
 ```
+To push your branch to the github use
+```
+git push origin newBranchName
+```
 
-
-Once the changes are complete and work correctly
+Once the changes are complete and ready to be put in the main project
 ```
 git checkout main
 git merge main newBranchName
