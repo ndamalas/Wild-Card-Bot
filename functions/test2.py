@@ -1,3 +1,5 @@
+#Function to test sending data to external commands
+
 #create variable with keyphrase
 prefix = '!secondFunc'
 

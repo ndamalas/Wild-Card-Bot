@@ -1,3 +1,5 @@
+#function to test calling external commands
+
 #create variable with keyphrase
 prefix = '!external'
 
