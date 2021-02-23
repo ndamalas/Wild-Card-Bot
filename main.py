@@ -22,8 +22,7 @@ for filename in os.listdir("functions"):
         filename = filename.replace(".py", "")
         print("functions."+filename)
         external = importlib.import_module("functions."+filename)
-        externalFunctions[external.prefix] = external.response
-
+        externalFunctions[external.prefix] = external
 
 #When the bot is ready it will print to console
 @client.event
@@ -39,9 +38,11 @@ async def on_message(message):
 		response = "Test successful!"
 		await message.channel.send(response)
 
+	#check for prefixes from external functions
 	for x in externalFunctions.keys():
 		if message.content == x:
-			await message.channel.send(externalFunctions[x])
+			#send data to external function
+			await externalFunctions[x].func(client, message)
 			break;
     
 
