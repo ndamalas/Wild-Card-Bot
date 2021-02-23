@@ -10,6 +10,8 @@ TOKEN = os.getenv('TOKEN')
 #Connect to discord client
 client = discord.Client()
 
+#Load functions from functions folder:
+
 #When the bot is ready it will print to console
 @client.event
 async def on_ready():
