@@ -1,0 +1,9 @@
+#create variable with keyphrase
+prefix = '!secondFunc'
+
+#function accepts the client and message
+#needs to be async
+#Since we can pass client and message we can have these functions do anything
+async def func(client, message):
+	response = 'You said: {}'.format(' '.join(message.content.split()[1:]))
+	await message.channel.send(response)
