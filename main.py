@@ -1,5 +1,5 @@
 import os
-
+import importlib
 import discord
 from dotenv import load_dotenv
 
@@ -10,7 +10,20 @@ TOKEN = os.getenv('TOKEN')
 #Connect to discord client
 client = discord.Client()
 
+#Dictionary to hold prefixes and the response
+externalFunctions = {}
 #Load functions from functions folder:
+for filename in os.listdir("functions"):
+    if filename.endswith("testFunction.py"):
+        #print out filepath to be sure it's working
+        print(os.path.join("functions", filename))
+        
+        #get module name
+        filename = filename.replace(".py", "")
+        print("functions."+filename)
+        external = importlib.import_module("functions."+filename)
+        externalFunctions[external.prefix] = external.response
+
 
 #When the bot is ready it will print to console
 @client.event
@@ -25,6 +38,12 @@ async def on_message(message):
 	if message.content == '!test':
 		response = "Test successful!"
 		await message.channel.send(response)
+
+	for x in externalFunctions.keys():
+		if message.content == x:
+			await message.channel.send(externalFunctions[x])
+			break;
+    
 
 #Run the bot
 client.run(TOKEN)
