@@ -10,7 +10,7 @@ TOKEN = os.getenv('TOKEN')
 #Connect to discord client
 client = discord.Client()
 
-#Dictionary to hold prefixes and the response
+#Dictionary to hold prefixes (commands) and the function file
 externalFunctions = {}
 
 #Load functions from functions folder:
@@ -33,24 +33,27 @@ async def on_ready():
 #When a user sends a message, checks the contents and responds if containing the command
 @client.event
 async def on_message(message):
+	#if message sender is the bot, don't check it
 	if message.author == client.user:
 		return
 	if message.content == '!test':
 		response = "Test successful!"
 		await message.channel.send(response)
+		return
 
-	# #check for prefixes from external functions
-	# for x in externalFunctions.keys():
-	# 	if message.content.startswith(x):
-	# 		#send data to external function
-	# 		await externalFunctions[x].func(client, message)
-	# 		break;
+	#make sure it is a command:
+	if message.content.startswith('!'):
+		#first part of message will be command
+		prefix = message.content.split(' ')[0]
+		#if prefix is found, send to function
+		if prefix in externalFunctions:
+			#calls function from external file, all functions must have same name it seems
+			await externalFunctions[prefix].func(client, message)
+			return
 
-	#first part of message will be command
-	#if prefix is found, send to function
-	prefix = message.content.split(' ')[0]
-	if prefix in externalFunctions:
-		await externalFunctions[prefix].func(client, message)
+		#Tell user if command was not valid
+		else:
+			await message.channel.send("Sorry that command was not recognized!")
     
 
 #Run the bot
