@@ -22,23 +22,36 @@ def printCommandList():
         response += '!' + command.name + '\n'
     return response
 
+userList = []
+
+def putUsersInList():
+	pass
+
 #Dictionary to hold prefixes (commands) and the function file
 externalFunctions = {}
 
 #Load functions from functions folder:
-for filename in os.listdir("functions"):
+for filename in os.listdir("modules"):
 	#grab all .py files except for the init file
-    if filename.endswith(".py") and not filename.startswith("__init__"):      
-        #get module name
-        filename = filename.replace(".py", "")
-        #import files as a module
-        externalFunc = importlib.import_module("functions."+filename)
+	if (filename.endswith(".py") and not filename.startswith("__init__")):
+		#get module name
+		filename = filename.replace(".py", "")
+		#import files as a module
+		module = importlib.import_module("modules." + filename)
+		for c in module.commandList:
+			c.module = module
+			commandList.append(c)
+			
+
+		"""
+		externalFunc = importlib.import_module("functions."+filename)
         #if command already exists in dict, don't load the file and warn the console
         if externalFunc.prefix in externalFunctions:
         	print("Error: Command collision on {} when loading {}\nModule not loaded".format(externalFunc.prefix, "functions." + filename))
         else:
         	#add modules to dict with the command as the key
         	externalFunctions[externalFunc.prefix] = externalFunc
+		"""
 #When the bot is ready it will print to console
 @client.event
 async def on_ready():
@@ -66,7 +79,7 @@ async def on_message(message):
 		name = message.content[1:]
 		for command in commandList:
 			if (name == command.name):
-				await command.callCommand(message)
+				await command.callCommand(client, message)
 				return
 		await message.channel.send("Sorry that command was not recognized!")
 			
