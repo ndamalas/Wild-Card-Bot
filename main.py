@@ -64,12 +64,6 @@ async def on_message(message):
 	if message.author == client.user:
 		return
 
-	#basic test command
-	"""if message.content == '!test':
-		response = "Test successful!"
-		await message.channel.send(response)
-		return"""
-
 	#make sure it is a command:
 	if message.content.startswith('!'):
 		if (message.content == '!commands'):
