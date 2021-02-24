@@ -2,6 +2,7 @@ from command import Command
 import os
 import importlib
 import discord
+import serverAdministration
 from dotenv import load_dotenv
 
 #loads in Discord API token
@@ -13,24 +14,27 @@ client = discord.Client()
 
 
 # Command List will hold Command objects
-# commandList = []
+commandList = {}
 
 # Function to print out all commands to the user
 def printCommandList():
     response = ''
     for command in commandList:
-        response += '!' + command + '\n'
+        response += command + '\n'
     return response
 
-userList = []
 
-def putUsersInList():
-	pass
+# Load commands from the serverAdministration.py file
+def loadAdmin():
+	for c in serverAdministration.commandList:
+		if c.name in commandList:
+			print("Error: Command collision on {} when loading {}".format(c.name, serverAdministration))
+			break
+		c.module = serverAdministration
+		commandList[c.name] = c
+loadAdmin()
 
-# Command List will hold Command objects
-commandList = {}
-
-#Load functions from functions folder:
+# Load functions from functions folder:
 for filename in os.listdir("modules"):
 	#grab all .py files except for the init file
 	if (filename.endswith(".py") and not filename.startswith("__init__")):
@@ -39,19 +43,12 @@ for filename in os.listdir("modules"):
 		#import files as a module
 		module = importlib.import_module("modules." + filename)
 		for c in module.commandList:
+			if c.name in commandList:
+				print("Error: Command collision on {} when loading {}".format(c.name, "modules." + filename))
+				break
 			c.module = module
 			commandList[c.name] = c
 			
-
-		"""
-		externalFunc = importlib.import_module("functions."+filename)
-        #if command already exists in dict, don't load the file and warn the console
-        if externalFunc.prefix in externalFunctions:
-        	print("Error: Command collision on {} when loading {}\nModule not loaded".format(externalFunc.prefix, "functions." + filename))
-        else:
-        	#add modules to dict with the command as the key
-        	externalFunctions[externalFunc.prefix] = externalFunc
-		"""
 #When the bot is ready it will print to console
 @client.event
 async def on_ready():
@@ -69,45 +66,13 @@ async def on_message(message):
 		if (message.content == '!commands'):
 			await message.channel.send(printCommandList())
 			return
-
-		# Removes the !
-		#name = message.content[1:]
 		
-		#for command in commandList:
 		name = message.content.split(' ')[0]
 		if name in commandList:
 			await commandList[name].callCommand(client, message)
 			return
 		await message.channel.send("Sorry that command was not recognized!")
 			
-"""
-		#first part of message will be command
-		prefix = message.content.split(' ')[0]
-		#if prefix is found, send to function
-		if prefix in externalFunctions:
-			#calls function from external file, all functions must have same name it seems
-			await externalFunctions[prefix].func(client, message)
-			return
-
-		#Tell user if command was not valid
-		else:
-			await message.channel.send("Sorry that command was not recognized!")
-"""
-
-# Testing
-# Add a command to the command list
-"""testCommand = Command('hello', None)
-testCommand1 = Command('test1', None)
-testCommand2 = Command('test2', None)
-testCommand3 = Command('test3', None)
-testCommand4 = Command('test4', None)
-
-
-commandList(testCommand)
-commandList.append(testCommand1)
-commandList.append(testCommand2)
-commandList.append(testCommand3)
-commandList.append(testCommand4)"""
 
 
 #Run the bot

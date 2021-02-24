@@ -1,5 +1,5 @@
-
 # Command class to define what a command object will be
+
 class Command:
     # Name will be the name of the command and what you call it by
     # Function will be the specific function that the command runs found in the module
