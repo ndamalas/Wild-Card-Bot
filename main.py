@@ -10,7 +10,8 @@ load_dotenv()
 TOKEN = os.getenv('TOKEN')
 
 #Connect to discord client
-client = discord.Client()
+intents = discord.Intents.all()
+client = discord.Client(intents=intents)
 
 
 # Command List will hold Command objects
@@ -25,14 +26,14 @@ def printCommandList():
 
 
 # Load commands from the serverAdministration.py file
-def loadAdmin():
+def loadAdminCommands():
 	for c in serverAdministration.commandList:
 		if c.name in commandList:
 			print("Error: Command collision on {} when loading {}".format(c.name, serverAdministration))
 			break
 		c.module = serverAdministration
 		commandList[c.name] = c
-loadAdmin()
+loadAdminCommands()
 
 # Load functions from functions folder:
 for filename in os.listdir("modules"):
