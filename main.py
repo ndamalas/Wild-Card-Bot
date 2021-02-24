@@ -10,6 +10,10 @@ TOKEN = os.getenv('TOKEN')
 #Connect to discord client
 client = discord.Client()
 
+
+# Command List will hold Command objects
+commandList = []
+
 #Dictionary to hold prefixes (commands) and the function file
 externalFunctions = {}
 
