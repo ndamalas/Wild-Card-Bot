@@ -13,13 +13,13 @@ client = discord.Client()
 
 
 # Command List will hold Command objects
-commandList = []
+# commandList = []
 
 # Function to print out all commands to the user
 def printCommandList():
     response = ''
     for command in commandList:
-        response += '!' + command.name + '\n'
+        response += '!' + command + '\n'
     return response
 
 userList = []
@@ -27,8 +27,8 @@ userList = []
 def putUsersInList():
 	pass
 
-#Dictionary to hold prefixes (commands) and the function file
-externalFunctions = {}
+# Command List will hold Command objects
+commandList = {}
 
 #Load functions from functions folder:
 for filename in os.listdir("modules"):
@@ -40,7 +40,7 @@ for filename in os.listdir("modules"):
 		module = importlib.import_module("modules." + filename)
 		for c in module.commandList:
 			c.module = module
-			commandList.append(c)
+			commandList[c.name] = c
 			
 
 		"""
@@ -70,11 +70,14 @@ async def on_message(message):
 			await message.channel.send(printCommandList())
 			return
 
-		name = message.content[1:]
-		for command in commandList:
-			if (name == command.name):
-				await command.callCommand(client, message)
-				return
+		# Removes the !
+		#name = message.content[1:]
+		
+		#for command in commandList:
+		name = message.content.split(' ')[0]
+		if name in commandList:
+			await commandList[name].callCommand(client, message)
+			return
 		await message.channel.send("Sorry that command was not recognized!")
 			
 """
@@ -93,18 +96,18 @@ async def on_message(message):
 
 # Testing
 # Add a command to the command list
-testCommand = Command('hello', None, None)
-testCommand1 = Command('test1', None, None)
-testCommand2 = Command('test2', None, None)
-testCommand3 = Command('test3', None, None)
-testCommand4 = Command('test4', None, None)
+"""testCommand = Command('hello', None)
+testCommand1 = Command('test1', None)
+testCommand2 = Command('test2', None)
+testCommand3 = Command('test3', None)
+testCommand4 = Command('test4', None)
 
 
-commandList.append(testCommand)
+commandList(testCommand)
 commandList.append(testCommand1)
 commandList.append(testCommand2)
 commandList.append(testCommand3)
-commandList.append(testCommand4)
+commandList.append(testCommand4)"""
 
 
 #Run the bot
