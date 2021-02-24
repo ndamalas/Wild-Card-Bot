@@ -1,3 +1,4 @@
+from command import Command
 import os
 import importlib
 import discord
@@ -13,6 +14,13 @@ client = discord.Client()
 
 # Command List will hold Command objects
 commandList = []
+
+# Function to print out all commands to the user
+def printCommandList():
+    response = ''
+    for command in commandList:
+        response += '!' + command.name + '\n'
+    return response
 
 #Dictionary to hold prefixes (commands) and the function file
 externalFunctions = {}
@@ -31,7 +39,6 @@ for filename in os.listdir("functions"):
         else:
         	#add modules to dict with the command as the key
         	externalFunctions[externalFunc.prefix] = externalFunc
-
 #When the bot is ready it will print to console
 @client.event
 async def on_ready():
@@ -45,13 +52,25 @@ async def on_message(message):
 		return
 
 	#basic test command
-	if message.content == '!test':
+	"""if message.content == '!test':
 		response = "Test successful!"
 		await message.channel.send(response)
-		return
+		return"""
 
 	#make sure it is a command:
 	if message.content.startswith('!'):
+		if (message.content == '!commands'):
+			await message.channel.send(printCommandList())
+			return
+
+		name = message.content[1:]
+		for command in commandList:
+			if (name == command.name):
+				await command.callCommand(message)
+				return
+		await message.channel.send("Sorry that command was not recognized!")
+			
+"""
 		#first part of message will be command
 		prefix = message.content.split(' ')[0]
 		#if prefix is found, send to function
@@ -63,7 +82,23 @@ async def on_message(message):
 		#Tell user if command was not valid
 		else:
 			await message.channel.send("Sorry that command was not recognized!")
-    
+"""
+
+# Testing
+# Add a command to the command list
+testCommand = Command('hello', None, None)
+testCommand1 = Command('test1', None, None)
+testCommand2 = Command('test2', None, None)
+testCommand3 = Command('test3', None, None)
+testCommand4 = Command('test4', None, None)
+
+
+commandList.append(testCommand)
+commandList.append(testCommand1)
+commandList.append(testCommand2)
+commandList.append(testCommand3)
+commandList.append(testCommand4)
+
 
 #Run the bot
 client.run(TOKEN)
