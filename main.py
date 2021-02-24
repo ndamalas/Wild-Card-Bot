@@ -42,6 +42,7 @@ for filename in os.listdir("modules"):
 		filename = filename.replace(".py", "")
 		#import files as a module
 		module = importlib.import_module("modules." + filename)
+		#for each command in the module commandList, if not a collision, add it to the main commandList dictionary with the command as they key and module as the value
 		for c in module.commandList:
 			if c.name in commandList:
 				print("Error: Command collision on {} when loading {}".format(c.name, "modules." + filename))
@@ -63,11 +64,14 @@ async def on_message(message):
 
 	#make sure it is a command:
 	if message.content.startswith('!'):
+		#command to print out the command list
 		if (message.content == '!commands'):
 			await message.channel.send(printCommandList())
 			return
 		
+		#Get the first word in the message, which would be the command
 		name = message.content.split(' ')[0]
+		#If it exists, call the command, otherwise warn user it was not recognized
 		if name in commandList:
 			await commandList[name].callCommand(client, message)
 			return
