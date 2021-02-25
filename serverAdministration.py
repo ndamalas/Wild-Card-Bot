@@ -11,7 +11,7 @@ async def exampleFunction(client, message):
     response = "This is an example of a function setup."
     await message.channel.send(response)
 
-# Display a list of the all the Users
+# Display a list of all the Users
 commandList.append(Command("!users", "displayUsers"))
 async def displayUsers(client, message):
     # User List to hold all members in the server
@@ -22,15 +22,6 @@ async def displayUsers(client, message):
             continue
         response += user.display_name + "\nRoles: "
         for role in user.roles:
-            response += role.name + ", "
+            response += role.name + " "
         response += "\n\n"
     await message.channel.send(response)
-
-# Function to fill the userList
-"""def fillUserList(client):
-    users = []
-    for guild in client.guilds:
-        for member in guild.members:
-            users.append(member)
-    return users
-"""
