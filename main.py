@@ -19,7 +19,7 @@ commandList = {}
 
 # Function to print out all commands to the user
 def printCommandList():
-    response = ''
+    response = '!commands\n'
     for command in commandList:
         response += command + '\n'
     return response
