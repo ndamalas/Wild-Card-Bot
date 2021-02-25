@@ -32,3 +32,31 @@ git checkout main
 git merge main newBranchName
 git push origin main
 ```
+
+## Writing Commands (Standard Format)
+To make commands in external files, follow the following format:
+
+Start each file with:
+
+``` python
+# import the command class
+from command import Command
+
+# instantiate the list that will hold all of the commands
+commandList = []
+```
+
+Then, for each command:
+
+```python
+# Follow the following format
+
+# Make sure every function is async and has both client, message as parameters
+async def exampleFunction(client, message):
+    response = "This is an example of a function setup."
+    await message.channel.send(response)
+
+#Example Command and Function: command is !example, and the function name is exampleFunction
+# Add the command to the command list, with the first argument being the command users will use and the second being the name of the function that will be called
+commandList.append(Command("!example", "exampleFunction"))
+```
