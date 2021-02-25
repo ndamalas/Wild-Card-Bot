@@ -51,7 +51,7 @@ Then, for each command:
 ```python
 # Follow the following format
 
-# Make sure every function is async and has both client, message as parameters
+# Make sure every function is async and has both client, message as parameters, and that await is used when sending your response
 async def exampleFunction(client, message):
     response = "This is an example of a function setup."
     await message.channel.send(response)
@@ -60,3 +60,5 @@ async def exampleFunction(client, message):
 # Add the command to the command list, with the first argument being the command users will use and the second being the name of the function that will be called
 commandList.append(Command("!example", "exampleFunction"))
 ```
+
+Take a look at serverAdministrator.py to see another example of how it works!

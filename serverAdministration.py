@@ -5,7 +5,7 @@ commandList = []
 
 # Example function:
 # Just make sure that the function name in a command is the same
-# Make sure every function is async and has both client, message as parameters
+# Make sure every function is async and has both client, message as parameters, and that await is used when sending your response
 commandList.append(Command("!example", "exampleFunction"))
 async def exampleFunction(client, message):
     response = "This is an example of a function setup."
