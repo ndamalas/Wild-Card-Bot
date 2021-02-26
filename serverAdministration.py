@@ -11,6 +11,17 @@ async def exampleFunction(client, message):
     response = "This is an example of a function setup."
     await message.channel.send(response)
 
+# Display a list of either all command functionality
+commandList.append(Command("!help", "help"))
+async def help(client, message):
+    # This will display a response that will hold descriptions of all of the commands
+    response = """`!help` : Displays a page of all commands and their descriptions.\n
+`!commands` : This command will display all of the available comamnds\n
+`!users` <optional_arg> : Will display a list of all users and their roles with no argument,
+but when given a role it will display all users with the given role.\n"""
+    await message.channel.send(response)
+
+
 # Display a list of either all Users or only Users with a certain role
 commandList.append(Command("!users", "displayAllUsers"))
 async def displayAllUsers(client, message):
@@ -29,7 +40,7 @@ def getAllUsers(userList):
     for user in userList:
         if user.display_name == "Wild Card Bot":
             continue
-        response += user.display_name + "\nRoles: "
+        response += "**" + user.display_name + "**\n__Roles:__ "
         for role in user.roles:
             response += role.name + " "
         response += "\n"
@@ -42,7 +53,7 @@ def getUsersFromRole(userList, role):
             continue
         for userRole in user.roles:
             if userRole.name == role:
-                response += user.display_name
+                response += "**" + user.display_name + "**"
                 response += "\n"
                 break
     return response

@@ -19,10 +19,11 @@ commandList = {}
 
 # Function to print out all commands to the user
 def printCommandList():
-    response = '!commands\n'
-    for command in commandList:
-        response += command + '\n'
-    return response
+	response = "```!commands\n"
+	for command in commandList:
+		response += "" + command + "\n"
+	response += "```"
+	return response
 
 
 # Load commands from the serverAdministration.py file
