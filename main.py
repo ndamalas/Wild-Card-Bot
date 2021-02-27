@@ -73,6 +73,17 @@ async def on_message(message):
 	#if message sender is the bot, don't check it
 	if message.author == client.user:
 		return
+	
+	# Remove links if the channel is currently being monitored
+	# True is returned if the message should be deleted due to the message having a link
+	if serverAdministration.checkMessageForLinks(message) == True:
+		# Ping the user and warn them about links
+		user = message.author.mention
+		response = ">>> " + user + " Please do not post links in this channel.\n"
+		response += "Messages with links are strictly prohibited in this channel and will be deleted."
+		await message.channel.send(response)
+		await message.delete()
+		return
 
 	# Check if it is a command:
 	if message.content.startswith('!'):
