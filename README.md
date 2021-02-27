@@ -10,7 +10,7 @@ pip3 install -U importlib
 ## Making changes
 **Do all testing in a branch until the changes are ready for production**
 
-**REMEMBER: Always pull before each time you start working in case someone else has made changes!!!**
+**REMEMBER: Always fetch then pull before each time you start working in case someone else has made changes!!!**
 
 Start by checking out a new branch
 ```
