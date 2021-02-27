@@ -401,6 +401,15 @@ async def viewRemoveLinksList(client, message, guild):
     if len(removeLinksChannels) != 0:
         await message.channel.send(response)
 
+# This function is used by main.py to check if the associated message has a link
+# If the message has a link and the channel is monitored, we return True to indicate deletion
+# If the message does not satify conditions False should be returned
+def checkMessageForLinks(message):
+    if message.channel.id in removeLinksChannels:
+        if "https://" in message.content or "http://" in message.content:
+            return True
+    return False
+
 # For testing ONLY
 commandList.append(Command("!stop", "logoutBot"))
 async def logoutBot(client, message):
