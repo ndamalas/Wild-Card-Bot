@@ -60,29 +60,48 @@ def getUsersFromRole(userList, role):
 
 
 # Command that creates a new text channel on command
+# Format: !createtc text-channel-name category-name
 commandList.append(Command("!createtc", "createTextChannel"))
 # Creates a text channel with the name specified by the user
 async def createTextChannel(client, message):
-    guild = message.guild #Get the server from the message sent
-    channelName = "new-text-channel" #Default channel name
-    categoryName = 0 #Holds the category name if specified. If not specified, 0 indicates no category
+    guild = message.guild # Get the server from the message sent
+    channelName = "new-text-channel" # Default channel name
+    categoryName = 0 # Holds the category name if specified. If not specified, 0 indicates no category
 
-    #Create the text channels, applies to creation of one text channel
-    if len(message.content.split(" ")) > 1:
+    # Create the text channel, considering if the user speciifed a category or name
+    if len(message.content.split(" ")) > 2:
+        channelName = message.content.split(" ")[1]
+        categoryName = message.content.split(" ")[2]
+        # Scans to see if the category already exists, adds channel to category if it does
+        categoryExists = False
+        for category in guild.categories:
+            if category.name == categoryName:
+                await guild.create_text_channel(channelName, category=category)
+                categoryExists = True
+                break        
+        # If the category does not exist, create the category and add channel to it
+        if categoryExists == False:
+            await guild.create_category_channel(categoryName)
+            # Find the category just created
+            for category in guild.categories:
+                if category.name == categoryName:
+                    await guild.create_text_channel(channelName, category=category)
+                    break
+    elif len(message.content.split(" ")) > 1:
+        # Create text channel with just a given name
         channelName = message.content.split(" ")[1]
         await guild.create_text_channel(channelName)
-    elif len(message.content.split(" ")) > 2:
-        channelName = message.content.split(" ")[1]
-        #categoryName = message.content.split(" ")[2]
-        await guild.create_text_channel(channelName, category=categoryName)
     else:
+        # Create text channel with the default name
         await guild.create_text_channel(channelName)
-    #Generate response with text channel added
-    response = "Successfully created the new text channel **" + channelName
+    # Generate response with text channel added
+    response = ">>> Successfully created the new text channel **" + channelName
     if categoryName != 0:
         response += "** in category **" + categoryName
     response += "**!"
     await message.channel.send(response)
+
+
 
 # For testing ONLY
 commandList.append(Command("!stop", "logoutBot"))
