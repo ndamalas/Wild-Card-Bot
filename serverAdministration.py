@@ -101,6 +101,66 @@ async def createTextChannel(client, message):
     response += "**!"
     await message.channel.send(response)
 
+# Command that deletes a new text channel on command
+# Format: !deletetc text-channel-name (id) (id is optional, text-channel-name should be text-channel-id)
+commandList.append(Command("!deletetc", "deleteTextChannel"))
+# Deletes a text channel with the name or id specified by the user
+async def deleteTextChannel(client, message):
+    guild = message.guild
+    # Check if multiple channels have the same name
+    if len(message.content.split(" ")) > 2:
+        # Delete a text channel via channel id
+        if message.content.split(" ")[2] == "id":
+            channelId = int(message.content.split(" ")[1]) # Channel ID is an int, so must cast
+            channelFound = False
+            for tc in guild.text_channels:
+                if tc.id == channelId:
+                    channelFound = True
+                    await tc.delete()
+                    await message.channel.send(">>> Successfully deleted the **" + tc.name + "** text channel!")
+                    break
+            # Notify user if the channel was not found
+            if channelFound == False:
+                await message.channel.send(">>> Text channel with id **" + str(channelId) + "** was not found!")
+        else:
+            # Delete a text channel by name
+            channelName = message.content.split(" ")[1]
+            await deleteTextChannelByName(client, message, guild, channelName)
+    elif len(message.content.split(" ")) > 1:
+        # Delete a text channel by name
+        channelName = message.content.split(" ")[1]
+        await deleteTextChannelByName(client, message, guild, channelName)
+    else:
+        # If no arguments provided, notify user
+        await message.channel.send(">>> Please specify a text channel name!\nCommand format: **!deletetc text-channel-name**")
+
+async def deleteTextChannelByName(client, message, guild, channelName):
+     # Check how many channels match that name
+        nameMatchCount = 0
+        for tc in guild.text_channels:
+            if tc.name == channelName:
+                nameMatchCount += 1
+        # Determine action based on how many name matches
+        if nameMatchCount > 1:
+            # If multiple matches, notify user and print all matches
+            response = ">>> Multiple matches found for **" + channelName + "**. Please delete using channel ID.\n"
+            responseCount = 1
+            for tc in guild.text_channels:
+                if tc.name == channelName:
+                    response += str(responseCount) + ". " + str(tc.id) + "\n"
+                    responseCount += 1
+            response += "Command format: **!deletetc text-channel-id id**"
+            await message.channel.send(response)
+        elif nameMatchCount == 1:
+            # Delete the text channel with the given name
+            for tc in guild.text_channels:
+                if tc.name == channelName:
+                    await tc.delete()
+                    await message.channel.send(">>> Successfully deleted the **" + channelName + "** text channel!")
+                    break
+        else:
+            # No text channel with the given name was found
+            await message.channel.send(">>> Text channel with name **" + channelName + "** was not found!")
 
 
 # For testing ONLY
