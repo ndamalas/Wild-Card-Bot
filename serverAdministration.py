@@ -105,12 +105,12 @@ async def createTextChannel(client, message):
                 response += "Command format: **!createtc text-channel-name category-id id**"
                 await message.channel.send(response)
                 channelName = 0 # Notify that channel was not created
-            elif categoryCount == 1:     
+            elif categoryCount == 1:
                 for category in guild.categories:
                     if category.name == categoryName:
                         # Create the text channel in the existing category
                         await guild.create_text_channel(channelName, category=category)
-                        break               
+                        break
             else:
                 # If the category does not exist, create the category and add channel to it
                 await guild.create_category_channel(categoryName)
@@ -212,6 +212,35 @@ async def deleteTextChannelByName(client, message, guild, channelName):
             # No text channel with the given name was found
             await message.channel.send(">>> Text channel with name **" + channelName + "** was not found!")
 
+# Syntax: !createvc channel_name *category_name
+commandList.append(Command("!createvc", "createVoiceChannel"))
+async def createVoiceChannel(client, message):
+    guild = message.guild
+    channelName = 0
+    categoryName = 0
+
+    if len(message.content.split(" ")) > 2:
+            channelName = message.content.split(" ")[1]
+            categoryName = message.content[len("!createvc ") + len(channelName) + 1:]
+            exists = 0
+            for category in guild.categories:
+                if category.name == categoryName:
+                    await guild.create_voice_channel(channelName, overwrites=None, category=category, reason=None)
+                    exists = 1
+                    break
+            if exists == 0:
+                await guild.create_category_channel(categoryName)
+                for category in guild.categories:
+                    if category.name == categoryName:
+                        await guild.create_voice_channel(channelName, overwrites=None, category=category, reason=None)
+                        break
+    elif len(message.content.split(" ")) > 1:
+        channelName = message.content.split(" ")[1]
+        await guild.create_voice_channel(channelName, overwrites=None, category=None, reason=None)
+    else:
+        await message.channel.send("Error")
+    if channelName != 0:
+        await message.channel.send("Success")
 
 # Command that deletes a new text channel on command
 # Format: !removelinks (add/remove/view) channel-name (id) (adds or removes a channel for monitoring links)
@@ -246,7 +275,7 @@ async def updateRemoveLinksList(client, message):
         # View the contents of the list
         if message.content.split(" ")[1] == "view":
             action = "view"
-            await viewRemoveLinksList(client, message, guild)           
+            await viewRemoveLinksList(client, message, guild)
     else:
         response = ">>> Please provide a text channel name and whether to add or remove link monitoring!\n"
         response += "Command format: **!removelinks add/remove channel-name**\n\n"
@@ -329,7 +358,7 @@ async def removeFromRemoveLinksList(client, message, guild, action, channelInfo)
         channelId = channelInfo
         if channelId in removeLinksChannels:
             removeLinksChannels.remove(channelId)
-            response = ">>> The text channel **" + guild.get_channel(channelId).name 
+            response = ">>> The text channel **" + guild.get_channel(channelId).name
             response += "** has been removed from the list for monitoring links."
             await message.channel.send(response)
         else:
@@ -393,7 +422,7 @@ async def viewRemoveLinksList(client, message, guild):
         await message.channel.send(">>> There are currently no text channels being monitored for links.")
     response = ">>> Here are all the text channels currently being monitored for links:\n" # Message to the user
     responseCount = 1 # Used for numbers
-    for tcId in removeLinksChannels:        
+    for tcId in removeLinksChannels:
         tc = guild.get_channel(tcId)
         response += str(responseCount) + ". " + tc.name + "\n"
         response += "ID: " + str(tc.id) + "\n"
