@@ -1,4 +1,10 @@
 from command import Command
+#Importing discord for the embedded model 
+import discord
+#Google search API imported
+#from googleapiclient.discovery import build
+#import pprint
+
 
 # Every module has to have a command list
 commandList = []
@@ -409,7 +415,35 @@ def checkMessageForLinks(message):
         if "https://" in message.content or "http://" in message.content:
             return True
     return False
-
+# Additional module command
+commandList.append(Command("!downloadModules", "downloadAdditionalModules"))
+# Function for additional module download command
+async def downloadAdditionalModules(ctx, message):
+    #Check the number of arguments typed including the command
+    args = len(message.content.split(" "))
+    # If the user just types the command give them the link to the GitHub modules that we have
+    # Otherwise given them the google search as well
+    if(args == 1):
+        #Embedded is the nice block that also gives the embedded link
+        embed = discord.Embed(
+        title='More Discord Modules',
+        description='[GitHub](https://github.com/ndamalas/Wild-Card-Bot/tree/main/modules)',
+        color = 0xffffff
+        )
+    await message.channel.send(embed=embed)
+    #else:
+        #Need to run: "pip install google-api-python-client" before this works
+        #googleKey = "AIzaSyDMod0KR7Boab6HJm4hY1lpgR-kBZb97uA"
+        #cse_ID = "d867b72f0fa01663e"
+        #results = googleSearch(
+            #args, googleKey, cse_ID, num=5)
+        #for result in results:
+            #pprint.pprint(result)
+    #await message.channel.send(results)
+#def googleSearch(args, googleKey, cse_ID, **kwargs):
+    #service = build("customsearch", "v1", developerKey=googleKey)
+    #res = service.cse().list(q=args, cx=cse_ID, **kwargs).execute()
+    #return res['items']
 # For testing ONLY
 commandList.append(Command("!stop", "logoutBot"))
 async def logoutBot(client, message):
