@@ -6,6 +6,9 @@ commandList = []
 # List of channels to remove links from, stores only text channel ids
 removeLinksChannels = []
 
+# List of banned words
+bannedWords = []
+
 # Example function:
 # Just make sure that the function name in a command is the same
 # Make sure every function is async and has both client, message as parameters, and that await is used when sending your response
@@ -20,7 +23,7 @@ async def help(client, message):
     # This will display a response that will hold descriptions of all of the commands
     response = """`!help` : Displays a page of all commands and their descriptions.\n
 `!commands` : This command will display all of the available comamnds\n
-`!users` <optional_arg> : Will display a list of all users and their roles with no argument,
+`!users <optional_arg>` : Will display a list of all users and their roles with no argument,
 but when given a role it will display all users with the given role.\n"""
     await message.channel.send(response)
 
@@ -438,6 +441,27 @@ def checkMessageForLinks(message):
         if "https://" in message.content or "http://" in message.content:
             return True
     return False
+
+# Display a list of all banned words
+commandList.append(Command("!bannedWords", "displayBannedWords"))
+async def displayBannedWords(client, message):
+    response = ""
+    for word in bannedWords:
+        response += word + "\n"
+    await message.channel.send(response)
+
+# Add a word to the banned word list
+# Will be used by typeing !addBannedWord <WORD>
+commandList.append(Command("!addBannedWord", "addBannedWord"))
+async def addBannedWord(client, message):
+    if (len(message.content.split(" ")) <= 1):
+        await message.channel.send("Please enter one or more words to add to the banned words list.\n Usage: !addBannedWord <WORD>\n")
+    words = message.content.split(" ")
+    for i in range(1, len(message.content.split(" "))):
+        word = words[i]
+        bannedWords.append(word)
+    await message.channel.send("Successfully added to the banned words list!")
+
 
 # For testing ONLY
 commandList.append(Command("!stop", "logoutBot"))
