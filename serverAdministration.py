@@ -451,16 +451,38 @@ async def displayBannedWords(client, message):
     await message.channel.send(response)
 
 # Add a word to the banned word list
-# Will be used by typeing !addBannedWord <WORD>
+# Will be used by typing !addBannedWord <WORD>
 commandList.append(Command("!addBannedWord", "addBannedWord"))
 async def addBannedWord(client, message):
     if (len(message.content.split(" ")) <= 1):
-        await message.channel.send("Please enter one or more words to add to the banned words list.\n Usage: !addBannedWord <WORD>\n")
+        await message.channel.send("Please enter one or more words to add to the banned words list.\n Usage: !addBannedWord <WORD>")
+        return
     words = message.content.split(" ")
     for i in range(1, len(message.content.split(" "))):
         word = words[i]
         bannedWords.append(word)
     await message.channel.send("Successfully added to the banned words list!")
+
+# Remove a word to the banned word list
+# Will be used by typing !removeBannedWord <WORD>
+commandList.append(Command("!removeBannedWord", "removeBannedWord"))
+async def removeBannedWord(client, message):
+    if (len(message.content.split(" ")) <= 1):
+        await message.channel.send("Please enter one or more words to remove from the banned words list.\n Usage: !removeBannedWord <WORD>")
+        return
+    words = message.content.split(" ")
+    for i in range(1, len(message.content.split(" "))):
+        word = words[i]
+        if (word in words):
+            bannedWords.remove(word)
+        else:
+            await message.channel.send(word + "not found in banned words list, try again.")
+            return
+    await message.channel.send("Successfully removed from the banned words list!")
+    
+            
+
+
 
 
 # For testing ONLY
