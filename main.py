@@ -19,11 +19,11 @@ commandList = {}
 
 # Function to get out all commands to the user
 def getCommandList():
-	# response = "```!commands\n"
-	response = "!commands\n"
+	response = "```!commands\n"
+	# response = "!commands\n"
 	for command in commandList:
 		response += "" + command + "\n"
-	# response += "```"
+	response += "```"
 	return response
 
 
@@ -88,17 +88,13 @@ async def on_message(message):
 
 	# Check if it is a command:
 	if message.content.startswith('!'):
-		if (len(message.content) == 1):
+		if (len(message.content) == 1 or message.content == '!commands'):
 			# c = commandList['!example']
 			# url = (await c.callCommand(client, message))
 			description = getCommandList()
 			embed = discord.Embed(title = 'Commands', description = description, colour = discord.Colour.green())
 			# embed.add_field(name='[hello](c.callCommand(client, message))')
 			await message.channel.send(embed=embed)
-			return
-		#command to print out the command list
-		if (message.content == '!commands'):
-			await message.channel.send(getCommandList())
 			return
 		
 		# Get the first word in the message, which would be the command
