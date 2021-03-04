@@ -1,4 +1,5 @@
 from command import Command
+import string
 
 # Every module has to have a command list
 commandList = []
@@ -476,7 +477,23 @@ async def removeBannedWord(message):
     await message.channel.send("Successfully removed from the banned words list!")
             
 
-
+# This function is used by main.py to check if the associated message has a link
+# If the message has a link and the channel is monitored, we return True to indicate deletion
+# If the message does not satify conditions False should be returned
+def checkMessageForBannedWords(message):
+    messageWords = message.content.split(" ")
+    reformattedMessageWords= []
+    # Strip the message of all punctuation and make all lowercase
+    for word in messageWords:
+        reformattedWord = word.translate(str.maketrans("", "", string.punctuation))
+        reformattedWord = reformattedWord.lower()
+        reformattedMessageWords.append(reformattedWord)
+    
+    # Check if the banned word is one of the words
+    for word in bannedWords:
+        if word in reformattedMessageWords:
+            return True
+    return False
 
 
 # For testing ONLY

@@ -75,6 +75,16 @@ async def on_message(message):
 	if message.author == client.user:
 		return
 	
+	# Remove messages with banned words
+	# True is returned if the message should be deleted for having a banned word
+	if serverAdministration.checkMessageForBannedWords(message) == True:
+		# Ping the user and warn them about the banned word
+		# This part is not done by Matthew, currently holds a temp response
+		response = ">>> You used a banned word."
+		await message.channel.send(response)
+		await message.delete()
+		return
+
 	# Remove links if the channel is currently being monitored
 	# True is returned if the message should be deleted due to the message having a link
 	if serverAdministration.checkMessageForLinks(message) == True:
