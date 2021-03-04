@@ -5,6 +5,9 @@ import discord
 import serverAdministration
 from dotenv import load_dotenv
 
+#import requests for file download
+import requests
+
 #loads in Discord API token
 load_dotenv()
 TOKEN = os.getenv('TOKEN')
@@ -62,6 +65,20 @@ def loadCommands():
 loadCommands()
 
 #Now refresh function (when we make it) is just clearing commandList and calling loadAdminCommands and loadCommands()
+
+#Downloading function
+async def downloadFile(message):
+	#if attached file exists
+	if(message.attachments):
+		#grab data from file
+		r = requests.get(message.attachments[0].url)
+		#write data to new file in modules directory
+		newFile = open("modules/" + message.attachments[0].filename, "w")
+		newFile.write(r.text)
+		newFile.close()
+		await message.channel.send("File {} successfully uploaded!".format(message.attachments[0].filename))
+	else:
+		await message.channel.send("No file attached!")
 			
 # When the bot is ready it will print to console
 @client.event
@@ -106,6 +123,10 @@ async def on_message(message):
 		if (message.content == '!help'):
 			await help(client, message)
 			return
+		#command to download function
+		if (message.content == '!add'):
+			await downloadFile(message)
+			return
 		# Get the first word in the message, which would be the command
 		name = message.content.split(' ')[0]
 		# If it exists, call the command, otherwise warn user it was not recognized
@@ -114,7 +135,7 @@ async def on_message(message):
 			return
 		await message.channel.send("Sorry that command was not recognized!")
 
-	# Else, should be send to the chat moderation function to check for banned words, etc.
+	#Todo: File upload command:
 			
 # Display a list of either all command functionality
 async def help(client, message):
