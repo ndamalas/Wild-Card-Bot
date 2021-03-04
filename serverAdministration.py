@@ -8,9 +8,6 @@ commandList = []
 # List of channels to remove links from, stores only text channel ids
 removeLinksChannels = []
 
-# List of banned words
-bannedWords = []
-
 # Example function:
 # Just make sure that the function name in a command is the same
 # Make sure every function is async and has both client, message as parameters, and that await is used when sending your response
@@ -18,6 +15,16 @@ commandList.append(Command("!example", "exampleFunction", "This is an example fu
 async def exampleFunction(client, message):
     response = "This is an example of a function setup."
     await message.channel.send(response)
+
+# List of banned words
+bannedWords = []
+# Will read in words into the bannedWords list
+def readBannedWords():
+    file = open("bannedWords.txt", "r")
+    line = file.readline()
+    while (line):
+        bannedWords.append(line)
+readBannedWords()
 
 # Display a list of either all Users or only Users with a certain role
 commandList.append(Command("!users", "displayAllUsers", "Will display all of the users if just given !users.\nUse !users <ROLE> to list users of a specific role."))
@@ -479,6 +486,8 @@ async def displayBannedWords(client, message):
         response = ""
         for word in bannedWords:
             response += word + "\n"
+        if response == "":
+            response = "The banned words list is currently empty."
         await message.channel.send(response)
         return
     elif (message.content.split(" ")[1] == "add"):
