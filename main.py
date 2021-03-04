@@ -92,7 +92,7 @@ async def on_message(message):
 		user = message.author.mention
 		response = user + " Please do not post links in this channel.\n"
 		response += "Messages with links are strictly prohibited in this channel and will be deleted."
-		embed = discord.Embed(title = 'Links are NOT Allowed in This Channel', description = response, colour = discord.Colour.red())
+		embed = discord.Embed(title='Links are NOT Allowed in This Channel', description=response, colour=discord.Colour.red())
 		embed.set_author(name=message.author.display_name, icon_url=message.author.avatar_url)
 		await message.channel.send(embed=embed)
 		await message.delete()

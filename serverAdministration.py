@@ -1,5 +1,6 @@
 from command import Command
 import string
+import discord
 
 # Every module has to have a command list
 commandList = []
@@ -88,7 +89,7 @@ async def createTextChannel(client, message):
                     categoryCount += 1
             if categoryCount > 1:
                 # If multiple matches, notify user and print all matches of categories
-                response = ">>> Multiple matches found for category with name **" + categoryName + "**. "
+                response = "Multiple matches found for category with name **" + categoryName + "**. "
                 response += "Please specify using category ID.\n"
                 responseCount = 1
                 for category in guild.categories:
@@ -96,7 +97,8 @@ async def createTextChannel(client, message):
                         response += str(responseCount) + ". " + str(category.id) + "\n"
                         responseCount += 1
                 response += "Command format: **!createtc text-channel-name category-id id**"
-                await message.channel.send(response)
+                embed = discord.Embed(title='Multiple Categories Found', description=response, colour=discord.Colour.blue())
+                await message.channel.send(embed=embed)
                 channelName = 0 # Notify that channel was not created
             elif categoryCount == 1:
                 for category in guild.categories:
@@ -119,16 +121,18 @@ async def createTextChannel(client, message):
         await guild.create_text_channel(channelName)
     else:
         # If no name is specified, notify user
-        response = ">>> Please specify a text channel name! Category name is optional.\n"
+        response = "Please specify a text channel name! Category name is optional.\n"
         response += "Command format: **!createtc text-channel-name category-name**"
-        await message.channel.send(response)
+        embed = discord.Embed(title='!createtc Usage', description=response, colour=discord.Colour.blue())
+        await message.channel.send(embed=embed)
     # Generate response with text channel added
     if channelName != 0:
-        response = ">>> Successfully created the new text channel **" + channelName
+        response = "Successfully created the new text channel **" + channelName
         if categoryName != 0:
             response += "** in category **" + categoryName
         response += "**!"
-        await message.channel.send(response)
+        embed = discord.Embed(title='Text Channel Created', description=response, colour=discord.Colour.blue())
+        await message.channel.send(embed=embed)
 
 # Helper function for createTextChannel that creates a text channel in the category specified by the ID
 async def createTextChannelWithCategoryID(client, message, guild, channelName, categoryId):
@@ -141,7 +145,9 @@ async def createTextChannelWithCategoryID(client, message, guild, channelName, c
             break
     # Notify user if the channel was not found
     if categoryFound == False:
-        await message.channel.send(">>> Category with id **" + str(categoryId) + "** was not found!")
+        response = "Category with id **" + str(categoryId) + "** was not found!"
+        embed = discord.Embed(title='!createtc Usage', description=response, colour=discord.Colour.blue())
+        await message.channel.send(embed=embed)
 
 # Command that deletes a new text channel on command
 # Format: !deletetc text-channel-name (id) (id is optional, text-channel-name should be text-channel-id)
@@ -159,11 +165,15 @@ async def deleteTextChannel(client, message):
                 if tc.id == channelId:
                     channelFound = True
                     await tc.delete()
-                    await message.channel.send(">>> Successfully deleted the **" + tc.name + "** text channel!")
+                    response = "Successfully deleted the **" + tc.name + "** text channel!"
+                    embed = discord.Embed(title='Text Channel Deleted', description=response, colour=discord.Colour.blue())
+                    await message.channel.send(embed=embed)
                     break
             # Notify user if the channel was not found
             if channelFound == False:
-                await message.channel.send(">>> Text channel with id **" + str(channelId) + "** was not found!")
+                response = "Text channel with id **" + str(channelId) + "** was not found!"
+                embed = discord.Embed(title='Text Channel Not Found', description=response, colour=discord.Colour.blue())
+                await message.channel.send(embed=embed)
         else:
             # Delete a text channel by name
             channelName = message.content.split(" ")[1]
@@ -174,7 +184,9 @@ async def deleteTextChannel(client, message):
         await deleteTextChannelByName(client, message, guild, channelName)
     else:
         # If no arguments provided, notify user
-        await message.channel.send(">>> Please specify a text channel name!\nCommand format: **!deletetc text-channel-name**")
+        response = "Please specify a text channel name!\nCommand format: **!deletetc text-channel-name**"
+        embed = discord.Embed(title='!deletetc Usage', description=response, colour=discord.Colour.blue())
+        await message.channel.send(embed=embed)
 
 # Helper function for deleteTextChannel that deletes a text channel via specifed name
 async def deleteTextChannelByName(client, message, guild, channelName):
@@ -186,24 +198,29 @@ async def deleteTextChannelByName(client, message, guild, channelName):
         # Determine action based on how many name matches
         if nameMatchCount > 1:
             # If multiple matches, notify user and print all matches
-            response = ">>> Multiple matches found for **" + channelName + "**. Please delete using channel ID.\n"
+            response = "Multiple matches found for **" + channelName + "**. Please delete using channel ID.\n"
             responseCount = 1
             for tc in guild.text_channels:
                 if tc.name == channelName:
                     response += str(responseCount) + ". " + str(tc.id) + "\n"
                     responseCount += 1
             response += "Command format: **!deletetc text-channel-id id**"
-            await message.channel.send(response)
+            embed = discord.Embed(title='Multiple Channels Found', description=response, colour=discord.Colour.blue())
+            await message.channel.send(embed=embed)
         elif nameMatchCount == 1:
             # Delete the text channel with the given name
             for tc in guild.text_channels:
                 if tc.name == channelName:
                     await tc.delete()
-                    await message.channel.send(">>> Successfully deleted the **" + channelName + "** text channel!")
+                    response = "Successfully deleted the **" + channelName + "** text channel!"
+                    embed = discord.Embed(title='Text Channel Deleted', description=response, colour=discord.Colour.blue())
+                    await message.channel.send(embed=embed)
                     break
         else:
             # No text channel with the given name was found
-            await message.channel.send(">>> Text channel with name **" + channelName + "** was not found!")
+            response = "Text channel with name **" + channelName + "** was not found!"
+            embed = discord.Embed(title='Text Channel Not Found', description=response, colour=discord.Colour.blue())
+            await message.channel.send(embed=embed)
 
 # Syntax: !createvc channel_name *category_name
 commandList.append(Command("!createvc", "createVoiceChannel"))
