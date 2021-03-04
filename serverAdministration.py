@@ -508,7 +508,8 @@ def checkMessageForBannedWords(message):
     
     # Check if the banned word is one of the words
     for word in bannedWords:
-        if word in reformattedMessageWords:
+        bannedWord = word.lower()
+        if bannedWord in reformattedMessageWords:
             return True
     return False
 
