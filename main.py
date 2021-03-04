@@ -68,6 +68,10 @@ loadCommands()
 
 #Downloading function
 async def downloadFile(message):
+	#Check if user has administrator privleges
+	if(!message.author.guild_permissions.administrator):
+		await channel.message.send("You do not have permission to add files")
+		return
 	#if attached file exists
 	if(message.attachments):
 		#grab data from file
@@ -76,6 +80,9 @@ async def downloadFile(message):
 		newFile = open("modules/" + message.attachments[0].filename, "w")
 		newFile.write(r.text)
 		newFile.close()
+		#reload commands
+		loadCommands()
+		#Send success message
 		await message.channel.send("File {} successfully uploaded!".format(message.attachments[0].filename))
 	else:
 		await message.channel.send("No file attached!")
