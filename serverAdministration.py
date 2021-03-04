@@ -25,6 +25,7 @@ def readBannedWords():
     while (line):
         bannedWords.append(line[:len(line)-1])
         line = file.readline()
+    file.close()
 readBannedWords()
 
 # Display a list of either all Users or only Users with a certain role
@@ -497,6 +498,9 @@ async def displayBannedWords(client, message):
     elif (message.content.split(" ")[1] == "remove"):
         await removeBannedWord(message)
         return
+    elif (message.content.split(" ")[1] == "clear"):
+        await clearBannedWords(message)
+        return
     await message.channel.send("Error: incorrect usage!")
     
 
@@ -528,11 +532,18 @@ async def removeBannedWord(message):
             bannedWords.remove(word)
         else:
             await message.channel.send(word + "not found in banned words list, try again.")
-    file = open("bannedWords", "w")
+    file = open("bannedWords.txt", "w")
     for word in bannedWords:
         file.write(word + "\n")
     file.close()
     await message.channel.send("Successfully removed from the banned words list!")
+
+# Clears out banned words list
+async def clearBannedWords(message):
+    file = open("bannedWords.txt", "w")
+    bannedWords.clear()
+    file.close()
+    await message.channel.send("Successfully cleared the banned words list!")
             
 
 # This function is used by main.py to check if the associated message has a link
