@@ -69,7 +69,7 @@ loadCommands()
 #Downloading function
 async def downloadFile(message):
 	#Check if user has administrator privleges
-	if(!message.author.guild_permissions.administrator):
+	if(not message.author.guild_permissions.administrator):
 		await channel.message.send("You do not have permission to add files")
 		return
 	#if attached file exists
@@ -80,12 +80,31 @@ async def downloadFile(message):
 		newFile = open("modules/" + message.attachments[0].filename, "w")
 		newFile.write(r.text)
 		newFile.close()
+		#Check formatting
+		if(not checkFormat(message.attachments[0].filename)):
+			os.remove("modules/" + message.attachments[0].filename)
+			await message.channel.send("File missing command list! File not added")
+			return
 		#reload commands
+		commandList = []
 		loadCommands()
+		loadAdminCommands()
 		#Send success message
-		await message.channel.send("File {} successfully uploaded!".format(message.attachments[0].filename))
+		await message.channel.send("File {} successfully uploaded and ready to use!".format(message.attachments[0].filename))
 	else:
 		await message.channel.send("No file attached!")
+
+#Checks to make sure function is formatted correctly
+def checkFormat(filename):
+	#load file as module, then check if there is a command list?
+	module = importlib.import_module("modules." + filename.replace(".py", ""))
+	#check if there is a command list
+	try:
+		#try to access command list, if an exception occurs its a bad file
+		len(module.commandList)
+		return True
+	except:
+		return False
 			
 # When the bot is ready it will print to console
 @client.event
