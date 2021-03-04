@@ -68,7 +68,7 @@ def getUsersFromRole(userList, role):
 # Command that creates a new text channel on command
 # Format: !createtc text-channel-name category-name (id) (The user can include spaces in their category name,
 # user can also specify the id of a particular category if there are multiple categories with same name)
-commandList.append(Command("!createtc", "createTextChannel"))
+commandList.append(Command("!createtc", "createTextChannel", "Creates a new text channel.\nUsage: !createtc <TEXT-CHANNEL-NAME> <CATEGORY-NAME> (id) (The user can include spaces in their category name, user can also specify the id of a particular category if there are multiple categories with same name)"))
 # Creates a text channel with the name specified by the user
 async def createTextChannel(client, message):
     guild = message.guild # Get the server from the message sent
@@ -163,7 +163,7 @@ async def createTextChannelWithCategoryID(client, message, guild, channelName, c
 
 # Command that deletes a new text channel on command
 # Format: !deletetc text-channel-name (id) (id is optional, text-channel-name should be text-channel-id)
-commandList.append(Command("!deletetc", "deleteTextChannel"))
+commandList.append(Command("!deletetc", "deleteTextChannel", "Deletes a new text channel on command.\nUsage: !deletetc <TEXT-CHANNEL-NAME> (id) (id is optional, text-channel-name should be text-channel-id)"))
 # Deletes a text channel with the name or id specified by the user
 async def deleteTextChannel(client, message):
     guild = message.guild
@@ -235,7 +235,7 @@ async def deleteTextChannelByName(client, message, guild, channelName):
             await message.channel.send(embed=embed)
 
 # Syntax: !createvc channel_name *category_name
-commandList.append(Command("!createvc", "createVoiceChannel"))
+commandList.append(Command("!createvc", "createVoiceChannel", "Creates a new voice channel.\nUsage: !createvc <CHANNLE_NAME> <*CATEGORY_NAME>"))
 async def createVoiceChannel(client, message):
     guild = message.guild
     channelName = 0
@@ -264,9 +264,9 @@ async def createVoiceChannel(client, message):
     if channelName != 0:
         await message.channel.send("Success")
 
-# Command that deletes a new text channel on command
+# Command that can show removeLinks
 # Format: !removelinks (add/remove/view) channel-name (id) (adds or removes a channel for monitoring links)
-commandList.append(Command("!removelinks", "updateRemoveLinksList"))
+commandList.append(Command("!removelinks", "updateRemoveLinksList", "Interact with the remove links list.\nUsage: !removelinks <ADD/REMOVE/VIEW> <CHANNEL-NAME> (id) (adds or removes a channel for monitoring links)"))
 # Deletes a text channel with the name or id specified by the user
 async def updateRemoveLinksList(client, message):
     guild = message.guild
@@ -482,7 +482,7 @@ def checkMessageForLinks(message):
     return False
 
 # Display a list of all banned words
-commandList.append(Command("!bannedWords", "displayBannedWords"))
+commandList.append(Command("!bannedWords", "displayBannedWords", "Can display, add, or remove words from banned words list.\nUsage: !bannedWords (optional) <ADD/REMOVE> <WORD>"))
 async def displayBannedWords(client, message):
     if (len(message.content.split(" ")) <= 1):
         response = ""
