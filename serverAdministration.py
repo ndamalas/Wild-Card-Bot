@@ -290,19 +290,21 @@ async def updateRemoveLinksList(client, message):
             action = "view"
             await viewRemoveLinksList(client, message, guild)
     else:
-        response = ">>> Please provide a text channel name and whether to add or remove link monitoring!\n"
+        response = "Please provide a text channel name and whether to add or remove link monitoring!\n"
         response += "Command format: **!removelinks add/remove channel-name**\n\n"
         response += "You may also view the list of text channels current being monitored.\n"
         response += "Command format: **!removelinks view**"
-        await message.channel.send(response)
+        embed = discord.Embed(title='!removelinks Usage', description=response, colour=discord.Colour.blue())
+        await message.channel.send(embed=embed)
         action = "error" # Prevent the prompt from being printed twice
     # If an action was not specified or incorrectly specified, notify the user
     if action == 0:
-        response = ">>> Please specify whether you want to add or remove a channel from being monitored for links!\n"
+        response = "Please specify whether you want to add or remove a channel from being monitored for links!\n"
         response += "Command format: **!removelinks add/remove channel-name**\n\n"
         response += "If you wanted to view the list of text channels current being monitored, use the command below.\n"
         response += "Command format: **!removelinks view**"
-        await message.channel.send(response)
+        embed = discord.Embed(title='!removelinks Usage', description=response, colour=discord.Colour.blue())
+        await message.channel.send(embed=embed)
 
 # Helper function to updateRemoveLinksList that adds another text channel id to the list
 async def addToRemoveLinksList(client, message, guild, action, channelInfo):
@@ -315,14 +317,18 @@ async def addToRemoveLinksList(client, message, guild, action, channelInfo):
                 channelFound = True
                 if tc.id not in removeLinksChannels:
                     removeLinksChannels.append(tc.id)
-                    response = ">>> The text channel **" + tc.name + "** has been added to the list to be monitored for links!"
+                    response = "The text channel **" + tc.name + "** has been added to the list to be monitored for links!"
+                    embed = discord.Embed(title='Added Channel For Link Monitoring', description=response, colour=discord.Colour.blue())
                 else:
-                    response = ">>> The text channel **" + tc.name + "** has already been added to the list!"
-                await message.channel.send(response)
+                    response = "The text channel **" + tc.name + "** has already been added to the list!"
+                    embed = discord.Embed(title='Channel Already Added', description=response, colour=discord.Colour.blue())
+                await message.channel.send(embed=embed)
                 break
          # if the channel was not found, notify user
         if channelFound == False:
-            await message.channel.send(">>> Text channel with id **" + str(channelId) + "** was not found!")
+            response = "Text channel with id **" + str(channelId) + "** was not found!"
+            embed = discord.Embed(title='Channel Not Found', description=response, colour=discord.Colour.blue())
+            await message.channel.send(embed=embed)
     else:
         # if name is passed in, check first to see how many channels have such a name that are not in the list
         channelName = channelInfo
@@ -333,21 +339,23 @@ async def addToRemoveLinksList(client, message, guild, action, channelInfo):
         # Determine action based on how many matches
         if nameMatchCount > 1:
             # If multiple matches, notify user and print all matches
-            response = ">>> Multiple matches found for **" + channelName + "**. Please add to the list using channel ID.\n"
+            response = "Multiple matches found for **" + channelName + "**. Please add to the list using channel ID.\n"
             responseCount = 1
             for tc in guild.text_channels:
                 if tc.name == channelName and tc.id not in removeLinksChannels:
                     response += str(responseCount) + ". " + str(tc.id) + "\n"
                     responseCount += 1
             response += "Command format: **!removelinks add channel-id id**"
-            await message.channel.send(response)
+            embed = discord.Embed(title='Multiple Channels Found', description=response, colour=discord.Colour.blue())
+            await message.channel.send(embed=embed)
         elif nameMatchCount == 1:
             # Add the text channel with the given name to removeLinksList
             for tc in guild.text_channels:
                 if tc.name == channelName and tc.id not in removeLinksChannels:
                     removeLinksChannels.append(tc.id)
-                    response = ">>> The text channel **" + tc.name + "** has been added to the list to be monitored for links!"
-                    await message.channel.send(response)
+                    response = "The text channel **" + tc.name + "** has been added to the list to be monitored for links!"
+                    embed = discord.Embed(title='Added Channel For Link Monitoring', description=response, colour=discord.Colour.blue())
+                    await message.channel.send(embed=embed)
                     break
         else:
             # No text channel with the given name was found outside of the list
@@ -359,10 +367,12 @@ async def addToRemoveLinksList(client, message, guild, action, channelInfo):
                     channelExists = True
             # Print corresponding message depending if channel exists
             if channelExists == True:
-                response = ">>> The text channel **" + channelName + "** has already been added to the list!"
+                response = "The text channel **" + channelName + "** has already been added to the list!"
+                embed = discord.Embed(title='Channel Already Added', description=response, colour=discord.Colour.blue())
             else:
-                response = ">>> Text channel with name **" + channelName + "** was not found!"
-            await message.channel.send(response)
+                response = "Text channel with name **" + channelName + "** was not found!"
+                embed = discord.Embed(title='Channel Not Found', description=response, colour=discord.Colour.blue())
+            await message.channel.send(embed=embed)
 
 # Helper function to updateRemoveLinksList that removes a text channel id to the list
 async def removeFromRemoveLinksList(client, message, guild, action, channelInfo):
@@ -371,9 +381,10 @@ async def removeFromRemoveLinksList(client, message, guild, action, channelInfo)
         channelId = channelInfo
         if channelId in removeLinksChannels:
             removeLinksChannels.remove(channelId)
-            response = ">>> The text channel **" + guild.get_channel(channelId).name
+            response = "The text channel **" + guild.get_channel(channelId).name
             response += "** has been removed from the list for monitoring links."
-            await message.channel.send(response)
+            embed = discord.Embed(title='Channel Removed from List Monitoring', description=response, colour=discord.Colour.blue())
+            await message.channel.send(embed=embed)
         else:
             # Check if the channel actually exists on the server
             channelExists = False
@@ -382,10 +393,12 @@ async def removeFromRemoveLinksList(client, message, guild, action, channelInfo)
                     channelExists = True
                     break
             if channelExists == True:
-                response = ">>> The text channel **" + guild.get_channel(channelId).name + "** was not found in the list!"
+                response = "The text channel **" + guild.get_channel(channelId).name + "** was not found in the list!"
+                embed = discord.Embed(title='Channel Not In List', description=response, colour=discord.Colour.blue())
             else:
-                response = ">>> Text channel with id **" + str(channelId) + "** was not found!"
-            await message.channel.send(response)
+                response = "Text channel with id **" + str(channelId) + "** was not found!"
+                embed = discord.Embed(title='Channel Not Found', description=response, colour=discord.Colour.blue())
+            await message.channel.send(embed=embed)
     else:
         # if name is passed in, check first to see how many channels have such a name in the list
         channelName = channelInfo
@@ -397,7 +410,7 @@ async def removeFromRemoveLinksList(client, message, guild, action, channelInfo)
         # Determine action based on how many matches
         if nameMatchCount > 1:
             # If multiple matches, notify user and print all matches
-            response = ">>> Multiple matches found for **" + channelName + "**. Please remove from the list using channel ID.\n"
+            response = "Multiple matches found for **" + channelName + "**. Please remove from the list using channel ID.\n"
             responseCount = 1
             for tcId in removeLinksChannels:
                 tc = guild.get_channel(tcId)
@@ -405,15 +418,17 @@ async def removeFromRemoveLinksList(client, message, guild, action, channelInfo)
                     response += str(responseCount) + ". " + str(tc.id) + "\n"
                     responseCount += 1
             response += "Command format: **!removelinks remove channel-id id**"
-            await message.channel.send(response)
+            embed = discord.Embed(title='Multiple Channels Found', description=response, colour=discord.Colour.blue())
+            await message.channel.send(embed=embed)
         elif nameMatchCount == 1:
             # Remove the text channel with the given name from removeLinksList
             for tcId in removeLinksChannels:
                 tc = guild.get_channel(tcId)
                 if tc.name == channelName:
                     removeLinksChannels.remove(tc.id)
-                    response = ">>> The text channel **" + tc.name + "** has been removed from the list for monitoring links."
-                    await message.channel.send(response)
+                    response = "The text channel **" + tc.name + "** has been removed from the list for monitoring links."
+                    embed = discord.Embed(title='Channel Removed From Link Monitoring', description=response, colour=discord.Colour.blue())
+                    await message.channel.send(embed=embed)
                     break
         else:
             # No text channel with the given name was found
@@ -424,16 +439,20 @@ async def removeFromRemoveLinksList(client, message, guild, action, channelInfo)
                     channelExists = True
                     break
             if channelExists == True:
-                response = ">>> The text channel **" + channelName + "** was not found in the list!"
+                response = "The text channel **" + channelName + "** was not found in the list!"
+                embed = discord.Embed(title='Channel Not In List', description=response, colour=discord.Colour.blue())
             else:
-                response = ">>> Text channel with name **" + channelName + "** was not found!"
-            await message.channel.send(response)
+                response = "Text channel with name **" + channelName + "** was not found!"
+                embed = discord.Embed(title='Channel Not Found', description=response, colour=discord.Colour.blue())
+            await message.channel.send(embed=embed)
 
 # Helper function to updateRemoveLinksList that prints the list to the user
 async def viewRemoveLinksList(client, message, guild):
     if len(removeLinksChannels) == 0:
-        await message.channel.send(">>> There are currently no text channels being monitored for links.")
-    response = ">>> Here are all the text channels currently being monitored for links:\n" # Message to the user
+        response = "There are currently no text channels being monitored for links."
+        embed = discord.Embed(title='No Channels in List', description=response, colour=discord.Colour.blue())
+        await message.channel.send(embed=embed)
+    response = "Here are all the text channels currently being monitored for links:\n" # Message to the user
     responseCount = 1 # Used for numbers
     for tcId in removeLinksChannels:
         tc = guild.get_channel(tcId)
@@ -441,7 +460,8 @@ async def viewRemoveLinksList(client, message, guild):
         response += "ID: " + str(tc.id) + "\n"
         responseCount += 1
     if len(removeLinksChannels) != 0:
-        await message.channel.send(response)
+        embed = discord.Embed(title='Channel List For Link Monitoring', description=response, colour=discord.Colour.blue())
+        await message.channel.send(embed=embed)
 
 # This function is used by main.py to check if the associated message has a link
 # If the message has a link and the channel is monitored, we return True to indicate deletion
