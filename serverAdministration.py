@@ -72,11 +72,14 @@ async def createTextChannel(client, message):
         if len(message.content.split(" ")) > 3 and message.content.split(" ")[3] == "id":
             channelName = message.content.split(" ")[1]
             categoryId = int(message.content.split(" ")[2])
-            await createTextChannelWithCategoryID(client, message, guild, channelName, categoryId)
+            returnedChannel = await createTextChannelWithCategoryID(client, message, guild, channelName, categoryId)
             # Obtain the category name
             for category in guild.categories:
                 if category.id == categoryId:
                     categoryName = category.name
+            # If no channel was created from createTextChannelWithCategoryID, set channelName to 0
+            if returnedChannel == None:
+                channelName = 0
         else:
             # If no ID specified, use the name
             channelName = message.content.split(" ")[1] # The channel name cannot have any spaces
@@ -141,13 +144,13 @@ async def createTextChannelWithCategoryID(client, message, guild, channelName, c
         if category.id == categoryId:
             # Mark the category was found and create the text channel in the category
             categoryFound = True
-            await guild.create_text_channel(channelName, category=category)
-            break
+            return await guild.create_text_channel(channelName, category=category)
     # Notify user if the channel was not found
     if categoryFound == False:
         response = "Category with id **" + str(categoryId) + "** was not found!"
         embed = discord.Embed(title='!createtc Usage', description=response, colour=discord.Colour.blue())
         await message.channel.send(embed=embed)
+    return None
 
 # Command that deletes a new text channel on command
 # Format: !deletetc text-channel-name (id) (id is optional, text-channel-name should be text-channel-id)
