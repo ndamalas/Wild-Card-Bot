@@ -1,9 +1,13 @@
 from command import Command
 import os
+import os.path
 import importlib
 import discord
 import serverAdministration
 from dotenv import load_dotenv
+
+#import requests for file download
+import requests
 
 #loads in Discord API token
 load_dotenv()
@@ -12,7 +16,6 @@ TOKEN = os.getenv('TOKEN')
 #Connect to discord client
 intents = discord.Intents.all()
 client = discord.Client(intents=intents)
-
 
 # Command List will hold Command objects
 commandList = {}
@@ -62,6 +65,103 @@ def loadCommands():
 loadCommands()
 
 #Now refresh function (when we make it) is just clearing commandList and calling loadAdminCommands and loadCommands()
+#Reload: clear command list and reload in commands
+def reload():
+	#error, accessing before assignment?
+	commandList.clear()
+	loadAdminCommands()
+	loadCommands()
+
+
+#Downloading function
+async def downloadFile(message):
+	#Check if user has administrator privleges
+	if(not message.author.guild_permissions.administrator):
+		await message.channel.send("You do not have permission to add files")
+		return
+	#if attached file exists
+	if(message.attachments):
+		#Check if filename already exists in modules
+		if(os.path.isfile("modules/"+message.attachments[0].filename)):
+			await message.channel.send("Module with that filename already exists, new file not added.")
+			return
+		#grab data from file
+		r = requests.get(message.attachments[0].url)
+		#write data to new file in modules directory
+		newFile = open("modules/" + message.attachments[0].filename, "w")
+		newFile.write(r.text)
+		newFile.close()
+		#Check formatting
+		if(not checkFormat(message.attachments[0].filename)):
+			os.remove("modules/" + message.attachments[0].filename)
+			await message.channel.send("File missing command list! File not added.")
+			return
+		#Check for collisions
+		if(collides(message.attachments[0].filename)):
+			os.remove("modules/" + message.attachments[0].filename)
+			await message.channel.send("File command collides with existing command! File not added.")
+			return
+		#reload commands
+		reload()
+		#Send success message
+		await message.channel.send("File {} successfully uploaded and ready to use!".format(message.attachments[0].filename))
+	else:
+		await message.channel.send("No file attached!")
+
+#used to remove files
+async def removeFile(message):
+	#check for admin priv
+	if(not message.author.guild_permissions.administrator):
+		await message.channel.send("You do not have permission to delete files")
+		return
+	#get filename
+	filename = message.content.split(' ')[1]
+	#if not .py add it
+	if(not filename.endswith(".py")):
+		filename = filename + ".py"
+	#check if files exists
+	if(not os.path.isfile("modules/"+filename)):
+		await message.channel.send("File {} not found.".format(filename))
+		return
+	#remove file
+	os.remove("modules/"+filename)
+	#reload
+	reload()
+	await message.channel.send("File {} successfully removed.".format(filename))
+
+def listModules():
+	response = "```\n"
+	for filename in os.listdir("modules"):
+		# grab all .py files except for the init file
+		if (filename.endswith(".py") and not filename.startswith("__init__")):
+			response = response + "{}\n".format(filename)
+	response = response + "```"
+	return response
+
+
+
+
+#Checks to make sure function is formatted correctly
+def checkFormat(filename):
+	#load file as module, then check if there is a command list?
+	module = importlib.import_module("modules." + filename.replace(".py", ""))
+	#check if there is a command list
+	try:
+		#try to access command list, if an exception occurs its a bad file
+		len(module.commandList)
+		return True
+	except:
+		return False
+
+def collides(filename):
+	#load module
+	module = importlib.import_module("modules." + filename.replace(".py", ""))
+	#Check if any commands are already used
+	for c in module.commandList:
+		if c.name in commandList:
+			return True
+	#return false if no collisions are found
+	return False
 			
 # When the bot is ready it will print to console
 @client.event
@@ -103,6 +203,16 @@ async def on_message(message):
 		if (len(message.content) == 1 or message.content == '!commands'):
 			await getCommands(client, message)
 			return
+		#command to download function
+		if (message.content == '!add'):
+			await downloadFile(message)
+			return
+		if (message.content.startswith('!del')):
+			await removeFile(message)
+			return
+		if (message.content == '!modules'):
+			await message.channel.send(listModules())
+			return
 		# Get the first word in the message, which would be the command
 		name = message.content.split(' ')[0]
 		if (name == '!help'):
@@ -114,7 +224,7 @@ async def on_message(message):
 			return
 		await message.channel.send("Sorry that command was not recognized!")
 
-	# Else, should be send to the chat moderation function to check for banned words, etc.
+	#Todo: File upload command:
 			
 # Display a list of either all command functionality
 async def help(client, message):
