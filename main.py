@@ -1,5 +1,6 @@
 from command import Command
 import os
+import os.path
 import importlib
 import discord
 import serverAdministration
@@ -15,7 +16,6 @@ TOKEN = os.getenv('TOKEN')
 #Connect to discord client
 intents = discord.Intents.all()
 client = discord.Client(intents=intents)
-
 
 # Command List will hold Command objects
 commandList = {}
@@ -74,6 +74,10 @@ async def downloadFile(message):
 		return
 	#if attached file exists
 	if(message.attachments):
+		#Check if filename already exists in modules
+		if(os.path.isfile("modules/"+message.attachments[0].filename)):
+			await message.channel.send("Module with that filename already exists, new file not added.")
+			return
 		#grab data from file
 		r = requests.get(message.attachments[0].url)
 		#write data to new file in modules directory
@@ -83,7 +87,12 @@ async def downloadFile(message):
 		#Check formatting
 		if(not checkFormat(message.attachments[0].filename)):
 			os.remove("modules/" + message.attachments[0].filename)
-			await message.channel.send("File missing command list! File not added")
+			await message.channel.send("File missing command list! File not added.")
+			return
+		#Check for collisions
+		if(collides(message.attachments[0].filename)):
+			os.remove("modules/" + message.attachments[0].filename)
+			await message.channel.send("File command collides with existing command! File not added.")
 			return
 		#reload commands
 		commandList = []
@@ -105,6 +114,16 @@ def checkFormat(filename):
 		return True
 	except:
 		return False
+
+def collides(filename):
+	#load module
+	module = importlib.import_module("modules." + filename.replace(".py", ""))
+	#Check if any commands are already used
+	for c in module.commandList:
+		if c.name in commandList:
+			return True
+	#return false if no collisions are found
+	return False
 			
 # When the bot is ready it will print to console
 @client.event
