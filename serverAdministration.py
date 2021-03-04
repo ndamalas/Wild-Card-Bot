@@ -450,7 +450,6 @@ async def displayBannedWords(client, message):
     
 
 # Helper to add a word to the banned word list
-commandList.append(Command("!addBannedWord", "addBannedWord"))
 async def addBannedWord(message):
     if (len(message.content.split(" ")) <= 2):
         await message.channel.send("Please enter one or more words to add to the banned words list.\nUsage: !bannedWords add <WORD>")

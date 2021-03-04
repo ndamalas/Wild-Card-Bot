@@ -107,8 +107,11 @@ async def on_message(message):
 # Display a list of either all command functionality
 async def help(client, message):
 	# This will display a response that will hold descriptions of all of the commands
-	embed = discord.Embed(title = "Help", description = "How to use all of the commands.", colour = discord.Colour.green())
-	print(commandList)
+	embed = discord.Embed(title = "Help", description = "**How to use all of the commands.**", colour = discord.Colour.green())
+	embed.set_author(name=message.author.display_name, icon_url=message.author.avatar_url)
+	#Manually add in !help and !commands since they aren't in the commandList
+	embed.add_field(name="`!help`", value="Will display all of the commands and descriptions if given no arguments.\nTo view only a specific command's diescription and usage: Use !help <COMMAND>.", inline=False)
+	embed.add_field(name="`!command`", value="Will display a list of all available comamnds.\nAn alias for this command is to just type \"!\".")
 	for command in commandList:
 		embed.add_field(name='`'+command+'`', value=commandList[command].description, inline=False)
 	await message.channel.send(embed=embed)
@@ -120,6 +123,7 @@ async def getCommands(client, message):
 	# url = (await c.callCommand(client, message))
 	description = getCommandList()
 	embed = discord.Embed(title = 'Commands', description = description, colour = discord.Colour.green())
+	embed.set_author(name=message.author.display_name, icon_url=message.author.avatar_url)
 	# embed.add_field(name='[hello](c.callCommand(client, message))')
 	await message.channel.send(embed=embed)
 
