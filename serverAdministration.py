@@ -23,7 +23,8 @@ def readBannedWords():
     file = open("bannedWords.txt", "r")
     line = file.readline()
     while (line):
-        bannedWords.append(line)
+        bannedWords.append(line[:len(line)-1])
+        line = file.readline()
 readBannedWords()
 
 # Display a list of either all Users or only Users with a certain role
@@ -508,6 +509,11 @@ async def addBannedWord(message):
     for i in range(2, len(message.content.split(" "))):
         word = words[i]
         bannedWords.append(word)
+        # Write them to the file
+        file = open("bannedWords.txt", "a")
+        file.write(word + "\n")
+    file.close()
+
     await message.channel.send("Successfully added to the banned words list!")
 
 # Helper to remove a word to the banned word list
@@ -522,7 +528,10 @@ async def removeBannedWord(message):
             bannedWords.remove(word)
         else:
             await message.channel.send(word + "not found in banned words list, try again.")
-            return
+    file = open("bannedWords", "w")
+    for word in bannedWords:
+        file.write(word + "\n")
+    file.close()
     await message.channel.send("Successfully removed from the banned words list!")
             
 
@@ -531,6 +540,9 @@ async def removeBannedWord(message):
 # If the message does not satify conditions False should be returned
 def checkMessageForBannedWords(message):
     messageWords = message.content.split(" ")
+    allowBannedWords = len(messageWords) > 1 and messageWords[0] == "!bannedWords" and messageWords[1] == "remove"
+    if (allowBannedWords):
+        return False
     reformattedMessageWords= []
     # Strip the message of all punctuation and make all lowercase
     for word in messageWords:
