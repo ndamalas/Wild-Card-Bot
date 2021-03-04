@@ -12,24 +12,13 @@ bannedWords = []
 # Example function:
 # Just make sure that the function name in a command is the same
 # Make sure every function is async and has both client, message as parameters, and that await is used when sending your response
-commandList.append(Command("!example", "exampleFunction"))
+commandList.append(Command("!example", "exampleFunction", "This is an example function."))
 async def exampleFunction(client, message):
     response = "This is an example of a function setup."
     await message.channel.send(response)
 
-# Display a list of either all command functionality
-commandList.append(Command("!help", "help"))
-async def help(client, message):
-    # This will display a response that will hold descriptions of all of the commands
-    response = """`!help` : Displays a page of all commands and their descriptions.\n
-`!commands` : This command will display all of the available comamnds\n
-`!users <optional_arg>` : Will display a list of all users and their roles with no argument,
-but when given a role it will display all users with the given role.\n"""
-    await message.channel.send(response)
-
-
 # Display a list of either all Users or only Users with a certain role
-commandList.append(Command("!users", "displayAllUsers"))
+commandList.append(Command("!users", "displayAllUsers", "Will display all of the users if just given !users.\nUse !users <ROLE> to list users of a specific role."))
 async def displayAllUsers(client, message):
     # User List to hold all members in the server
     userList = message.guild.members

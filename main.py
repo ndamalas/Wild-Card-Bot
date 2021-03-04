@@ -1,4 +1,4 @@
-# from command import Command
+from command import Command
 import os
 import importlib
 import discord
@@ -19,7 +19,7 @@ commandList = {}
 
 # Function to get out all commands to the user
 def getCommandList():
-	response = "```!commands\n"
+	response = "```!help\n!commands\n"
 	# response = "!commands\n"
 	for command in commandList:
 		response += "" + command + "\n"
@@ -89,14 +89,11 @@ async def on_message(message):
 	# Check if it is a command:
 	if message.content.startswith('!'):
 		if (len(message.content) == 1 or message.content == '!commands'):
-			# c = commandList['!example']
-			# url = (await c.callCommand(client, message))
-			description = getCommandList()
-			embed = discord.Embed(title = 'Commands', description = description, colour = discord.Colour.green())
-			# embed.add_field(name='[hello](c.callCommand(client, message))')
-			await message.channel.send(embed=embed)
+			await getCommands(client, message)
 			return
-		
+		if (message.content == '!help'):
+			await help(client, message)
+			return
 		# Get the first word in the message, which would be the command
 		name = message.content.split(' ')[0]
 		# If it exists, call the command, otherwise warn user it was not recognized
@@ -107,7 +104,24 @@ async def on_message(message):
 
 	# Else, should be send to the chat moderation function to check for banned words, etc.
 			
+# Display a list of either all command functionality
+async def help(client, message):
+	# This will display a response that will hold descriptions of all of the commands
+	embed = discord.Embed(title = "Help", description = "How to use all of the commands.", colour = discord.Colour.green())
+	print(commandList)
+	for command in commandList:
+		embed.add_field(name='`'+command+'`', value=commandList[command].description, inline=False)
+	await message.channel.send(embed=embed)
 
+
+# Display a list of either all command functionality
+async def getCommands(client, message):
+    # c = commandList['!example']
+	# url = (await c.callCommand(client, message))
+	description = getCommandList()
+	embed = discord.Embed(title = 'Commands', description = description, colour = discord.Colour.green())
+	# embed.add_field(name='[hello](c.callCommand(client, message))')
+	await message.channel.send(embed=embed)
 
 #Run the bot
 client.run(TOKEN)
