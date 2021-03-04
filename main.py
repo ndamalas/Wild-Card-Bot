@@ -65,6 +65,13 @@ def loadCommands():
 loadCommands()
 
 #Now refresh function (when we make it) is just clearing commandList and calling loadAdminCommands and loadCommands()
+#Reload: clear command list and reload in commands
+def reload():
+	#error, accessing before assignment?
+	commandList.clear()
+	loadAdminCommands()
+	loadCommands()
+
 
 #Downloading function
 async def downloadFile(message):
@@ -95,13 +102,44 @@ async def downloadFile(message):
 			await message.channel.send("File command collides with existing command! File not added.")
 			return
 		#reload commands
-		commandList = []
-		loadCommands()
-		loadAdminCommands()
+		reload()
 		#Send success message
 		await message.channel.send("File {} successfully uploaded and ready to use!".format(message.attachments[0].filename))
 	else:
 		await message.channel.send("No file attached!")
+
+#used to remove files
+async def removeFile(message):
+	#check for admin priv
+	if(not message.author.guild_permissions.administrator):
+		await channel.message.send("You do not have permission to delete files")
+		return
+	#get filename
+	filename = message.content.split(' ')[1]
+	#if not .py add it
+	if(not filename.endswith(".py")):
+		filename = filename + ".py"
+	#check if files exists
+	if(not os.path.isfile("modules/"+filename)):
+		await message.channel.send("File {} not found.".format(filename))
+		return
+	#remove file
+	os.remove("modules/"+filename)
+	#reload
+	reload()
+	await message.channel.send("File {} successfully removed.".format(filename))
+
+def listModules():
+	response = "```\n"
+	for filename in os.listdir("modules"):
+		# grab all .py files except for the init file
+		if (filename.endswith(".py") and not filename.startswith("__init__")):
+			response = response + "{}\n".format(filename)
+	response = response + "```"
+	return response
+
+
+
 
 #Checks to make sure function is formatted correctly
 def checkFormat(filename):
@@ -171,6 +209,12 @@ async def on_message(message):
 		#command to download function
 		if (message.content == '!add'):
 			await downloadFile(message)
+			return
+		if (message.content.startswith('!del')):
+			await removeFile(message)
+			return
+		if (message.content == '!modules'):
+			await message.channel.send(listModules())
 			return
 		# Get the first word in the message, which would be the command
 		name = message.content.split(' ')[0]
