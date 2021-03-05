@@ -8,6 +8,9 @@ from dotenv import load_dotenv
 
 #import requests for file download
 import requests
+#used to check for time vs time of modified dir
+import time
+import threading
 
 #loads in Discord API token
 load_dotenv()
@@ -19,6 +22,7 @@ client = discord.Client(intents=intents)
 
 # Command List will hold Command objects
 commandList = {}
+lastmodified = ""
 
 # Function to get out all commands to the user
 def getCommandList():
@@ -63,7 +67,10 @@ def loadCommands():
 				commandList[c.name] = c
 #Call function above to load the commands
 loadCommands()
-
+#collect last modified for modules dir now that it is loaded
+lastmodified = time.ctime(max(os.stat(root).st_mtime for root,_,_ in os.walk("modules")))
+moduleLen = len(os.listdir("modules"))
+print("Len {}\nTime {}\n".format(moduleLen, lastmodified))
 #Now refresh function (when we make it) is just clearing commandList and calling loadAdminCommands and loadCommands()
 #Reload: clear command list and reload in commands
 def reload():
@@ -71,6 +78,26 @@ def reload():
 	commandList.clear()
 	loadAdminCommands()
 	loadCommands()
+
+#Check for changes in modules directory
+def checkForChanges(f_stop):
+	global moduleLen
+	global lastmodified
+	if not f_stop.is_set():
+		#check for changes
+		newLen = len(os.listdir("modules"))
+		newmod = time.ctime(max(os.stat(root).st_mtime for root,_,_ in os.walk("modules")))
+		if(newLen != moduleLen or lastmodified != newmod):
+			print("Change detected in module file!")
+			moduleLen = newLen
+			lastmodified = newmod
+			print("Len {}\nTime {}\n".format(moduleLen, lastmodified))
+			reload()
+		#every 60 seconds
+		threading.Timer(60, checkForChanges, [f_stop]).start()
+#have alternative threading event running to check for changes
+f_stop = threading.Event()
+checkForChanges(f_stop)
 
 
 #Downloading function
