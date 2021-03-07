@@ -481,6 +481,79 @@ def checkMessageForLinks(message):
             return True
     return False
 
+# Displays a list of all roles in the server
+commandList.append(Command("!roles", "listRoles"))
+async def listRoles(client, message):
+    guild = message.guild
+    response = ">>> Listing All Server Roles:\n"
+    response += ", ".join([str(r.name) for r in guild.roles])
+    await message.channel.send(response)
+    return
+
+# Create a role
+commandList.append(Command("!createRole", "createRole"))
+async def createRole(client, message):
+    guild = message.guild
+    #member = message.author
+    if len(message.content.split(" ")) != 2:
+        await message.channel.send(">>> Please use format:\n !createRole \"role name\"")
+        return
+    await guild.create_role(name=message.content.split(" ")[1])
+    response = ">>> NEW ROLE CREATED!"
+    await message.channel.send(response)
+    return
+
+# Delete a role
+commandList.append(Command("!createRoleTwo", "createRoleTwo"))
+async def createRoleTwo(client, message):
+    guild = message.guild
+    #member = message.author
+    if len(message.content.split(" ")) != 2:
+        await message.channel.send(">>> Please use format:\n !deleteRole \"role name\"")
+        return
+    response = ">>> Role not found"
+    for current_role in guild.roles:
+        if str(current_role.name) == message.content.split(" ")[1]:
+            role_to_delete=discord.utils.get(message.guild.roles, name=str(current_role.name))
+            await role_to_delete.delete()
+            response = "ROLE DELETED!"
+    await message.channel.send(response)
+    return
+
+#Gives a role to a user
+commandList.append(Command("!giveRole", "giveRole"))
+async def giveRole(client, message):
+    guild = message.guild
+    await message.channel.send("IN GIVE ROLE FUNCTION")
+    if len(message.content.split(" ")) != 3:
+        await message.channel.send(">>> Please use format: \n !giveRole \"User#0000\" \"Role Name\"")
+    user_found = False
+    member=0
+    userList = message.guild.members
+    #await message.channel.send(userList[0])
+    for user in userList:
+        if str(user) == message.content.split(" ")[1]:
+            user_found = True
+            member = user
+    if user_found == False:
+        await message.channel.send("USER NOT FOUND")
+        return
+    #role_found = False
+    #role=0
+    #for curr_role in guild.roles():
+    #    if str(curr_role.name) == message.content.split(" ")[2]:
+    #        await message.channel.send("Role found dw")
+    #        role_found = True
+    #        role = curr_role
+    #await message.channel.send("OUT OF LOOP")
+    #if role_found == False:
+    #    await message.channel.send("ROLE NOT FOUND")
+    #    return
+    role=discord.utils.get(message.guild.roles, name="role name")
+    await member.add_role(role)
+    await message.channel.send("ROLE GIVEN")
+    return
+
 # Display a list of all banned words
 commandList.append(Command("!bannedWords", "displayBannedWords", "Can display, add, or remove words from banned words list.\nUsage: !bannedWords (optional) <ADD/REMOVE> <WORD>"))
 async def displayBannedWords(client, message):
