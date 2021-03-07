@@ -396,15 +396,26 @@ async def listPermissionsForRole(message, role, nameOrId):
 		roleFound = message.guild.get_role(roleId)
 	# Build the list of commands allowed
 	response = "The following commands are allowed for the role " + roleFound.name + ":\n"
-	if roleFound.id in bannedCommandsByRole:
+	if roleFound.id in bannedCommandsByRole and len(bannedCommandsByRole[roleFound.id]) > 0:
 		for command in commandList:
 			if command not in bannedCommandsByRole[roleFound.id]:
 				response += command + "\n"
+		response += "\nThe following commands are blocked for the role " + roleFound.name + ":\n"
+		for command in bannedCommandsByRole[roleFound.id]:
+			response += command + "\n"
 	else:
 		for command in commandList:
 			response += command + "\n"
 	embed = discord.Embed(title='Commands Role Can Use', description=response, colour=discord.Colour.blue())
 	await message.channel.send(embed=embed)
+
+# Checks if the role given is blocked from using the given command
+# Returns True if the command is allowed, False if the command is blocked
+def checkCommandAllowedForRole(role, command):
+	if role.id in bannedCommandsByRole:
+		if command in bannedCommandsByRole[role.id]:
+			return False
+	return True
 
 # When the bot is ready it will print to console
 @client.event
@@ -443,6 +454,27 @@ async def on_message(message):
 
 	# Check if it is a command:
 	if message.content.startswith('!'):
+		# Prevent commands that are blocked for a specific role from executing
+		# If the user has multiple roles, all roles will be checked
+		commandAllowed = True
+		for role in message.author.roles:
+			command = message.content.split(" ")[0]
+			# True means that the command is allowed for that particular role
+			# If user has one role that allows usage, stop searching as user is allowed
+			if checkCommandAllowedForRole(role, command) == True:
+				commandAllowed = True
+				break
+			else:
+				commandAllowed = False
+		# If command is not allowed, prevent user from using command
+		if commandAllowed == False:
+			user = message.author.mention
+			response = user + "You do not have the permissions to use this command!"
+			embed = discord.Embed(title='No Permissions To Use Command', description=response, colour=discord.Colour.red())
+			embed.set_author(name=message.author.display_name, icon_url=message.author.avatar_url)
+			await message.channel.send(embed=embed)
+			return
+
 		if (len(message.content) == 1 or message.content == '!commands'):
 			await getCommands(client, message)
 			return
