@@ -2,8 +2,7 @@ from command import Command
 #Importing discord for the embedded model 
 import discord
 #Google search API imported
-#from googleapiclient.discovery import build
-#import pprint
+from googlesearch import search
 
 
 # Every module has to have a command list
@@ -430,20 +429,14 @@ async def downloadAdditionalModules(ctx, message):
         description='[GitHub](https://github.com/ndamalas/Wild-Card-Bot/tree/main/modules)',
         color = 0xffffff
         )
-    await message.channel.send(embed=embed)
-    #else:
-        #Need to run: "pip install google-api-python-client" before this works
-        #googleKey = "AIzaSyDMod0KR7Boab6HJm4hY1lpgR-kBZb97uA"
-        #cse_ID = "d867b72f0fa01663e"
-        #results = googleSearch(
-            #args, googleKey, cse_ID, num=5)
-        #for result in results:
-            #pprint.pprint(result)
-    #await message.channel.send(results)
-#def googleSearch(args, googleKey, cse_ID, **kwargs):
-    #service = build("customsearch", "v1", developerKey=googleKey)
-    #res = service.cse().list(q=args, cx=cse_ID, **kwargs).execute()
-    #return res['items']
+        await message.channel.send(embed=embed)
+    else:
+        #Need to have "pip install beautifulsoup4"
+        #and also "pip install google"
+        query = "download " + message.content[17: -1] + "modules for WildCard Discord Bot"
+        print(query)
+        for j in search(query, tld="com", lang = 'en', num=5, stop=5, pause=2): 
+            await message.channel.send(j)
 # For testing ONLY
 commandList.append(Command("!stop", "logoutBot"))
 async def logoutBot(client, message):
