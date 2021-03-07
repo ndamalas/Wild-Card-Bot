@@ -70,6 +70,22 @@ def loadCommands():
 				commandList[c.name] = c
 #Call function above to load the commands
 loadCommands()
+
+# Load the commands in the main module
+def loadMainCommands():
+	commandsInMain = [] # '!add', '!del', '!rolecommands', '!modules', '!help', '!commands'
+	commandsInMain.append(Command('!add', None, 'None'))
+	commandsInMain.append(Command('!del', None, 'None'))
+	commandsInMain.append(Command('!rolecommands', None, 'None'))
+	commandsInMain.append(Command('!modules', None, 'None'))
+	commandsInMain.append(Command('!help', None, 'None'))
+	commandsInMain.append(Command('!commands', None, 'None'))
+	for command in commandsInMain:
+		commandList[command.name] = command
+
+# Call function above to load the main module commands
+loadMainCommands()
+
 #collect last modified for modules dir now that it is loaded
 lastmodified = time.ctime(max(os.stat(root).st_mtime for root,_,_ in os.walk("modules")))
 moduleLen = len(os.listdir("modules"))
