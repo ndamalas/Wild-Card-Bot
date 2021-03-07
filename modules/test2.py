@@ -10,5 +10,5 @@ commandList = []
 #Since we can pass client and message we can have these functions do anything
 commandList.append(Command("!collide", "func"))
 async def func(client, message):
-	response = 'You said: {}'.format(' '.join(message.content.split()[1:]))
+	response = 'You said (Testing testing): {}'.format(' '.join(message.content.split()[1:]))
 	await message.channel.send(response)

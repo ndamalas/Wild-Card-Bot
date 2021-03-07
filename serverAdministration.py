@@ -1,10 +1,7 @@
 from command import Command
-#Importing discord for the embedded model 
+import string
 import discord
-#Google search API imported
 from googlesearch import search
-
-
 # Every module has to have a command list
 commandList = []
 
@@ -14,24 +11,25 @@ removeLinksChannels = []
 # Example function:
 # Just make sure that the function name in a command is the same
 # Make sure every function is async and has both client, message as parameters, and that await is used when sending your response
-commandList.append(Command("!example", "exampleFunction"))
+commandList.append(Command("!example", "exampleFunction", "This is an example function."))
 async def exampleFunction(client, message):
     response = "This is an example of a function setup."
     await message.channel.send(response)
 
-# Display a list of either all command functionality
-commandList.append(Command("!help", "help"))
-async def help(client, message):
-    # This will display a response that will hold descriptions of all of the commands
-    response = """`!help` : Displays a page of all commands and their descriptions.\n
-`!commands` : This command will display all of the available comamnds\n
-`!users` <optional_arg> : Will display a list of all users and their roles with no argument,
-but when given a role it will display all users with the given role.\n"""
-    await message.channel.send(response)
-
+# List of banned words
+bannedWords = []
+# Will read in words into the bannedWords list
+def readBannedWords():
+    file = open("bannedWords.txt", "r")
+    line = file.readline()
+    while (line):
+        bannedWords.append(line[:len(line)-1])
+        line = file.readline()
+    file.close()
+readBannedWords()
 
 # Display a list of either all Users or only Users with a certain role
-commandList.append(Command("!users", "displayAllUsers"))
+commandList.append(Command("!users", "displayAllUsers", "Will display all of the users if just given !users.\nUse !users <ROLE> to list users of a specific role."))
 async def displayAllUsers(client, message):
     # User List to hold all members in the server
     userList = message.guild.members
@@ -70,7 +68,7 @@ def getUsersFromRole(userList, role):
 # Command that creates a new text channel on command
 # Format: !createtc text-channel-name category-name (id) (The user can include spaces in their category name,
 # user can also specify the id of a particular category if there are multiple categories with same name)
-commandList.append(Command("!createtc", "createTextChannel"))
+commandList.append(Command("!createtc", "createTextChannel", "Creates a new text channel.\nUsage: !createtc <TEXT-CHANNEL-NAME> <CATEGORY-NAME> (id) (The user can include spaces in their category name, user can also specify the id of a particular category if there are multiple categories with same name)"))
 # Creates a text channel with the name specified by the user
 async def createTextChannel(client, message):
     guild = message.guild # Get the server from the message sent
@@ -83,11 +81,14 @@ async def createTextChannel(client, message):
         if len(message.content.split(" ")) > 3 and message.content.split(" ")[3] == "id":
             channelName = message.content.split(" ")[1]
             categoryId = int(message.content.split(" ")[2])
-            await createTextChannelWithCategoryID(client, message, guild, channelName, categoryId)
+            returnedChannel = await createTextChannelWithCategoryID(client, message, guild, channelName, categoryId)
             # Obtain the category name
             for category in guild.categories:
                 if category.id == categoryId:
                     categoryName = category.name
+            # If no channel was created from createTextChannelWithCategoryID, set channelName to 0
+            if returnedChannel == None:
+                channelName = 0
         else:
             # If no ID specified, use the name
             channelName = message.content.split(" ")[1] # The channel name cannot have any spaces
@@ -100,7 +101,7 @@ async def createTextChannel(client, message):
                     categoryCount += 1
             if categoryCount > 1:
                 # If multiple matches, notify user and print all matches of categories
-                response = ">>> Multiple matches found for category with name **" + categoryName + "**. "
+                response = "Multiple matches found for category with name **" + categoryName + "**. "
                 response += "Please specify using category ID.\n"
                 responseCount = 1
                 for category in guild.categories:
@@ -108,14 +109,15 @@ async def createTextChannel(client, message):
                         response += str(responseCount) + ". " + str(category.id) + "\n"
                         responseCount += 1
                 response += "Command format: **!createtc text-channel-name category-id id**"
-                await message.channel.send(response)
+                embed = discord.Embed(title='Multiple Categories Found', description=response, colour=discord.Colour.blue())
+                await message.channel.send(embed=embed)
                 channelName = 0 # Notify that channel was not created
-            elif categoryCount == 1:     
+            elif categoryCount == 1:
                 for category in guild.categories:
                     if category.name == categoryName:
                         # Create the text channel in the existing category
                         await guild.create_text_channel(channelName, category=category)
-                        break               
+                        break
             else:
                 # If the category does not exist, create the category and add channel to it
                 await guild.create_category_channel(categoryName)
@@ -131,16 +133,18 @@ async def createTextChannel(client, message):
         await guild.create_text_channel(channelName)
     else:
         # If no name is specified, notify user
-        response = ">>> Please specify a text channel name! Category name is optional.\n"
+        response = "Please specify a text channel name! Category name is optional.\n"
         response += "Command format: **!createtc text-channel-name category-name**"
-        await message.channel.send(response)
+        embed = discord.Embed(title='!createtc Usage', description=response, colour=discord.Colour.blue())
+        await message.channel.send(embed=embed)
     # Generate response with text channel added
     if channelName != 0:
-        response = ">>> Successfully created the new text channel **" + channelName
+        response = "Successfully created the new text channel **" + channelName
         if categoryName != 0:
             response += "** in category **" + categoryName
         response += "**!"
-        await message.channel.send(response)
+        embed = discord.Embed(title='Text Channel Created', description=response, colour=discord.Colour.blue())
+        await message.channel.send(embed=embed)
 
 # Helper function for createTextChannel that creates a text channel in the category specified by the ID
 async def createTextChannelWithCategoryID(client, message, guild, channelName, categoryId):
@@ -149,15 +153,17 @@ async def createTextChannelWithCategoryID(client, message, guild, channelName, c
         if category.id == categoryId:
             # Mark the category was found and create the text channel in the category
             categoryFound = True
-            await guild.create_text_channel(channelName, category=category)
-            break
+            return await guild.create_text_channel(channelName, category=category)
     # Notify user if the channel was not found
     if categoryFound == False:
-        await message.channel.send(">>> Category with id **" + str(categoryId) + "** was not found!")
+        response = "Category with id **" + str(categoryId) + "** was not found!"
+        embed = discord.Embed(title='!createtc Usage', description=response, colour=discord.Colour.blue())
+        await message.channel.send(embed=embed)
+    return None
 
 # Command that deletes a new text channel on command
 # Format: !deletetc text-channel-name (id) (id is optional, text-channel-name should be text-channel-id)
-commandList.append(Command("!deletetc", "deleteTextChannel"))
+commandList.append(Command("!deletetc", "deleteTextChannel", "Deletes a new text channel on command.\nUsage: !deletetc <TEXT-CHANNEL-NAME> (id) (id is optional, text-channel-name should be text-channel-id)"))
 # Deletes a text channel with the name or id specified by the user
 async def deleteTextChannel(client, message):
     guild = message.guild
@@ -171,11 +177,15 @@ async def deleteTextChannel(client, message):
                 if tc.id == channelId:
                     channelFound = True
                     await tc.delete()
-                    await message.channel.send(">>> Successfully deleted the **" + tc.name + "** text channel!")
+                    response = "Successfully deleted the **" + tc.name + "** text channel!"
+                    embed = discord.Embed(title='Text Channel Deleted', description=response, colour=discord.Colour.blue())
+                    await message.channel.send(embed=embed)
                     break
             # Notify user if the channel was not found
             if channelFound == False:
-                await message.channel.send(">>> Text channel with id **" + str(channelId) + "** was not found!")
+                response = "Text channel with id **" + str(channelId) + "** was not found!"
+                embed = discord.Embed(title='Text Channel Not Found', description=response, colour=discord.Colour.blue())
+                await message.channel.send(embed=embed)
         else:
             # Delete a text channel by name
             channelName = message.content.split(" ")[1]
@@ -186,7 +196,9 @@ async def deleteTextChannel(client, message):
         await deleteTextChannelByName(client, message, guild, channelName)
     else:
         # If no arguments provided, notify user
-        await message.channel.send(">>> Please specify a text channel name!\nCommand format: **!deletetc text-channel-name**")
+        response = "Please specify a text channel name!\nCommand format: **!deletetc text-channel-name**"
+        embed = discord.Embed(title='!deletetc Usage', description=response, colour=discord.Colour.blue())
+        await message.channel.send(embed=embed)
 
 # Helper function for deleteTextChannel that deletes a text channel via specifed name
 async def deleteTextChannelByName(client, message, guild, channelName):
@@ -198,29 +210,63 @@ async def deleteTextChannelByName(client, message, guild, channelName):
         # Determine action based on how many name matches
         if nameMatchCount > 1:
             # If multiple matches, notify user and print all matches
-            response = ">>> Multiple matches found for **" + channelName + "**. Please delete using channel ID.\n"
+            response = "Multiple matches found for **" + channelName + "**. Please delete using channel ID.\n"
             responseCount = 1
             for tc in guild.text_channels:
                 if tc.name == channelName:
                     response += str(responseCount) + ". " + str(tc.id) + "\n"
                     responseCount += 1
             response += "Command format: **!deletetc text-channel-id id**"
-            await message.channel.send(response)
+            embed = discord.Embed(title='Multiple Channels Found', description=response, colour=discord.Colour.blue())
+            await message.channel.send(embed=embed)
         elif nameMatchCount == 1:
             # Delete the text channel with the given name
             for tc in guild.text_channels:
                 if tc.name == channelName:
                     await tc.delete()
-                    await message.channel.send(">>> Successfully deleted the **" + channelName + "** text channel!")
+                    response = "Successfully deleted the **" + channelName + "** text channel!"
+                    embed = discord.Embed(title='Text Channel Deleted', description=response, colour=discord.Colour.blue())
+                    await message.channel.send(embed=embed)
                     break
         else:
             # No text channel with the given name was found
-            await message.channel.send(">>> Text channel with name **" + channelName + "** was not found!")
+            response = "Text channel with name **" + channelName + "** was not found!"
+            embed = discord.Embed(title='Text Channel Not Found', description=response, colour=discord.Colour.blue())
+            await message.channel.send(embed=embed)
 
+# Syntax: !createvc channel_name *category_name
+commandList.append(Command("!createvc", "createVoiceChannel", "Creates a new voice channel.\nUsage: !createvc <CHANNLE_NAME> <*CATEGORY_NAME>"))
+async def createVoiceChannel(client, message):
+    guild = message.guild
+    channelName = 0
+    categoryName = 0
 
-# Command that deletes a new text channel on command
+    if len(message.content.split(" ")) > 2:
+            channelName = message.content.split(" ")[1]
+            categoryName = message.content[len("!createvc ") + len(channelName) + 1:]
+            exists = 0
+            for category in guild.categories:
+                if category.name == categoryName:
+                    await guild.create_voice_channel(channelName, overwrites=None, category=category, reason=None)
+                    exists = 1
+                    break
+            if exists == 0:
+                await guild.create_category_channel(categoryName)
+                for category in guild.categories:
+                    if category.name == categoryName:
+                        await guild.create_voice_channel(channelName, overwrites=None, category=category, reason=None)
+                        break
+    elif len(message.content.split(" ")) > 1:
+        channelName = message.content.split(" ")[1]
+        await guild.create_voice_channel(channelName, overwrites=None, category=None, reason=None)
+    else:
+        await message.channel.send("Error")
+    if channelName != 0:
+        await message.channel.send("Success")
+
+# Command that can show removeLinks
 # Format: !removelinks (add/remove/view) channel-name (id) (adds or removes a channel for monitoring links)
-commandList.append(Command("!removelinks", "updateRemoveLinksList"))
+commandList.append(Command("!removelinks", "updateRemoveLinksList", "Interact with the remove links list.\nUsage: !removelinks <ADD/REMOVE/VIEW> <CHANNEL-NAME> (id) (adds or removes a channel for monitoring links)"))
 # Deletes a text channel with the name or id specified by the user
 async def updateRemoveLinksList(client, message):
     guild = message.guild
@@ -251,21 +297,23 @@ async def updateRemoveLinksList(client, message):
         # View the contents of the list
         if message.content.split(" ")[1] == "view":
             action = "view"
-            await viewRemoveLinksList(client, message, guild)           
+            await viewRemoveLinksList(client, message, guild)
     else:
-        response = ">>> Please provide a text channel name and whether to add or remove link monitoring!\n"
+        response = "Please provide a text channel name and whether to add or remove link monitoring!\n"
         response += "Command format: **!removelinks add/remove channel-name**\n\n"
         response += "You may also view the list of text channels current being monitored.\n"
         response += "Command format: **!removelinks view**"
-        await message.channel.send(response)
+        embed = discord.Embed(title='!removelinks Usage', description=response, colour=discord.Colour.blue())
+        await message.channel.send(embed=embed)
         action = "error" # Prevent the prompt from being printed twice
     # If an action was not specified or incorrectly specified, notify the user
     if action == 0:
-        response = ">>> Please specify whether you want to add or remove a channel from being monitored for links!\n"
+        response = "Please specify whether you want to add or remove a channel from being monitored for links!\n"
         response += "Command format: **!removelinks add/remove channel-name**\n\n"
         response += "If you wanted to view the list of text channels current being monitored, use the command below.\n"
         response += "Command format: **!removelinks view**"
-        await message.channel.send(response)
+        embed = discord.Embed(title='!removelinks Usage', description=response, colour=discord.Colour.blue())
+        await message.channel.send(embed=embed)
 
 # Helper function to updateRemoveLinksList that adds another text channel id to the list
 async def addToRemoveLinksList(client, message, guild, action, channelInfo):
@@ -278,14 +326,18 @@ async def addToRemoveLinksList(client, message, guild, action, channelInfo):
                 channelFound = True
                 if tc.id not in removeLinksChannels:
                     removeLinksChannels.append(tc.id)
-                    response = ">>> The text channel **" + tc.name + "** has been added to the list to be monitored for links!"
+                    response = "The text channel **" + tc.name + "** has been added to the list to be monitored for links!"
+                    embed = discord.Embed(title='Added Channel For Link Monitoring', description=response, colour=discord.Colour.blue())
                 else:
-                    response = ">>> The text channel **" + tc.name + "** has already been added to the list!"
-                await message.channel.send(response)
+                    response = "The text channel **" + tc.name + "** has already been added to the list!"
+                    embed = discord.Embed(title='Channel Already Added', description=response, colour=discord.Colour.blue())
+                await message.channel.send(embed=embed)
                 break
          # if the channel was not found, notify user
         if channelFound == False:
-            await message.channel.send(">>> Text channel with id **" + str(channelId) + "** was not found!")
+            response = "Text channel with id **" + str(channelId) + "** was not found!"
+            embed = discord.Embed(title='Channel Not Found', description=response, colour=discord.Colour.blue())
+            await message.channel.send(embed=embed)
     else:
         # if name is passed in, check first to see how many channels have such a name that are not in the list
         channelName = channelInfo
@@ -296,21 +348,23 @@ async def addToRemoveLinksList(client, message, guild, action, channelInfo):
         # Determine action based on how many matches
         if nameMatchCount > 1:
             # If multiple matches, notify user and print all matches
-            response = ">>> Multiple matches found for **" + channelName + "**. Please add to the list using channel ID.\n"
+            response = "Multiple matches found for **" + channelName + "**. Please add to the list using channel ID.\n"
             responseCount = 1
             for tc in guild.text_channels:
                 if tc.name == channelName and tc.id not in removeLinksChannels:
                     response += str(responseCount) + ". " + str(tc.id) + "\n"
                     responseCount += 1
             response += "Command format: **!removelinks add channel-id id**"
-            await message.channel.send(response)
+            embed = discord.Embed(title='Multiple Channels Found', description=response, colour=discord.Colour.blue())
+            await message.channel.send(embed=embed)
         elif nameMatchCount == 1:
             # Add the text channel with the given name to removeLinksList
             for tc in guild.text_channels:
                 if tc.name == channelName and tc.id not in removeLinksChannels:
                     removeLinksChannels.append(tc.id)
-                    response = ">>> The text channel **" + tc.name + "** has been added to the list to be monitored for links!"
-                    await message.channel.send(response)
+                    response = "The text channel **" + tc.name + "** has been added to the list to be monitored for links!"
+                    embed = discord.Embed(title='Added Channel For Link Monitoring', description=response, colour=discord.Colour.blue())
+                    await message.channel.send(embed=embed)
                     break
         else:
             # No text channel with the given name was found outside of the list
@@ -322,10 +376,12 @@ async def addToRemoveLinksList(client, message, guild, action, channelInfo):
                     channelExists = True
             # Print corresponding message depending if channel exists
             if channelExists == True:
-                response = ">>> The text channel **" + channelName + "** has already been added to the list!"
+                response = "The text channel **" + channelName + "** has already been added to the list!"
+                embed = discord.Embed(title='Channel Already Added', description=response, colour=discord.Colour.blue())
             else:
-                response = ">>> Text channel with name **" + channelName + "** was not found!"
-            await message.channel.send(response)
+                response = "Text channel with name **" + channelName + "** was not found!"
+                embed = discord.Embed(title='Channel Not Found', description=response, colour=discord.Colour.blue())
+            await message.channel.send(embed=embed)
 
 # Helper function to updateRemoveLinksList that removes a text channel id to the list
 async def removeFromRemoveLinksList(client, message, guild, action, channelInfo):
@@ -334,9 +390,10 @@ async def removeFromRemoveLinksList(client, message, guild, action, channelInfo)
         channelId = channelInfo
         if channelId in removeLinksChannels:
             removeLinksChannels.remove(channelId)
-            response = ">>> The text channel **" + guild.get_channel(channelId).name 
+            response = "The text channel **" + guild.get_channel(channelId).name
             response += "** has been removed from the list for monitoring links."
-            await message.channel.send(response)
+            embed = discord.Embed(title='Channel Removed from List Monitoring', description=response, colour=discord.Colour.blue())
+            await message.channel.send(embed=embed)
         else:
             # Check if the channel actually exists on the server
             channelExists = False
@@ -345,10 +402,12 @@ async def removeFromRemoveLinksList(client, message, guild, action, channelInfo)
                     channelExists = True
                     break
             if channelExists == True:
-                response = ">>> The text channel **" + guild.get_channel(channelId).name + "** was not found in the list!"
+                response = "The text channel **" + guild.get_channel(channelId).name + "** was not found in the list!"
+                embed = discord.Embed(title='Channel Not In List', description=response, colour=discord.Colour.blue())
             else:
-                response = ">>> Text channel with id **" + str(channelId) + "** was not found!"
-            await message.channel.send(response)
+                response = "Text channel with id **" + str(channelId) + "** was not found!"
+                embed = discord.Embed(title='Channel Not Found', description=response, colour=discord.Colour.blue())
+            await message.channel.send(embed=embed)
     else:
         # if name is passed in, check first to see how many channels have such a name in the list
         channelName = channelInfo
@@ -360,7 +419,7 @@ async def removeFromRemoveLinksList(client, message, guild, action, channelInfo)
         # Determine action based on how many matches
         if nameMatchCount > 1:
             # If multiple matches, notify user and print all matches
-            response = ">>> Multiple matches found for **" + channelName + "**. Please remove from the list using channel ID.\n"
+            response = "Multiple matches found for **" + channelName + "**. Please remove from the list using channel ID.\n"
             responseCount = 1
             for tcId in removeLinksChannels:
                 tc = guild.get_channel(tcId)
@@ -368,15 +427,17 @@ async def removeFromRemoveLinksList(client, message, guild, action, channelInfo)
                     response += str(responseCount) + ". " + str(tc.id) + "\n"
                     responseCount += 1
             response += "Command format: **!removelinks remove channel-id id**"
-            await message.channel.send(response)
+            embed = discord.Embed(title='Multiple Channels Found', description=response, colour=discord.Colour.blue())
+            await message.channel.send(embed=embed)
         elif nameMatchCount == 1:
             # Remove the text channel with the given name from removeLinksList
             for tcId in removeLinksChannels:
                 tc = guild.get_channel(tcId)
                 if tc.name == channelName:
                     removeLinksChannels.remove(tc.id)
-                    response = ">>> The text channel **" + tc.name + "** has been removed from the list for monitoring links."
-                    await message.channel.send(response)
+                    response = "The text channel **" + tc.name + "** has been removed from the list for monitoring links."
+                    embed = discord.Embed(title='Channel Removed From Link Monitoring', description=response, colour=discord.Colour.blue())
+                    await message.channel.send(embed=embed)
                     break
         else:
             # No text channel with the given name was found
@@ -387,24 +448,29 @@ async def removeFromRemoveLinksList(client, message, guild, action, channelInfo)
                     channelExists = True
                     break
             if channelExists == True:
-                response = ">>> The text channel **" + channelName + "** was not found in the list!"
+                response = "The text channel **" + channelName + "** was not found in the list!"
+                embed = discord.Embed(title='Channel Not In List', description=response, colour=discord.Colour.blue())
             else:
-                response = ">>> Text channel with name **" + channelName + "** was not found!"
-            await message.channel.send(response)
+                response = "Text channel with name **" + channelName + "** was not found!"
+                embed = discord.Embed(title='Channel Not Found', description=response, colour=discord.Colour.blue())
+            await message.channel.send(embed=embed)
 
 # Helper function to updateRemoveLinksList that prints the list to the user
 async def viewRemoveLinksList(client, message, guild):
     if len(removeLinksChannels) == 0:
-        await message.channel.send(">>> There are currently no text channels being monitored for links.")
-    response = ">>> Here are all the text channels currently being monitored for links:\n" # Message to the user
+        response = "There are currently no text channels being monitored for links."
+        embed = discord.Embed(title='No Channels in List', description=response, colour=discord.Colour.blue())
+        await message.channel.send(embed=embed)
+    response = "Here are all the text channels currently being monitored for links:\n" # Message to the user
     responseCount = 1 # Used for numbers
-    for tcId in removeLinksChannels:        
+    for tcId in removeLinksChannels:
         tc = guild.get_channel(tcId)
         response += str(responseCount) + ". " + tc.name + "\n"
         response += "ID: " + str(tc.id) + "\n"
         responseCount += 1
     if len(removeLinksChannels) != 0:
-        await message.channel.send(response)
+        embed = discord.Embed(title='Channel List For Link Monitoring', description=response, colour=discord.Colour.blue())
+        await message.channel.send(embed=embed)
 
 # This function is used by main.py to check if the associated message has a link
 # If the message has a link and the channel is monitored, we return True to indicate deletion
@@ -414,7 +480,92 @@ def checkMessageForLinks(message):
         if "https://" in message.content or "http://" in message.content:
             return True
     return False
-# Additional module command
+# Display a list of all banned words
+commandList.append(Command("!bannedWords", "displayBannedWords", "Can display, add, or remove words from banned words list.\nUsage: !bannedWords (optional) <ADD/REMOVE> <WORD>"))
+async def displayBannedWords(client, message):
+    if (len(message.content.split(" ")) <= 1):
+        response = ""
+        for word in bannedWords:
+            response += word + "\n"
+        if response == "":
+            response = "The banned words list is currently empty."
+        await message.channel.send(response)
+        return
+    elif (message.content.split(" ")[1] == "add"):
+        await addBannedWord(message)
+        return
+    elif (message.content.split(" ")[1] == "remove"):
+        await removeBannedWord(message)
+        return
+    elif (message.content.split(" ")[1] == "clear"):
+        await clearBannedWords(message)
+        return
+    await message.channel.send("Error: incorrect usage!")
+    
+
+# Helper to add a word to the banned word list
+async def addBannedWord(message):
+    if (len(message.content.split(" ")) <= 2):
+        await message.channel.send("Please enter one or more words to add to the banned words list.\nUsage: !bannedWords add <WORD>")
+        return
+    words = message.content.split(" ")
+    for i in range(2, len(message.content.split(" "))):
+        word = words[i]
+        bannedWords.append(word)
+        # Write them to the file
+        file = open("bannedWords.txt", "a")
+        file.write(word + "\n")
+    file.close()
+
+    await message.channel.send("Successfully added to the banned words list!")
+
+# Helper to remove a word to the banned word list
+async def removeBannedWord(message):
+    if (len(message.content.split(" ")) <= 2):
+        await message.channel.send("Please enter one or more words to remove from the banned words list.\nUsage: !bannedWords remove <WORD>")
+        return
+    words = message.content.split(" ")
+    for i in range(2, len(message.content.split(" "))):
+        word = words[i]
+        if (word in words):
+            bannedWords.remove(word)
+        else:
+            await message.channel.send(word + " not found in banned words list, try again.")
+    file = open("bannedWords.txt", "w")
+    for word in bannedWords:
+        file.write(word + "\n")
+    file.close()
+    await message.channel.send("Successfully removed from the banned words list!")
+
+# Clears out banned words list
+async def clearBannedWords(message):
+    file = open("bannedWords.txt", "w")
+    bannedWords.clear()
+    file.close()
+    await message.channel.send("Successfully cleared the banned words list!")
+            
+
+# This function is used by main.py to check if the associated message has a link
+# If the message has a link and the channel is monitored, we return True to indicate deletion
+# If the message does not satify conditions False should be returned
+def checkMessageForBannedWords(message):
+    messageWords = message.content.split(" ")
+    allowBannedWords = len(messageWords) > 1 and messageWords[0] == "!bannedWords" and messageWords[1] == "remove"
+    if (allowBannedWords):
+        return False
+    reformattedMessageWords= []
+    # Strip the message of all punctuation and make all lowercase
+    for word in messageWords:
+        reformattedWord = word.translate(str.maketrans("", "", string.punctuation))
+        reformattedWord = reformattedWord.lower()
+        reformattedMessageWords.append(reformattedWord)
+    
+    # Check if the banned word is one of the words
+    for word in bannedWords:
+        bannedWord = word.lower()
+        if bannedWord in reformattedMessageWords:
+            return True
+    return False
 commandList.append(Command("!downloadModules", "downloadAdditionalModules"))
 # Function for additional module download command
 async def downloadAdditionalModules(ctx, message):
@@ -422,21 +573,28 @@ async def downloadAdditionalModules(ctx, message):
     args = len(message.content.split(" "))
     # If the user just types the command give them the link to the GitHub modules that we have
     # Otherwise given them the google search as well
-    if(args == 1):
-        #Embedded is the nice block that also gives the embedded link
-        embed = discord.Embed(
-        title='More Discord Modules',
+    embed = discord.Embed(
+        title='WildCard Bot Discord Modules',
         description='[GitHub](https://github.com/ndamalas/Wild-Card-Bot/tree/main/modules)',
         color = 0xffffff
-        )
+    )
+    if(args == 1):
+        #Embedded is the nice block that also gives the embedded link
+        await message.channel.send("You can find and download more discord modules for WildCard Bot made by our team here:\n")
         await message.channel.send(embed=embed)
     else:
-        #Need to have "pip install beautifulsoup4"
+        #Need to install "pip install beautifulsoup4"
         #and also "pip install google"
-        query = "download " + message.content[17: -1] + "modules for WildCard Discord Bot"
-        print(query)
+        query = "download " + message.content[17:] + " modules for WildCard Discord Bot"
+        #print(query)
+        #results = discord.Embed(
+        #    title=' **Search results for** ' + '*' + message.content[17:] + '* :\n>>>'
+        #)
+        #result = "**Search results for** ' + '*' + message.content[17:] + '* :\n"
+        await message.channel.send(embed=embed)
         for j in search(query, tld="com", lang = 'en', num=5, stop=5, pause=2): 
             await message.channel.send(j)
+#def helperBlockFunction(ctx, args)
 # For testing ONLY
 commandList.append(Command("!stop", "logoutBot"))
 async def logoutBot(client, message):

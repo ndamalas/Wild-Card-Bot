@@ -1,0 +1,193 @@
+commit afbf219b899d7d56fa38ff53621d3274a4e2b948
+Author: ndamalas <ndamalas9913@gmail.com>
+Date:   Thu Feb 25 12:18:41 2021 -0600
+
+    Added sprint 1 planning document
+
+commit 99cbe32b82f4a3c1325cb2998a974103be84d2ab
+Author: ndamalas <ndamalas9913@gmail.com>
+Date:   Thu Feb 25 10:03:11 2021 -0600
+
+    Made loading functions into a command so we can easily reload if need be. Also updated some comments in main
+
+commit 029323d95cc2b8f2e67cdd71b2d843ee43047cd5
+Author: ndamalas <ndamalas9913@gmail.com>
+Date:   Thu Feb 25 09:54:36 2021 -0600
+
+    Updated readme to include standard formatting for external commands
+
+commit be01cdc7216c986b690b3c5898658c2fabe0befa
+Author: karrowood <karrowo@purdue.edu>
+Date:   Wed Feb 24 21:39:30 2021 -0500
+
+    Fixed the intents, now bot can display users and roles!
+
+commit 2148c313595cb444237eccca68be2a0a39f82421
+Author: karrowood <karrowo@purdue.edu>
+Date:   Wed Feb 24 18:43:26 2021 -0500
+
+    Added it to where the bot can display the users but it doesn't have permission yet
+
+commit 6a7ecf9292e0e3b9290425bf8f63ee912a956d90
+Author: ndamalas <ndamalas9913@gmail.com>
+Date:   Wed Feb 24 16:01:52 2021 -0600
+
+    Updated readme
+
+commit 5e43392b8b5e3659af7591d9d7c6ab9d011f5760
+Author: ndamalas <ndamalas9913@gmail.com>
+Date:   Wed Feb 24 16:01:22 2021 -0600
+
+    Updated readme
+
+commit 4d05f45df7912561e3b07d8b1b2db0037b2f041b
+Author: ndamalas <ndamalas9913@gmail.com>
+Date:   Wed Feb 24 16:00:09 2021 -0600
+
+    Added more comments in code explaining what the command loading does and how it works
+
+commit 77cf953ff95c9dde9163cb9e3c270601b400b94a
+Author: karrowood <karrowo@purdue.edu>
+Date:   Wed Feb 24 14:41:07 2021 -0500
+
+    Added serverAdministration.py for built in functions as well as an example function for the way functions should be set up
+
+commit 97498e4d58bb832a181d0399bf5db21069c8fd85
+Author: karrowood <karrowo@purdue.edu>
+Date:   Wed Feb 24 14:20:07 2021 -0500
+
+    Finalized changed from commandList as Array to as a dictionary
+
+commit 5e168482446dedc6de28f6f08f38fe62710b0114
+Author: karrowood <karrowo@purdue.edu>
+Date:   Wed Feb 24 12:06:31 2021 -0500
+
+    Implemented the command list as a Dictionary
+
+commit 5ed563c4f857562d230f1e0da1b1ba25e98cda25
+Author: karrowood <karrowo@purdue.edu>
+Date:   Wed Feb 24 10:37:31 2021 -0500
+
+    Added some comments
+
+commit 22810fe0967fee34921e70da9931083f54326fa9
+Author: karrowood <karrowo@purdue.edu>
+Date:   Tue Feb 23 21:16:48 2021 -0500
+
+    Commit
+
+commit c9c2e3a6915270df73ab9619209f08fafb0a8ec2
+Author: Kyle Arrowood <54600261+karrowood@users.noreply.github.com>
+Date:   Tue Feb 23 21:04:59 2021 -0500
+
+    Made the command list able to work with external functions!
+
+commit e464a5cb2c5f494cf1253e065230767325783e14
+Author: Kyle Arrowood <54600261+karrowood@users.noreply.github.com>
+Date:   Tue Feb 23 20:26:19 2021 -0500
+
+    Added beginning of command list development
+
+commit 6305ee6425227faf1de80e2ce6b85482a5272a0c
+Author: Kyle Arrowood <54600261+karrowood@users.noreply.github.com>
+Date:   Tue Feb 23 19:19:12 2021 -0500
+
+    Created command class and user class
+
+commit 9cf04c1c24ab7284b6b48dece42f692dedd0b9b3
+Author: ndamalas <ndamalas9913@gmail.com>
+Date:   Tue Feb 23 17:58:38 2021 -0600
+
+    Updated test functions to give descriptions of their purposes
+
+commit ee0fe90f6784296f4772c6f0540061286f2291c9
+Author: ndamalas <ndamalas9913@gmail.com>
+Date:   Tue Feb 23 17:34:50 2021 -0600
+
+    Bot now prints error to console if module commands conflict. Bot also informs users if the command they tried does not exist
+
+commit 716a8925e803b2403e5f50df5a50f1c1a1180964
+Author: ndamalas <ndamalas9913@gmail.com>
+Date:   Tue Feb 23 17:21:17 2021 -0600
+
+    Updated main bot to tell user if command is not recognized
+
+commit 4ceeac9aff6b458392e37385b252335424d29e06
+Author: ndamalas <ndamalas9913@gmail.com>
+Date:   Tue Feb 23 17:10:15 2021 -0600
+
+    Created a second function that echoes everything after the command prefix. Modified function handler so now we can pass arguments in the commands to the external functions.
+
+commit d8cb779e4c82fe8cb1982fbb7030b0c38efe3f8e
+Author: ndamalas <ndamalas9913@gmail.com>
+Date:   Tue Feb 23 13:23:09 2021 -0600
+
+    Main can now have testFunction execute functions inside it, allowing us to use external commands now given the prefix(es). Also updated readme.
+
+commit 6e0e828de77d732002f7461b3a705a15214ef5c5
+Author: ndamalas <ndamalas9913@gmail.com>
+Date:   Tue Feb 23 13:03:52 2021 -0600
+
+    Made test function in function folder. Made function in main to load data from the test function file. Just variables currently, next step is full functions.
+
+commit d925fa6e4e73d747c702f794cdab17f8e83c7d62
+Author: ndamalas <ndamalas9913@gmail.com>
+Date:   Tue Feb 23 11:50:26 2021 -0600
+
+    Made function folder
+
+commit 28ec143b9ff7868ce774f5d83fad72b2fe087e7e
+Author: ndamalas <ndamalas9913@gmail.com>
+Date:   Mon Feb 22 23:36:56 2021 -0600
+
+    Readded .env
+
+commit 760c240bda0657b58b63c60963a05e85874fa26f
+Author: ndamalas <ndamalas9913@gmail.com>
+Date:   Mon Feb 22 23:30:51 2021 -0600
+
+    Deleted .env
+    
+    Moved key away since it shouldn't be open like this
+
+commit c411df159c8363a7ba6a4b5f795b7c2a9a466354
+Author: ndamalas <ndamalas9913@gmail.com>
+Date:   Mon Feb 22 11:11:00 2021 -0600
+
+    Update README.md
+
+commit 7801c44648e90275cca1fcb19b507f62fac7cacf
+Author: ndamalas <ndamalas9913@gmail.com>
+Date:   Mon Feb 22 11:08:17 2021 -0600
+
+    Updated README
+
+commit be0899f969d771154a70cf20a2ac941a40326e0a
+Author: ndamalas <ndamalas9913@gmail.com>
+Date:   Mon Feb 22 11:02:19 2021 -0600
+
+    Token file added
+
+commit b68edde4394153c32e98af69aca11c236547d5d8
+Author: ndamalas <ndamalas9913@gmail.com>
+Date:   Mon Feb 22 10:57:37 2021 -0600
+
+    Created bot shell in main.py, token in .env, and added library install instructions to the README
+
+commit 73b43f69addb52d7604fcbf0e323887e3e5ddb66
+Author: ndamalas <ndamalas9913@gmail.com>
+Date:   Fri Feb 19 20:14:18 2021 -0600
+
+    Design Document finished
+
+commit 731f72fa37e66f325b841394646fe0219eed2c84
+Author: ndamalas <ndamalas9913@gmail.com>
+Date:   Thu Feb 18 10:34:40 2021 -0600
+
+    Add files via upload
+
+commit b9bf59dbd217fe17626ea86369f802464ef1a718
+Author: ndamalas <ndamalas9913@gmail.com>
+Date:   Wed Feb 17 15:09:29 2021 -0600
+
+    Initial commit
