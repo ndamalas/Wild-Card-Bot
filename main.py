@@ -190,7 +190,7 @@ def collides(filename):
 	#return false if no collisions are found
 	return False
 
-# Format: !rolecommands <allow/block/perms> role-name id commands
+# Format: !rolecommands <allow/block/perms> role-name id command
 # Command used for banning certain roles from using certain commands
 async def roleCommands(message):
     # This is a admin only command
@@ -205,7 +205,7 @@ async def roleCommands(message):
         # Find role by ID if specified, or else find role by name
         if message.content.split(" ")[3] == "id":
             command = message.content.split(" ")[4]
-            roleId = message.content.split(" ")[2]
+            roleId = int(message.content.split(" ")[2])
             exists = await determineRoleExists(message, command, roleId, "id")
             if exists == False:
                 return
@@ -216,6 +216,9 @@ async def roleCommands(message):
             if message.content.split(" ")[1] == "block":
                 action = "block"
                 await blockCommandFromRole(message, command, roleId, "id")
+            if message.content.split(" ")[1] == "perms":
+                action = "perms"
+                await listPermissionsForRole(message, roleId, "id")
         else:
             command = message.content.split(" ")[3]
             roleName = message.content.split(" ")[2]
@@ -229,14 +232,21 @@ async def roleCommands(message):
             if message.content.split(" ")[1] == "block":
                 action = "block"
                 await blockCommandFromRole(message, command, roleName, "name")
+            if message.content.split(" ")[1] == "perms":
+                action = "perms"
+                await listPermissionsForRole(message, roleName, "name")
     elif len(message.content.split(" ")) >= 4:
         # Find role by name, or if id is specified display commands the role with id can use
         if message.content.split(" ")[3] == "id":
             command = None # Indicate that command is not needed
-            roleId = message.content.split(" ")[2]
+            roleId = int(message.content.split(" ")[2])
             exists = await determineRoleExists(message, command, roleId, "id")
             if exists == False:
                 return
+			# determine action based on second argument
+            if message.content.split(" ")[1] == "perms":
+                action = "perms"
+                await listPermissionsForRole(message, roleId, "id")
         else:
             command = message.content.split(" ")[3]
             roleName = message.content.split(" ")[2]
@@ -250,6 +260,9 @@ async def roleCommands(message):
             if message.content.split(" ")[1] == "block":
                 action = "block"
                 await blockCommandFromRole(message, command, roleName, "name")
+            if message.content.split(" ")[1] == "perms":
+                action = "perms"
+                await listPermissionsForRole(message, roleName, "name")
     elif len(message.content.split(" ")) >= 3:
         # List all available commands to a specific role
         command = None # Indicate that command is not needed
@@ -257,6 +270,9 @@ async def roleCommands(message):
         exists = await determineRoleExists(message, command, roleName, "name")
         if exists == False:
                 return
+        if message.content.split(" ")[1] == "perms":
+            action = "perms"
+            await listPermissionsForRole(message, roleName, "name")
     else:
         response = "Please provide a role name, a command, and whether to allow or block the command!\n"
         response += "Command format: **!rolecommands allow/block role-name command**\n\n"
@@ -364,6 +380,31 @@ async def blockCommandFromRole(message, command, role, nameOrId):
 		response = command + " has been blocked for " + roleFound.name + "!"
 		embed = discord.Embed(title='Command Blocked', description=response, colour=discord.Colour.blue())
 		await message.channel.send(embed=embed)
+
+# Helper function for roleCommands that lists all the permissions of a given role
+async def listPermissionsForRole(message, role, nameOrId):
+	if nameOrId == "name":
+		roleName = role
+		# Find the role with the given name
+		for role in message.guild.roles:
+			if role.name == roleName:
+				roleFound = role
+				break
+	else:
+		# Find the role with the given id
+		roleId = role
+		roleFound = message.guild.get_role(roleId)
+	# Build the list of commands allowed
+	response = "The following commands are allowed for the role " + roleFound.name + ":\n"
+	if roleFound.id in bannedCommandsByRole:
+		for command in commandList:
+			if command not in bannedCommandsByRole[roleFound.id]:
+				response += command + "\n"
+	else:
+		for command in commandList:
+			response += command + "\n"
+	embed = discord.Embed(title='Commands Role Can Use', description=response, colour=discord.Colour.blue())
+	await message.channel.send(embed=embed)
 
 # When the bot is ready it will print to console
 @client.event
