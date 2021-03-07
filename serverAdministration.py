@@ -1,6 +1,7 @@
 from command import Command
 import string
 import discord
+import asyncio
 from googlesearch import search
 # Every module has to have a command list
 commandList = []
@@ -501,7 +502,7 @@ async def displayBannedWords(client, message):
         await clearBannedWords(message)
         return
     await message.channel.send("Error: incorrect usage!")
-    
+
 
 # Helper to add a word to the banned word list
 async def addBannedWord(message):
@@ -543,7 +544,7 @@ async def clearBannedWords(message):
     bannedWords.clear()
     file.close()
     await message.channel.send("Successfully cleared the banned words list!")
-            
+
 
 # This function is used by main.py to check if the associated message has a link
 # If the message has a link and the channel is monitored, we return True to indicate deletion
@@ -559,7 +560,7 @@ def checkMessageForBannedWords(message):
         reformattedWord = word.translate(str.maketrans("", "", string.punctuation))
         reformattedWord = reformattedWord.lower()
         reformattedMessageWords.append(reformattedWord)
-    
+
     # Check if the banned word is one of the words
     for word in bannedWords:
         bannedWord = word.lower()
@@ -592,8 +593,26 @@ async def downloadAdditionalModules(ctx, message):
         #)
         #result = "**Search results for** ' + '*' + message.content[17:] + '* :\n"
         await message.channel.send(embed=embed)
-        for j in search(query, tld="com", lang = 'en', num=5, stop=5, pause=2): 
+        for j in search(query, tld="com", lang = 'en', num=5, stop=5, pause=2):
             await message.channel.send(j)
+
+commandList.append(Command("!mute", "muteUser", "Timeout specified user for amount of time.\nUsage: !timeout USER-NAME SECONDS"))
+async def muteUser(ctx, message):
+    guild = message.guild
+    # Check if input has valid number of args
+    if len(message.content.split(" ")) == 3:
+        # Check if member exists in server
+        for member in guild.members:
+            if member.name == message.content.split(" ")[1]:
+                # Check if role exists in server
+                for role in guild.roles:
+                    if role.name == "Muted":
+                        await member.add_roles(role, reason = None)
+                        await asyncio.sleep(int(message.content.split(" ")[2]))
+                        await member.remove_roles(role, reason = None)
+    else:
+        await message.channel.send("Invalid input\nUsage: !timeout @USER <SECONDS>")
+
 #def helperBlockFunction(ctx, args)
 # For testing ONLY
 commandList.append(Command("!stop", "logoutBot"))
