@@ -1,6 +1,7 @@
 from command import Command
 import os
 import os.path
+import sys
 import importlib
 import discord
 import serverAdministration
@@ -36,6 +37,20 @@ def getCommandList():
 	response += "```"
 	return response
 
+# Load the commands in the main module
+def loadMainCommands():
+	commandList["!help"] = Command("!help", "help", "Will display all of the commands and descriptions if given no arguments.\nTo view only a specific command's diescription and usage: Use !help <COMMAND>.", sys.modules[__name__])
+	commandList["!commands"] = Command("!commands", "getCommands", "Will display a list of all available comamnds.\nAn alias for this command is to just type \"!\".", sys.modules[__name__])
+	commandList["!add"] = Command("!add", "downloadFile", "TODO", sys.modules[__name__])
+	commandList["!del"] = Command("!del", "removeFile", "TODO", sys.modules[__name__])
+	commandList["!rolecommands"] = Command("!rolecommands", "roleCommands", "TODO", sys.modules[__name__])
+	commandList["!modules"] = Command("!modules", "getModules", "TODO", sys.modules[__name__])
+	"""for command in commandsInMain:
+		command.module = sys.modules[__name__]
+		commandList[command.name] = command"""
+
+# Call function above to load the main module commands
+loadMainCommands()
 
 # Load commands from the serverAdministration.py file
 def loadAdminCommands():
@@ -71,20 +86,7 @@ def loadCommands():
 #Call function above to load the commands
 loadCommands()
 
-# Load the commands in the main module
-def loadMainCommands():
-	commandsInMain = [] # '!add', '!del', '!rolecommands', '!modules', '!help', '!commands'
-	commandsInMain.append(Command('!add', None, 'None'))
-	commandsInMain.append(Command('!del', None, 'None'))
-	commandsInMain.append(Command('!rolecommands', None, 'None'))
-	commandsInMain.append(Command('!modules', None, 'None'))
-	commandsInMain.append(Command('!help', None, 'None'))
-	commandsInMain.append(Command('!commands', None, 'None'))
-	for command in commandsInMain:
-		commandList[command.name] = command
 
-# Call function above to load the main module commands
-loadMainCommands()
 
 #collect last modified for modules dir now that it is loaded
 lastmodified = time.ctime(max(os.stat(root).st_mtime for root,_,_ in os.walk("modules")))
@@ -466,6 +468,45 @@ def checkCommandAllowedForRole(role, command):
 			return False
 	return True
 
+
+
+	#Todo: File upload command:
+			
+# Display a list of either all command functionality
+async def help(client, message):
+	messageArray = message.content.split(' ')
+	# For when users only want help on specific commands
+	if (len(messageArray) > 1):
+		embed = discord.Embed(title = "Help", colour = discord.Colour.green())
+		embed.set_author(name=message.author.display_name, icon_url=message.author.avatar_url)
+		for i in range(1, len(messageArray)):
+			if messageArray[i] in commandList:
+				command = messageArray[i]
+				embed.add_field(name='`'+command+'`', value=commandList[command].description, inline=False)
+			else:
+				await message.channel.send(messageArray[i] + " not found in commands list, try again.")
+				return
+	else:
+		# This will display a response that will hold descriptions of all of the commands
+		embed = discord.Embed(title = "Help", description = "**How to use all of the commands.**", colour = discord.Colour.green())
+		embed.set_author(name=message.author.display_name, icon_url=message.author.avatar_url)
+		for command in commandList:
+			embed.add_field(name='`'+command+'`', value=commandList[command].description, inline=False)
+	await message.channel.send(embed=embed)
+
+
+# Display a list of either all command functionality
+async def getCommands(client, message):
+    # c = commandList['!example']
+	# url = (await c.callCommand(client, message))
+	description = getCommandList()
+	embed = discord.Embed(title = 'Commands', description = description, colour = discord.Colour.green())
+	embed.set_author(name=message.author.display_name, icon_url=message.author.avatar_url)
+	# embed.add_field(name='[hello](c.callCommand(client, message))')
+	await message.channel.send(embed=embed)
+
+
+
 # When the bot is ready it will print to console
 @client.event
 async def on_ready():
@@ -524,70 +565,20 @@ async def on_message(message):
 			await message.channel.send(embed=embed)
 			return
 
-		if (len(message.content) == 1 or message.content == '!commands'):
+		if (len(message.content) == 1):
 			await getCommands(client, message)
 			return
-		#command to download function
-		if (message.content == '!add'):
-			await downloadFile(message)
-			return
-		if (message.content.split(" ")[0] == '!del'):
-			await removeFile(message)
-			return
-		if (message.content == '!modules'):
-			await message.channel.send(listModules())
-			return
-		if (message.content.split(" ")[0] == '!rolecommands'):
-			await roleCommands(message)
-			return
+
 		# Get the first word in the message, which would be the command
 		name = message.content.split(' ')[0]
-		if (name == '!help'):
-			await help(client, message)
-			return
 		# If it exists, call the command, otherwise warn user it was not recognized
 		if name in commandList:
 			await commandList[name].callCommand(client, message)
 			return
 		await message.channel.send("Sorry that command was not recognized!")
 
-	#Todo: File upload command:
-			
-# Display a list of either all command functionality
-async def help(client, message):
-	messageArray = message.content.split(' ')
-	# For when users only want help on specific commands
-	if (len(messageArray) > 1):
-		embed = discord.Embed(title = "Help", colour = discord.Colour.green())
-		embed.set_author(name=message.author.display_name, icon_url=message.author.avatar_url)
-		for i in range(1, len(messageArray)):
-			if messageArray[i] in commandList:
-				command = messageArray[i]
-				embed.add_field(name='`'+command+'`', value=commandList[command].description, inline=False)
-			else:
-				await message.channel.send(messageArray[i] + " not found in commands list, try again.")
-				return
-	else:
-		# This will display a response that will hold descriptions of all of the commands
-		embed = discord.Embed(title = "Help", description = "**How to use all of the commands.**", colour = discord.Colour.green())
-		embed.set_author(name=message.author.display_name, icon_url=message.author.avatar_url)
-		#Manually add in !help and !commands since they aren't in the commandList
-		embed.add_field(name="`!help`", value="Will display all of the commands and descriptions if given no arguments.\nTo view only a specific command's diescription and usage: Use !help <COMMAND>.", inline=False)
-		embed.add_field(name="`!command`", value="Will display a list of all available comamnds.\nAn alias for this command is to just type \"!\".")
-		for command in commandList:
-			embed.add_field(name='`'+command+'`', value=commandList[command].description, inline=False)
-	await message.channel.send(embed=embed)
 
 
-# Display a list of either all command functionality
-async def getCommands(client, message):
-    # c = commandList['!example']
-	# url = (await c.callCommand(client, message))
-	description = getCommandList()
-	embed = discord.Embed(title = 'Commands', description = description, colour = discord.Colour.green())
-	embed.set_author(name=message.author.display_name, icon_url=message.author.avatar_url)
-	# embed.add_field(name='[hello](c.callCommand(client, message))')
-	await message.channel.send(embed=embed)
 
 #Run the bot
 client.run(TOKEN)
