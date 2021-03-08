@@ -47,20 +47,23 @@ def loadMainCommands():
 	commandList["!modules"] = Command("!modules", "getModules", "TODO", sys.modules[__name__])
 	commandList["!rename"] = Command("!rename", "rename", "Used to rename commands.\nUsage: !rename <OLDNAME> <NEWNAME>.", sys.modules[__name__])
 
-	"""for command in commandsInMain:
-		command.module = sys.modules[__name__]
-		commandList[command.name] = command"""
 
 # Call function above to load the main module commands
 loadMainCommands()
+
+# Function to handle collisions with command names when being loaded from files
+def handleCollision(command, module):
+	newName = input("Command collision on {} when loading {}.\nPlease enter a new name for {}.\n".format(command.name, module.__name__, command.name))
+	command.name = newName
+	commandList[command.name] = command
+	return command
 
 # Load commands from the serverAdministration.py file
 def loadAdminCommands():
 	for c in serverAdministration.commandList:
 		# Check for command collisions
 		if c.name in commandList:
-			print("Error: Command collision on {} when loading {}".format(c.name, serverAdministration))
-			break
+			c = handleCollision(c, serverAdministration)
 		# If no collisions, load the module
 		c.module = serverAdministration
 		commandList[c.name] = c
@@ -81,14 +84,11 @@ def loadCommands():
 			# for each command in the module commandList, if not a collision, add it to the main commandList dictionary with the command as they key and module as the value
 			for c in module.commandList:
 				if c.name in commandList:
-					print("Error: Command collision on {} when loading {}".format(c.name, "modules." + filename))
-					break
+					c = handleCollision(c, module)
 				c.module = module
 				commandList[c.name] = c
 #Call function above to load the commands
 loadCommands()
-
-
 
 #collect last modified for modules dir now that it is loaded
 lastmodified = time.ctime(max(os.stat(root).st_mtime for root,_,_ in os.walk("modules")))
