@@ -498,7 +498,7 @@ async def on_message(message):
 		if (message.content == '!add'):
 			await downloadFile(message)
 			return
-		if (message.content.startswith('!del')):
+		if (message.content.split("0") == '!del'):
 			await removeFile(message)
 			return
 		if (message.content == '!modules'):
