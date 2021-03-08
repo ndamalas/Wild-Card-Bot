@@ -30,7 +30,7 @@ bannedCommandsByRole = {}
 
 # Function to get out all commands to the user
 def getCommandList():
-	response = "```!help\n!commands\n"
+	response = "```"
 	# response = "!commands\n"
 	for command in commandList:
 		response += "" + command + "\n"
@@ -45,6 +45,8 @@ def loadMainCommands():
 	commandList["!del"] = Command("!del", "removeFile", "TODO", sys.modules[__name__])
 	commandList["!rolecommands"] = Command("!rolecommands", "roleCommands", "TODO", sys.modules[__name__])
 	commandList["!modules"] = Command("!modules", "getModules", "TODO", sys.modules[__name__])
+	commandList["!rename"] = Command("!rename", "rename", "Used to rename commands.\nUsage: !rename <OLDNAME> <NEWNAME>.", sys.modules[__name__])
+
 	"""for command in commandsInMain:
 		command.module = sys.modules[__name__]
 		commandList[command.name] = command"""
@@ -468,9 +470,29 @@ def checkCommandAllowedForRole(role, command):
 			return False
 	return True
 
+#Todo: File upload command:
 
 
-	#Todo: File upload command:
+# Command to rename a command
+async def rename(client, message):
+	contents = message.content.split(" ")
+	if (len(contents) != 3):
+		response = "Incorrect usage of command !rename!\nUsage: !rename <OLDNAME> <NEWNAME>"
+	elif (contents[1] not in commandList):
+		response = "Error, no command with the name {}".format(contents[1])
+	else:
+		renameCommand(contents[1], contents[2])
+		response = "Successfully renamed {} to {}!".format(contents[1], contents[2])
+	await message.channel.send(response)
+
+# Helper function to actually rename the command and change it in the commandList
+def renameCommand(oldName, newName):
+	command = commandList[oldName]
+	command.name = newName
+	commandList[newName] = commandList.pop(oldName)
+
+
+
 			
 # Display a list of either all command functionality
 async def help(client, message):
