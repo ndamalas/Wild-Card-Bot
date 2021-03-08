@@ -551,10 +551,10 @@ async def clearBannedWords(message):
 # If the message does not satify conditions False should be returned
 def checkMessageForBannedWords(message):
     messageWords = message.content.split(" ")
-    allowBannedWords = len(messageWords) > 1 and messageWords[0] == "!bannedWords" and messageWords[1] == "remove"
-    if (allowBannedWords):
+    allowCommands = len(messageWords) >= 1 and messageWords[0].startswith("!")
+    if allowCommands:
         return False
-    reformattedMessageWords= []
+    reformattedMessageWords = []
     # Strip the message of all punctuation and make all lowercase
     for word in messageWords:
         reformattedWord = word.translate(str.maketrans("", "", string.punctuation))

@@ -241,6 +241,9 @@ async def roleCommands(message):
             exists = await determineRoleExists(message, command, roleName, "name")
             if exists == False:
                 return
+			# If multiple roles have the same name, ask user to use ID
+            if await sameNameRolesCheck(message, roleName) == True:
+                return
 			# determine action based on second argument
             if message.content.split(" ")[1] == "allow":
                 action = "allow"
@@ -269,6 +272,9 @@ async def roleCommands(message):
             exists = await determineRoleExists(message, command, roleName, "name")
             if exists == False:
                 return
+			# If multiple roles have the same name, ask user to use ID
+            if await sameNameRolesCheck(message, roleName) == True:
+                return
 			# determine action based on second argument
             if message.content.split(" ")[1] == "allow":
                 action = "allow"
@@ -286,6 +292,9 @@ async def roleCommands(message):
         exists = await determineRoleExists(message, command, roleName, "name")
         if exists == False:
                 return
+		# If multiple roles have the same name, ask user to use ID
+        if await sameNameRolesCheck(message, roleName) == True:
+            return
         if message.content.split(" ")[1] == "perms":
             action = "perms"
             await listPermissionsForRole(message, roleName, "name")
@@ -337,6 +346,30 @@ async def determineRoleExists(message, command, role, nameOrId):
         return False
     return True
 
+# Helper function for roleCommands that checks if multiple roles have the same name
+# Returns True if there are same name roles, False if there are not
+async def sameNameRolesCheck(message, roleName):
+	roleCount = 0
+	for role in message.guild.roles:
+		if role.name == roleName:
+			roleCount += 1
+	# If there are more than one role named roleName, tell user
+	if roleCount > 1:
+		response = "Multiple matches found for the role **" + roleName + "**. Please specify using role ID.\n"
+		responseCount = 1
+		for role in message.guild.roles:
+			if role.name == roleName:
+				response += str(responseCount) + ". " + str(role.id) + "\n"
+				responseCount += 1
+		response += "\nIf you want to allow or block the role **" + roleName + "** from a command, use the following command:\n"
+		response += "**!rolecommands allow/block role-id id command**\n\n"
+		response += "If you want to view the permissions of the role **" + roleName + "**, use the following command:\n"
+		response += "**!rolecommands perms role-id id**"
+		embed = discord.Embed(title='Multiple Roles Found', description=response, colour=discord.Colour.blue())
+		await message.channel.send(embed=embed)
+		return True
+	return False
+
 # Helper function for roleCommands that allows a command for a certain role
 async def allowCommandForRole(message, command, role, nameOrId):
 	if nameOrId == "name":
@@ -353,7 +386,7 @@ async def allowCommandForRole(message, command, role, nameOrId):
 	# Remove the command from the corresponding role list
 	if roleFound.id in bannedCommandsByRole:
 		if command in bannedCommandsByRole[roleFound.id]:
-			bannedCommandsByRole[role.id].remove(command)
+			bannedCommandsByRole[roleFound.id].remove(command)
 			response = command + " has been allowed for " + roleFound.name + "!"
 			embed = discord.Embed(title='Command Allowed', description=response, colour=discord.Colour.blue())
 			await message.channel.send(embed=embed)
@@ -498,7 +531,7 @@ async def on_message(message):
 		if (message.content == '!add'):
 			await downloadFile(message)
 			return
-		if (message.content.startswith('!del')):
+		if (message.content.split(" ")[0] == '!del'):
 			await removeFile(message)
 			return
 		if (message.content == '!modules'):
