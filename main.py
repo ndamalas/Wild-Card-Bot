@@ -465,6 +465,7 @@ async def blockCommandFromRole(message, command, role, nameOrId):
 			await message.channel.send(embed=embed)	
 	else:
 		bannedCommandsByRole[roleFound.id] = []
+		bannedCommandsByRole[roleFound.id].append(roleFound.permissions)
 		bannedCommandsByRole[roleFound.id].append(command)
 		response = command + " has been blocked for " + roleFound.name + "!"
 		embed = discord.Embed(title='Command Blocked', description=response, colour=discord.Colour.blue())
@@ -485,13 +486,14 @@ async def listPermissionsForRole(message, role, nameOrId):
 		roleFound = message.guild.get_role(roleId)
 	# Build the list of commands allowed
 	response = "The following commands are allowed for the role " + roleFound.name + ":\n"
-	if roleFound.id in bannedCommandsByRole and len(bannedCommandsByRole[roleFound.id]) > 0:
+	if roleFound.id in bannedCommandsByRole and len(bannedCommandsByRole[roleFound.id]) > 1:
 		for command in commandList:
 			if command not in bannedCommandsByRole[roleFound.id]:
 				response += command + "\n"
 		response += "\nThe following commands are blocked for the role " + roleFound.name + ":\n"
 		for command in bannedCommandsByRole[roleFound.id]:
-			response += command + "\n"
+			if type(command) == type("str"):
+				response += command + "\n"
 	else:
 		for command in commandList:
 			response += command + "\n"
@@ -512,26 +514,35 @@ def autoSetPermissionsForRoles(message):
 	for role in message.guild.roles:
 		if role.id not in bannedCommandsByRole:
 			# If the role is currently not in the dict, then add it
-			role = message.guild.get_role(role.id)
 			bannedCommandsByRole[role.id] = []
+			# Append the permissions object to detect if there are any changes to the permissions
+			bannedCommandsByRole[role.id].append(role.permissions)
 			# If the role does not have admin permissions, block all commands that require admin permissions
+			# Since admin is granted every permission, if the user is an admin they will have access to all commands
 			if role.permissions.administrator == False:
 				for command in commandList:
 					commandObj = commandList[command]
 					if "administrator" in commandObj.permissions:
 						bannedCommandsByRole[role.id].append(command)
-			# If role does not have permissions to manage channels, block all such commands
-			if role.permissions.manage_channels == False:
-				for command in commandList:
-					commandObj = commandList[command]
-					if "manage_channels" in commandObj.permissions:
-						bannedCommandsByRole[role.id].append(command)
-			# If role does not have permissions to manage permissions, block all such commands
-			if role.permissions.manage_permissions == False:
-				for command in commandList:
-					commandObj = commandList[command]
-					if "manage_permissions" in commandObj.permissions or "manage_roles" in commandObj.permissions:
-						bannedCommandsByRole[role.id].append(command)
+				# If role does not have permissions to manage channels, block all such commands
+				if role.permissions.manage_channels == False:
+					for command in commandList:
+						commandObj = commandList[command]
+						if "manage_channels" in commandObj.permissions:
+							bannedCommandsByRole[role.id].append(command)
+				# If role does not have permissions to manage permissions, block all such commands
+				if role.permissions.manage_permissions == False:
+					for command in commandList:
+						commandObj = commandList[command]
+						if "manage_permissions" in commandObj.permissions or "manage_roles" in commandObj.permissions:
+							bannedCommandsByRole[role.id].append(command)
+				# Add more permissions check here
+		else:
+			if role.permissions != bannedCommandsByRole[role.id][0]:
+				# Since permissions have changed, remove the entry for this role and rebuild it
+				del bannedCommandsByRole[role.id]
+				autoSetPermissionsForRoles(message)
+
 
 #Todo: File upload command:
 
@@ -671,8 +682,8 @@ async def on_message(message):
 				break
 			else:
 				commandAllowed = False
-		# If command is not allowed, prevent user from using command
-		if commandAllowed == False:
+		# If command is not allowed, prevent user from using command unless it is the server owner
+		if commandAllowed == False and message.guild.owner_id != message.author.id:
 			user = message.author.mention
 			response = user + " You do not have the permissions to use this command!"
 			embed = discord.Embed(title='No Permissions To Use Command', description=response, colour=discord.Colour.red())
