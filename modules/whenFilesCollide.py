@@ -6,10 +6,10 @@ from command import Command
 
 
 commandList = []
-commandList.append(Command("!collide1", "func"))
+#commandList.append(Command("!collide1", "func"))
 async def func(client, message):
     response = 'In collide'
     await message.channel.send(response)
 
-commandList.append(Command("!collide2", "func"))
+#commandList.append(Command("!collide2", "func"))
     

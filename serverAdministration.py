@@ -528,10 +528,11 @@ async def removeBannedWord(message):
     words = message.content.split(" ")
     for i in range(2, len(message.content.split(" "))):
         word = words[i]
-        if (word in words):
+        if (word in bannedWords):
             bannedWords.remove(word)
         else:
             await message.channel.send(word + " not found in banned words list, try again.")
+            return
     file = open("bannedWords.txt", "w")
     for word in bannedWords:
         file.write(word + "\n")
