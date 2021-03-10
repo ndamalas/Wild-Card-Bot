@@ -28,6 +28,9 @@ lastmodified = ""
 # List of Commands a Role cannot use
 bannedCommandsByRole = {}
 
+# List of Modules that are available
+moduleList = []
+
 # Function to get out all commands to the user
 def getCommandList():
 	response = "```"
@@ -38,7 +41,7 @@ def getCommandList():
 
 # Load the commands in the main module
 def loadMainCommands():
-	commandList["!help"] = Command("!help", "help", "Will display all of the commands and descriptions if given no arguments.\nTo view only a specific command's diescription and usage: Use !help <COMMAND>.", sys.modules[__name__])
+	commandList["!help"] = Command("!help", "help", "Will display all of the commands and descriptions if given no arguments.\nTo view only a specific command's description and usage: Use !help <COMMAND>.\nTo view specific modules' commands' descriptions and usages: Use !help <MODULENAME (without .py)>.", sys.modules[__name__])
 	commandList["!commands"] = Command("!commands", "getCommands", "Will display a list of all available comamnds.\nAn alias for this command is to just type \"!\".", sys.modules[__name__])
 	commandList["!add"] = Command("!add", "downloadFile", "TODO", sys.modules[__name__], permissions=["administrator"])
 	commandList["!del"] = Command("!del", "removeFile", "TODO", sys.modules[__name__], permissions=["administrator"])
@@ -591,11 +594,19 @@ def writeToRename(oldName, newName):
 		file = open("commandRenames.txt", "a")
 		file.write(oldName + " " + newName + "\n")
 
+# Makes a list of modules without ".py" at the end and stores them in moduleList
+def makeModuleList(): 
+	for filename in os.listdir("modules"):
+		# grab all .py files except for the init file
+		if (filename.endswith(".py") and not filename.startswith("__init__")):
+			fileAdded = filename[:-3]
+			moduleList.append(fileAdded)
 
 # Display a list of either all command functionality
 async def help(client, message):
 	messageArray = message.content.split(' ')
-	# For when users only want help on specific commands
+	# For when users only want help on specific commands or specific modules
+	makeModuleList()
 	if (len(messageArray) > 1):
 		embed = discord.Embed(title = "Help", colour = discord.Colour.green())
 		embed.set_author(name=message.author.display_name, icon_url=message.author.avatar_url)
@@ -603,8 +614,12 @@ async def help(client, message):
 			if messageArray[i] in commandList:
 				command = messageArray[i]
 				embed.add_field(name='`'+command+'`', value=commandList[command].description, inline=False)
-			else:
-				await message.channel.send(messageArray[i] + " not found in commands list, try again.")
+			elif messageArray[i] in moduleList: 
+				module = importlib.import_module("modules." + messageArray[i])
+				for c in module.commandList:
+					embed.add_field(name='`'+c.name+'`', value=c.description, inline=False)
+			else :
+				await message.channel.send(messageArray[i] + " not found in commands list or module list, try again.")
 				return
 	else:
 		# This will display a response that will hold descriptions of all of the commands
