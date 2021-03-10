@@ -40,11 +40,11 @@ def getCommandList():
 def loadMainCommands():
 	commandList["!help"] = Command("!help", "help", "Will display all of the commands and descriptions if given no arguments.\nTo view only a specific command's diescription and usage: Use !help <COMMAND>.", sys.modules[__name__])
 	commandList["!commands"] = Command("!commands", "getCommands", "Will display a list of all available comamnds.\nAn alias for this command is to just type \"!\".", sys.modules[__name__])
-	commandList["!add"] = Command("!add", "downloadFile", "TODO", sys.modules[__name__])
-	commandList["!del"] = Command("!del", "removeFile", "TODO", sys.modules[__name__])
-	commandList["!rolecommands"] = Command("!rolecommands", "roleCommands", "TODO", sys.modules[__name__])
-	commandList["!modules"] = Command("!modules", "getModules", "TODO", sys.modules[__name__])
-	commandList["!rename"] = Command("!rename", "rename", "Used to rename commands.\nUsage: !rename <OLDNAME> <NEWNAME>.", sys.modules[__name__])
+	commandList["!add"] = Command("!add", "downloadFile", "TODO", sys.modules[__name__], permissions=["administrator"])
+	commandList["!del"] = Command("!del", "removeFile", "TODO", sys.modules[__name__], permissions=["administrator"])
+	commandList["!rolecommands"] = Command("!rolecommands", "roleCommands", "TODO", sys.modules[__name__], permissions=["manage_permissions"])
+	commandList["!modules"] = Command("!modules", "getModules", "TODO", sys.modules[__name__], permissions=["administrator"])
+	commandList["!rename"] = Command("!rename", "rename", "Used to rename commands.\nUsage: !rename <OLDNAME> <NEWNAME>.", sys.modules[__name__], permissions=["administrator"])
 	
 
 
@@ -229,13 +229,7 @@ def collides(filename):
 
 # Format: !rolecommands <allow/block/perms> role-name id command
 # Command used for banning certain roles from using certain commands
-async def roleCommands(message):
-    # This is a admin only command
-    if message.author.guild_permissions.administrator == False:
-        response = "You do not permissions to use this command!"
-        embed = discord.Embed(title='No Permission', description=response, colour=discord.Colour.red())
-        embed.set_author(name=message.author.display_name, icon_url=message.author.avatar_url)
-        await message.channel.send(embed=embed)
+async def roleCommands(client, message):
     action = 0 # 0 indicates incorrect arguments and prints error
     # Determine if admin wants to allow a command, block a command, or see which commands the role can use
     if len(message.content.split(" ")) >= 5:
@@ -487,6 +481,33 @@ def checkCommandAllowedForRole(role, command):
 			return False
 	return True
 
+# Checks if the roles in the server are in bannedCommandsByRole
+# If not, update bannedCommandsByRole with the new roles and automatically set permissions
+def autoSetPermissionsForRoles(message):
+	for role in message.guild.roles:
+		if role.id not in bannedCommandsByRole:
+			# If the role is currently not in the dict, then add it
+			role = message.guild.get_role(role.id)
+			bannedCommandsByRole[role.id] = []
+			# If the role does not have admin permissions, block all commands that require admin permissions
+			if role.permissions.administrator == False:
+				for command in commandList:
+					commandObj = commandList[command]
+					if "administrator" in commandObj.permissions:
+						bannedCommandsByRole[role.id].append(command)
+			# If role does not have permissions to manage channels, block all such commands
+			if role.permissions.manage_channels == False:
+				for command in commandList:
+					commandObj = commandList[command]
+					if "manage_channels" in commandObj.permissions:
+						bannedCommandsByRole[role.id].append(command)
+			# If role does not have permissions to manage permissions, block all such commands
+			if role.permissions.manage_permissions == False:
+				for command in commandList:
+					commandObj = commandList[command]
+					if "manage_permissions" in commandObj.permissions or "manage_roles" in commandObj.permissions:
+						bannedCommandsByRole[role.id].append(command)
+
 #Todo: File upload command:
 
 
@@ -607,6 +628,9 @@ async def on_message(message):
 
 	# Check if it is a command:
 	if message.content.startswith('!'):
+		# Check the server for any new roles and automatically set permissions
+		autoSetPermissionsForRoles(message)
+
 		# Prevent commands that are blocked for a specific role from executing
 		# If the user has multiple roles, all roles will be checked
 		commandAllowed = True
@@ -639,7 +663,6 @@ async def on_message(message):
 			await commandList[name].callCommand(client, message)
 			return
 		await message.channel.send("Sorry that command was not recognized!")
-
 
 
 
