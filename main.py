@@ -231,28 +231,53 @@ def collides(filename):
 # Command used for banning certain roles from using certain commands
 async def roleCommands(client, message):
     action = 0 # 0 indicates incorrect arguments and prints error
+	# Set the message arguments correctly
+	# Since roles can have spaces in the name, we need to account for it
+    if len(message.content.split(" ")) > 1:
+        messageArguments = []
+        messageArguments.append(message.content.split(" ")[0]) # Command Name
+        messageArguments.append(message.content.split(" ")[1]) # Action
+        if message.content.split(" ")[1] == "perms" and "id" not in message.content.split(" "):
+            if len(messageArguments[0]) + len(messageArguments[1]) + 2 < len(message.content):
+                roleName = message.content[len(messageArguments[0]) + len(messageArguments[1]) + 2:]
+                messageArguments.append(roleName)
+        if message.content.split(" ")[1] == "allow" or message.content.split(" ")[1] == "block" and "id" not in message.content.split(" "):
+            if len(messageArguments[0]) + len(messageArguments[1]) + 2 < len(message.content):
+                roleName = message.content[len(messageArguments[0]) + len(messageArguments[1]) + 2:]
+                commandName = None
+                if roleName.split(" ")[-1].startswith("!") and roleName.rfind(" ") != -1:
+                    commandName = roleName[roleName.rfind(" ") + 1:]
+                    roleName = roleName[:roleName.rfind(" ")]
+                messageArguments.append(roleName)
+                if commandName != None:
+                    messageArguments.append(commandName)
+        if "id" in message.content.split(" "):
+            messageArguments = message.content.split(" ")
+    else:
+        messageArguments = message.content.split(" ")
+
     # Determine if admin wants to allow a command, block a command, or see which commands the role can use
-    if len(message.content.split(" ")) >= 5:
+    if len(messageArguments) >= 5:
         # Find role by ID if specified, or else find role by name
-        if message.content.split(" ")[3] == "id":
-            command = message.content.split(" ")[4]
-            roleId = int(message.content.split(" ")[2])
+        if messageArguments[3] == "id":
+            command = messageArguments[4]
+            roleId = int(messageArguments[2])
             exists = await determineRoleExists(message, command, roleId, "id")
             if exists == False:
                 return
 			# determine action based on second argument
-            if message.content.split(" ")[1] == "allow":
+            if messageArguments[1] == "allow":
                 action = "allow"
                 await allowCommandForRole(message, command, roleId, "id")
-            if message.content.split(" ")[1] == "block":
+            if messageArguments[1] == "block":
                 action = "block"
                 await blockCommandFromRole(message, command, roleId, "id")
-            if message.content.split(" ")[1] == "perms":
+            if messageArguments[1] == "perms":
                 action = "perms"
                 await listPermissionsForRole(message, roleId, "id")
         else:
-            command = message.content.split(" ")[3]
-            roleName = message.content.split(" ")[2]
+            command = messageArguments[3]
+            roleName = messageArguments[2]
             exists = await determineRoleExists(message, command, roleName, "name")
             if exists == False:
                 return
@@ -260,30 +285,30 @@ async def roleCommands(client, message):
             if await sameNameRolesCheck(message, roleName) == True:
                 return
 			# determine action based on second argument
-            if message.content.split(" ")[1] == "allow":
+            if messageArguments[1] == "allow":
                 action = "allow"
                 await allowCommandForRole(message, command, roleName, "name")
-            if message.content.split(" ")[1] == "block":
+            if messageArguments[1] == "block":
                 action = "block"
                 await blockCommandFromRole(message, command, roleName, "name")
-            if message.content.split(" ")[1] == "perms":
+            if messageArguments[1] == "perms":
                 action = "perms"
                 await listPermissionsForRole(message, roleName, "name")
-    elif len(message.content.split(" ")) >= 4:
+    elif len(messageArguments) >= 4:
         # Find role by name, or if id is specified display commands the role with id can use
-        if message.content.split(" ")[3] == "id":
+        if messageArguments[3] == "id":
             command = None # Indicate that command is not needed
-            roleId = int(message.content.split(" ")[2])
+            roleId = int(messageArguments[2])
             exists = await determineRoleExists(message, command, roleId, "id")
             if exists == False:
                 return
 			# determine action based on second argument
-            if message.content.split(" ")[1] == "perms":
+            if messageArguments[1] == "perms":
                 action = "perms"
                 await listPermissionsForRole(message, roleId, "id")
         else:
-            command = message.content.split(" ")[3]
-            roleName = message.content.split(" ")[2]
+            command = messageArguments[3]
+            roleName = messageArguments[2]
             exists = await determineRoleExists(message, command, roleName, "name")
             if exists == False:
                 return
@@ -291,26 +316,26 @@ async def roleCommands(client, message):
             if await sameNameRolesCheck(message, roleName) == True:
                 return
 			# determine action based on second argument
-            if message.content.split(" ")[1] == "allow":
+            if messageArguments[1] == "allow":
                 action = "allow"
                 await allowCommandForRole(message, command, roleName, "name")
-            if message.content.split(" ")[1] == "block":
+            if messageArguments[1] == "block":
                 action = "block"
                 await blockCommandFromRole(message, command, roleName, "name")
-            if message.content.split(" ")[1] == "perms":
+            if messageArguments[1] == "perms":
                 action = "perms"
                 await listPermissionsForRole(message, roleName, "name")
-    elif len(message.content.split(" ")) >= 3:
+    elif len(messageArguments) >= 3:
         # List all available commands to a specific role
         command = None # Indicate that command is not needed
-        roleName = message.content.split(" ")[2]
+        roleName = messageArguments[2]
         exists = await determineRoleExists(message, command, roleName, "name")
         if exists == False:
                 return
 		# If multiple roles have the same name, ask user to use ID
         if await sameNameRolesCheck(message, roleName) == True:
             return
-        if message.content.split(" ")[1] == "perms":
+        if messageArguments[1] == "perms":
             action = "perms"
             await listPermissionsForRole(message, roleName, "name")
     else:
@@ -334,7 +359,7 @@ async def roleCommands(client, message):
 async def determineRoleExists(message, command, role, nameOrId):
     # Check to see if command actually exists on the server
     if command != None and command not in commandList:
-        response = "That command was not found in the command list!"
+        response = "The command " + command + " was not found in the command list!"
         embed = discord.Embed(title='Not In Command List', description=response, colour=discord.Colour.red())
         await message.channel.send(embed=embed)
         return False
