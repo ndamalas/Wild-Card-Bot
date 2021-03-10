@@ -1,7 +1,8 @@
 from command import Command
 import string
 import discord
-
+import asyncio
+from googlesearch import search
 # Every module has to have a command list
 commandList = []
 
@@ -68,7 +69,7 @@ def getUsersFromRole(userList, role):
 # Command that creates a new text channel on command
 # Format: !createtc text-channel-name category-name (id) (The user can include spaces in their category name,
 # user can also specify the id of a particular category if there are multiple categories with same name)
-commandList.append(Command("!createtc", "createTextChannel", "Creates a new text channel.\nUsage: !createtc <TEXT-CHANNEL-NAME> <CATEGORY-NAME> (id) (The user can include spaces in their category name, user can also specify the id of a particular category if there are multiple categories with same name)"))
+commandList.append(Command("!createtc", "createTextChannel", "Creates a new text channel.\nUsage: !createtc <TEXT-CHANNEL-NAME> <CATEGORY-NAME> (id) (The user can include spaces in their category name, user can also specify the id of a particular category if there are multiple categories with same name)", permissions=["manage_channels"]))
 # Creates a text channel with the name specified by the user
 async def createTextChannel(client, message):
     guild = message.guild # Get the server from the message sent
@@ -163,7 +164,7 @@ async def createTextChannelWithCategoryID(client, message, guild, channelName, c
 
 # Command that deletes a new text channel on command
 # Format: !deletetc text-channel-name (id) (id is optional, text-channel-name should be text-channel-id)
-commandList.append(Command("!deletetc", "deleteTextChannel", "Deletes a new text channel on command.\nUsage: !deletetc <TEXT-CHANNEL-NAME> (id) (id is optional, text-channel-name should be text-channel-id)"))
+commandList.append(Command("!deletetc", "deleteTextChannel", "Deletes a new text channel on command.\nUsage: !deletetc <TEXT-CHANNEL-NAME> (id) (id is optional, text-channel-name should be text-channel-id)", permissions=["manage_channels"]))
 # Deletes a text channel with the name or id specified by the user
 async def deleteTextChannel(client, message):
     guild = message.guild
@@ -235,7 +236,7 @@ async def deleteTextChannelByName(client, message, guild, channelName):
             await message.channel.send(embed=embed)
 
 # Syntax: !createvc channel_name *category_name
-commandList.append(Command("!createvc", "createVoiceChannel", "Creates a new voice channel.\nUsage: !createvc <CHANNLE_NAME> <*CATEGORY_NAME>"))
+commandList.append(Command("!createvc", "createVoiceChannel", "Creates a new voice channel.\nUsage: !createvc <CHANNLE_NAME> <*CATEGORY_NAME>", permissions=["manage_channels"]))
 async def createVoiceChannel(client, message):
     guild = message.guild
     channelName = 0
@@ -266,7 +267,7 @@ async def createVoiceChannel(client, message):
 
 # Command that can show removeLinks
 # Format: !removelinks (add/remove/view) channel-name (id) (adds or removes a channel for monitoring links)
-commandList.append(Command("!removelinks", "updateRemoveLinksList", "Interact with the remove links list.\nUsage: !removelinks <ADD/REMOVE/VIEW> <CHANNEL-NAME> (id) (adds or removes a channel for monitoring links)"))
+commandList.append(Command("!removelinks", "updateRemoveLinksList", "Interact with the remove links list.\nUsage: !removelinks <ADD/REMOVE/VIEW> <CHANNEL-NAME> (id) (adds or removes a channel for monitoring links)", permissions=["manage_channels"]))
 # Deletes a text channel with the name or id specified by the user
 async def updateRemoveLinksList(client, message):
     guild = message.guild
@@ -480,82 +481,8 @@ def checkMessageForLinks(message):
         if "https://" in message.content or "http://" in message.content:
             return True
     return False
-
-# Displays a list of all roles in the server
-commandList.append(Command("!roles", "listRoles"))
-async def listRoles(client, message):
-    guild = message.guild
-    response = ">>> Listing All Server Roles:\n"
-    response += ", ".join([str(r.name) for r in guild.roles])
-    await message.channel.send(response)
-    return
-
-# Create a role
-commandList.append(Command("!createRole", "createRole"))
-async def createRole(client, message):
-    guild = message.guild
-    #member = message.author
-    if len(message.content.split(" ")) != 2:
-        await message.channel.send(">>> Please use format:\n !createRole \"role name\"")
-        return
-    await guild.create_role(name=message.content.split(" ")[1])
-    response = ">>> NEW ROLE CREATED!"
-    await message.channel.send(response)
-    return
-
-# Delete a role
-commandList.append(Command("!createRoleTwo", "createRoleTwo"))
-async def createRoleTwo(client, message):
-    guild = message.guild
-    #member = message.author
-    if len(message.content.split(" ")) != 2:
-        await message.channel.send(">>> Please use format:\n !deleteRole \"role name\"")
-        return
-    response = ">>> Role not found"
-    for current_role in guild.roles:
-        if str(current_role.name) == message.content.split(" ")[1]:
-            role_to_delete=discord.utils.get(message.guild.roles, name=str(current_role.name))
-            await role_to_delete.delete()
-            response = "ROLE DELETED!"
-    await message.channel.send(response)
-    return
-
-#Gives a role to a user
-commandList.append(Command("!giveRole", "giveRole"))
-async def giveRole(client, message):
-    guild = message.guild
-    await message.channel.send("IN GIVE ROLE FUNCTION")
-    if len(message.content.split(" ")) != 3:
-        await message.channel.send(">>> Please use format: \n !giveRole \"User#0000\" \"Role Name\"")
-    user_found = False
-    member=0
-    userList = message.guild.members
-    #await message.channel.send(userList[0])
-    for user in userList:
-        if str(user) == message.content.split(" ")[1]:
-            user_found = True
-            member = user
-    if user_found == False:
-        await message.channel.send("USER NOT FOUND")
-        return
-    #role_found = False
-    #role=0
-    #for curr_role in guild.roles():
-    #    if str(curr_role.name) == message.content.split(" ")[2]:
-    #        await message.channel.send("Role found dw")
-    #        role_found = True
-    #        role = curr_role
-    #await message.channel.send("OUT OF LOOP")
-    #if role_found == False:
-    #    await message.channel.send("ROLE NOT FOUND")
-    #    return
-    role=discord.utils.get(message.guild.roles, name="role name")
-    await member.add_role(role)
-    await message.channel.send("ROLE GIVEN")
-    return
-
 # Display a list of all banned words
-commandList.append(Command("!bannedWords", "displayBannedWords", "Can display, add, or remove words from banned words list.\nUsage: !bannedWords (optional) <ADD/REMOVE> <WORD>"))
+commandList.append(Command("!bannedWords", "displayBannedWords", "Can display, add, or remove words from banned words list.\nUsage: !bannedWords (optional) <ADD/REMOVE/CLEAR> <WORD>"))
 async def displayBannedWords(client, message):
     if (len(message.content.split(" ")) <= 1):
         response = ""
@@ -575,7 +502,7 @@ async def displayBannedWords(client, message):
         await clearBannedWords(message)
         return
     await message.channel.send("Error: incorrect usage!")
-    
+
 
 # Helper to add a word to the banned word list
 async def addBannedWord(message):
@@ -601,10 +528,11 @@ async def removeBannedWord(message):
     words = message.content.split(" ")
     for i in range(2, len(message.content.split(" "))):
         word = words[i]
-        if (word in words):
+        if (word in bannedWords):
             bannedWords.remove(word)
         else:
             await message.channel.send(word + " not found in banned words list, try again.")
+            return
     file = open("bannedWords.txt", "w")
     for word in bannedWords:
         file.write(word + "\n")
@@ -617,31 +545,71 @@ async def clearBannedWords(message):
     bannedWords.clear()
     file.close()
     await message.channel.send("Successfully cleared the banned words list!")
-            
+
 
 # This function is used by main.py to check if the associated message has a link
 # If the message has a link and the channel is monitored, we return True to indicate deletion
 # If the message does not satify conditions False should be returned
 def checkMessageForBannedWords(message):
     messageWords = message.content.split(" ")
-    allowBannedWords = len(messageWords) > 1 and messageWords[0] == "!bannedWords" and messageWords[1] == "remove"
-    if (allowBannedWords):
+    allowCommands = len(messageWords) >= 1 and messageWords[0].startswith("!")
+    if allowCommands:
         return False
-    reformattedMessageWords= []
+    reformattedMessageWords = []
     # Strip the message of all punctuation and make all lowercase
     for word in messageWords:
         reformattedWord = word.translate(str.maketrans("", "", string.punctuation))
         reformattedWord = reformattedWord.lower()
         reformattedMessageWords.append(reformattedWord)
-    
+
     # Check if the banned word is one of the words
     for word in bannedWords:
         bannedWord = word.lower()
         if bannedWord in reformattedMessageWords:
             return True
     return False
+commandList.append(Command("!downloadModules", "downloadAdditionalModules", "Gives the user links to where new modules for the bot can be downloaded or the user can specify modules they would like to search for and links are provided.\nUsage: !downloadModules <SPECIFIC-MODULE>"))
+# Function for additional module download command
+async def downloadAdditionalModules(ctx, message):
+    #Check the number of arguments typed including the command
+    args = len(message.content.split(" "))
+    # If the user just types the command give them the link to the GitHub modules that we have
+    # Otherwise given them the google search as well
+    embed = discord.Embed(
+        title='WildCard Bot Discord Modules',
+        description='[GitHub](https://github.com/ndamalas/Wild-Card-Bot/tree/main/modules)',
+        color = 0xffffff
+    )
+    if(args == 1):
+        #Embedded is the nice block that also gives the embedded link
+        await message.channel.send("You can find and download more discord modules for WildCard Bot made by our team here:\n")
+        await message.channel.send(embed=embed)
+    else:
+        #Need to install "pip install beautifulsoup4"
+        #and also "pip install google"
+        query = "download " + message.content[17:] + " modules for WildCard Discord Bot"
+        await message.channel.send(embed=embed)
+        for j in search(query, tld="com", lang = 'en', num=5, stop=5, pause=2):
+            await message.channel.send(j)
 
+commandList.append(Command("!mute", "muteUser", "Timeout specified user for amount of time.\nUsage: !timeout USER-NAME SECONDS"))
+async def muteUser(ctx, message):
+    guild = message.guild
+    # Check if input has valid number of args
+    if len(message.content.split(" ")) == 3:
+        # Check if member exists in server
+        for member in guild.members:
+            if member.name == message.content.split(" ")[1]:
+                # Check if role exists in server
+                for role in guild.roles:
+                    if role.name == "Muted":
+                        await member.add_roles(role, reason = None)
+                        await asyncio.sleep(int(message.content.split(" ")[2]))
+                        await member.remove_roles(role, reason = None)
+    else:
+        await message.channel.send("Invalid input\nUsage: !timeout @USER <SECONDS>")
 
+#def helperBlockFunction(ctx, args)
 # For testing ONLY
 commandList.append(Command("!stop", "logoutBot"))
 async def logoutBot(client, message):
