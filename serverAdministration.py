@@ -568,7 +568,7 @@ def checkMessageForBannedWords(message):
         if bannedWord in reformattedMessageWords:
             return True
     return False
-commandList.append(Command("!downloadModules", "downloadAdditionalModules"))
+commandList.append(Command("!downloadModules", "downloadAdditionalModules", "Gives the user links to where new modules for the bot can be downloaded or the user can specify modules they would like to search for and links are provided.\nUsage: !downloadModules <SPECIFIC-MODULE>"))
 # Function for additional module download command
 async def downloadAdditionalModules(ctx, message):
     #Check the number of arguments typed including the command
@@ -588,11 +588,6 @@ async def downloadAdditionalModules(ctx, message):
         #Need to install "pip install beautifulsoup4"
         #and also "pip install google"
         query = "download " + message.content[17:] + " modules for WildCard Discord Bot"
-        #print(query)
-        #results = discord.Embed(
-        #    title=' **Search results for** ' + '*' + message.content[17:] + '* :\n>>>'
-        #)
-        #result = "**Search results for** ' + '*' + message.content[17:] + '* :\n"
         await message.channel.send(embed=embed)
         for j in search(query, tld="com", lang = 'en', num=5, stop=5, pause=2):
             await message.channel.send(j)

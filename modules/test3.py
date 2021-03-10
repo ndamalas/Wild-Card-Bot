@@ -8,7 +8,7 @@ commandList = []
 #function accepts the client and message
 #needs to be async
 #Since we can pass client and message we can have these functions do anything
-commandList.append(Command("!col", "func"))
+commandList.append(Command("!col", "func", "Function testing files being recognized by bot.\nUsage: !col"))
 async def func(client, message):
 	response = 'You said (i dragged in this file): {}'.format(' '.join(message.content.split()[1:]))
 	await message.channel.send(response)

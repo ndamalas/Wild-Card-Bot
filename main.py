@@ -46,7 +46,7 @@ def loadMainCommands():
 	commandList["!add"] = Command("!add", "downloadFile", "TODO", sys.modules[__name__], permissions=["administrator"])
 	commandList["!del"] = Command("!del", "removeFile", "TODO", sys.modules[__name__], permissions=["administrator"])
 	commandList["!rolecommands"] = Command("!rolecommands", "roleCommands", "TODO", sys.modules[__name__], permissions=["manage_permissions"])
-	commandList["!modules"] = Command("!modules", "getModules", "TODO", sys.modules[__name__], permissions=["administrator"])
+	commandList["!modules"] = Command("!modules", "getModules", "Lists all of the current modules that the user has on their bot.\nUsage: !modules", sys.modules[__name__], permissions=["administrator"])
 	commandList["!rename"] = Command("!rename", "rename", "Used to rename commands.\nUsage: !rename <OLDNAME> <NEWNAME>.", sys.modules[__name__], permissions=["administrator"])
 	
 
@@ -619,7 +619,7 @@ async def help(client, message):
 				for c in module.commandList:
 					embed.add_field(name='`'+c.name+'`', value=c.description, inline=False)
 			else :
-				await message.channel.send(messageArray[i] + " not found in commands list or module list, try again.")
+				await message.channel.send('*'+ '__' + messageArray[i] + '__' + '*' + " not found in commands list or module list, try again.")
 				return
 	else:
 		# This will display a response that will hold descriptions of all of the commands
