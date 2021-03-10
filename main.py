@@ -632,9 +632,12 @@ async def on_message(message):
 	# True is returned if the message should be deleted for having a banned word
 	if serverAdministration.checkMessageForBannedWords(message) == True:
 		# Ping the user and warn them about the banned word
-		# This part is not done by Matthew, currently holds a temp response
-		response = ">>> You used a banned word."
-		await message.channel.send(response)
+		user = message.author.mention
+		response = user + " You have used a banned word. Your message has been deleted.\n"
+		response += "If you are unsure about the banned word you used, please contact server administrator(s)."
+		embed = discord.Embed(title='Banned Word Used', description=response, colour=discord.Colour.red())
+		embed.set_author(name=message.author.display_name, icon_url=message.author.avatar_url)
+		await message.channel.send(embed=embed)
 		await message.delete()
 		return
 
@@ -671,7 +674,7 @@ async def on_message(message):
 		# If command is not allowed, prevent user from using command
 		if commandAllowed == False:
 			user = message.author.mention
-			response = user + "You do not have the permissions to use this command!"
+			response = user + " You do not have the permissions to use this command!"
 			embed = discord.Embed(title='No Permissions To Use Command', description=response, colour=discord.Colour.red())
 			embed.set_author(name=message.author.display_name, icon_url=message.author.avatar_url)
 			await message.channel.send(embed=embed)
