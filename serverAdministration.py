@@ -482,7 +482,7 @@ def checkMessageForLinks(message):
             return True
     return False
 # Display a list of all banned words
-commandList.append(Command("!bannedWords", "displayBannedWords", "Can display, add, or remove words from banned words list.\nUsage: !bannedWords (optional) <ADD/REMOVE> <WORD>"))
+commandList.append(Command("!bannedWords", "displayBannedWords", "Can display, add, or remove words from banned words list.\nUsage: !bannedWords (optional) <ADD/REMOVE/CLEAR> <WORD>"))
 async def displayBannedWords(client, message):
     if (len(message.content.split(" ")) <= 1):
         response = ""

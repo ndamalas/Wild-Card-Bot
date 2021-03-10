@@ -31,7 +31,6 @@ bannedCommandsByRole = {}
 # Function to get out all commands to the user
 def getCommandList():
 	response = "```"
-	# response = "!commands\n"
 	for command in commandList:
 		response += "" + command + "\n"
 	response += "```"
@@ -46,6 +45,7 @@ def loadMainCommands():
 	commandList["!rolecommands"] = Command("!rolecommands", "roleCommands", "TODO", sys.modules[__name__])
 	commandList["!modules"] = Command("!modules", "getModules", "TODO", sys.modules[__name__])
 	commandList["!rename"] = Command("!rename", "rename", "Used to rename commands.\nUsage: !rename <OLDNAME> <NEWNAME>.", sys.modules[__name__])
+	
 
 
 # Call function above to load the main module commands
@@ -54,6 +54,7 @@ loadMainCommands()
 # Function to handle collisions with command names when being loaded from files
 def handleCollision(command, module):
 	newName = input("Command collision on {} when loading {}.\nPlease enter a new name for {}.\n".format(command.name, module.__name__, command.name))
+	#writeToRename(command.name, newName)
 	command.name = newName
 	commandList[command.name] = command
 	return command
@@ -89,6 +90,22 @@ def loadCommands():
 				commandList[c.name] = c
 #Call function above to load the commands
 loadCommands()
+
+# Get Renames
+def getRenames():
+	data = []
+	with open("commandRenames.txt") as f:
+		data = f.readlines()
+	for i in range(len(data)):
+		# Goes line by line
+		contents = data[i].split(" ")
+		command = commandList[contents[0]]
+		contents[1] = contents[1].rstrip()
+		command.name = contents[1]
+		commandList[contents[1]] = commandList.pop(contents[0])
+#Call function
+getRenames()
+
 
 #collect last modified for modules dir now that it is loaded
 lastmodified = time.ctime(max(os.stat(root).st_mtime for root,_,_ in os.walk("modules")))
@@ -490,10 +507,34 @@ def renameCommand(oldName, newName):
 	command = commandList[oldName]
 	command.name = newName
 	commandList[newName] = commandList.pop(oldName)
+	writeToRename(oldName, newName)
+
+# Function used to write to the renameCommands.txt
+def writeToRename(oldName, newName):
+	# Names will be stored like <NAME IN CODE> <ALIAS>
+	# Find the line number to edit
+	data = []
+	with open("commandRenames.txt") as f:
+		data = f.readlines()
+	found = False
+	for i in range(len(data)):
+		# Goes line by line
+		if oldName in data[i]:
+			found = True
+			contents = data[i].split(" ")
+			newLine = contents[0] + " " + newName + "\n"
+			if contents[0] == newName:
+				newLine = ""
+			data[i] = newLine
+	if found:
+		file = open("commandRenames.txt", "w")
+		for line in data:
+			file.write(line)
+	else:
+		file = open("commandRenames.txt", "a")
+		file.write(oldName + " " + newName + "\n")
 
 
-
-			
 # Display a list of either all command functionality
 async def help(client, message):
 	messageArray = message.content.split(' ')
