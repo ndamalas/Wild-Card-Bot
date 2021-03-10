@@ -614,6 +614,7 @@ async def help(client, message):
 			if messageArray[i] in commandList:
 				command = messageArray[i]
 				embed.add_field(name='`'+command+'`', value=commandList[command].description, inline=False)
+				#embed.add_field(name="Roles than can use this command:")
 			elif messageArray[i] in moduleList: 
 				module = importlib.import_module("modules." + messageArray[i])
 				for c in module.commandList:
