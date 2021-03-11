@@ -499,7 +499,7 @@ def checkMessageForLinks(message):
     return False
 
 # Displays a list of all roles in the server
-commandList.append(Command("!roles", "listRoles"))
+commandList.append(Command("!roles", "listRoles", "Lists all roles in server\nUsage: !roles"))
 async def listRoles(client, message):
     guild = message.guild
     response = ">>> Listing All Server Roles:\n"
@@ -508,7 +508,7 @@ async def listRoles(client, message):
     return
 
 # Create a role
-commandList.append(Command("!createRole", "createRole"))
+commandList.append(Command("!createRole", "createRole", "Creates a new Role in the server\nUsage: !createRole \"role name\""))
 async def createRole(client, message):
     guild = message.guild
     #member = message.author
@@ -521,7 +521,7 @@ async def createRole(client, message):
     return
 
 # Delete a role
-commandList.append(Command("!delRole", "delRole"))
+commandList.append(Command("!delRole", "delRole", "Deletes a Role from the server\nUsage: !delRole \"role name\""))
 async def delRole(client, message):
     guild = message.guild
     #member = message.author
@@ -538,7 +538,7 @@ async def delRole(client, message):
     return
 
 #Gives a role to a user
-commandList.append(Command("!giveRole", "giveRole"))
+commandList.append(Command("!giveRole", "giveRole", "Gives user a role\nUsage: !giveRole \"User#0000\" \"Role Name\""))
 async def giveRole(client, message):
     guild = message.guild
     await message.channel.send("IN GIVE ROLE FUNCTION")
@@ -595,7 +595,7 @@ async def removeRole(client, message):
             return
     await message.channel.send("User does not have specified role")
 
-commandList.append(Command("!banMember", "banMember", "Bans member from server"))
+commandList.append(Command("!banMember", "banMember", "Bans member from server\nUsage: !banMember \"user\" \"reason\""))
 async def banMember(client, message):
     #await message.channel.send("IN BAN MEMBER")
     member = message.author
@@ -626,16 +626,16 @@ async def banMember(client, message):
     #guild.ban(member, reason=message)
     await message.channel.send("User has been banned")
 
-commandList.append(Command("!kickMember", "kickMember", "Kicks member from server"))
+commandList.append(Command("!kickMember", "kickMember", "Kicks member from server\nUsage: !kickMember \"user\" \"reason\""))
 async def kickMember(client, message):
-    #await message.channel.send("In Kick MEMBER")
-    #member = message.author
+    await message.channel.send("In Kick MEMBER")
+    member = message.author
     guild = message.guild
     #response=""
     if len(message.content.split(" ")) != 3:
-        await message.channel.send(">>> Please use format:\n !banMember \"user\" \"reason\"")
+        await message.channel.send(">>> Please use format:\n !kickMember \"user\" \"reason\"")
         return
-    #await message.channel.send("PASSED FORMAT CHECK")
+    await message.channel.send("PASSED FORMAT CHECK")
     user_found = False
     member_to_kick = 0
     userList = message.guild.members
@@ -649,7 +649,10 @@ async def kickMember(client, message):
     #for i in range(3, len(message.content.split(" "))):
         #response+=message.content.split(" ")[i]
     #await message.channel.send(response)
-    await guild.ban(member_to_kick)
+    await guild.kick(member_to_kick)
+    # member.kick(member_to_kick)
+    # client.Kick(member_to_kick)
+    # guild.ban(member_to_kick)
     #guild.ban(member, reason=message)
     await message.channel.send("User has been kicked")
 
