@@ -10,6 +10,9 @@ pip3 install -U google
 pip3 install -U youtube_dl
 ```
 
+You will also need to install ffmpeg from https://ffmpeg.org/download.html
+
+
 ## Making changes
 **Do all testing in a branch until the changes are ready for production**
 
@@ -36,12 +39,18 @@ git merge main newBranchName
 git push origin main
 ```
 
+And then delete the branch when you're done with it using
+```
+git branch -d localBranchName
+git push origin --delete remoteBranchName
+```
+
 ## Writing Commands (Standard Format)
 To make commands in external files, follow the following format:
 
 Start each file with:
 
-``` python
+```python
 # import the command class and Discord library
 from command import Command
 import discord
@@ -66,3 +75,26 @@ commandList.append(Command("!example", "exampleFunction"))
 ```
 
 Take a look at serverAdministrator.py to see another example of how it works!
+
+## Setting up the bot
+* Download all required dependencies
+* Go to the discord developer portal: https://discord.com/developers/
+* Create a new app with "New Application"
+
+In the OAuth2 page:
+* In the scopes box click "bot" and then select "Administrator" in bot permissions.
+* copy the link provided to add the bot to your server
+
+In the Bot page:
+* Click copy to copy your bot authorization token
+* Enable presence intent and server members intent
+
+In the Wild-Card-Bot directory create a new file called ".env" and inside it put:
+`TOKEN = TheTokenYouCopied`
+
+The bot is now ready to run!
+
+
+
+## Running the bot
+After following the setup, you can run the bot by simply using `python3 main.py`
