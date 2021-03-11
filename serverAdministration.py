@@ -849,17 +849,16 @@ async def playMusic(ctx, message):
         if file.endswith(".mp3"):
             os.rename(file, 'file.mp3')
     guild.voice_client.play(discord.FFmpegPCMAudio("file.mp3"))
+    ctx.voice_clients[0].source = discord.PCMVolumeTransformer(ctx.voice_clients[0].source)
     guild.voice_client.is_playing()
     await msg.delete()
     await message.channel.send("Now playing")
 
-# Work in progress. Issues: can decrease volume but not increase volume
 commandList.append(Command("!vol", "adjustVolume", "Allows users to adjust volume\nUsage: !vol <0-100>"))
 async def adjustVolume(ctx, message):
     guild = message.guild
     if guild.voice_client != None:
         volume = float(max(0.0, min(1.0, float(message.content.split(" ")[1]) / 100.0)))
-        ctx.voice_clients[0].source = discord.PCMVolumeTransformer(ctx.voice_clients[0].source)
         ctx.voice_clients[0].source.volume = volume
         print(volume)
         await message.channel.send("Set volume: {}%".format(message.content.split(" ")[1]))
