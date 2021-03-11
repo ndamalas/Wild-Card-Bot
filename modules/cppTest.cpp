@@ -16,6 +16,7 @@ int main(int argc, char* argv[]) {
 		cppTest();
 		return 0;
 	}
-	cout << "Incorrect use!" << endl;
+
+	cout << "Commands to use: !cppTest" << endl;
 	return 0;
 }
