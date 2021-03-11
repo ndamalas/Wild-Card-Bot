@@ -9,7 +9,7 @@ import yfinance as yf
 # Every module has to have a command list
 commandList = []
 
-usage = "Returns basic stock info given a ticker. Usage: '!stocks TICKER'\nAdd the following if you want more information: 'volume', 'day' 'short', 'long', 'business'"
+usage = "Returns basic stock info given a ticker. Usage: '!stock TICKER'\nAdd the following if you want more information: 'all', volume', 'day' 'short', 'longTerm', 'business', and 'more'"
 commandList.append(Command("!stock", "getStock", usage))
 async def getStock(client, message):
 	#Grab ticker data and pull from API
@@ -22,7 +22,8 @@ async def getStock(client, message):
 
 	#start response
 	response = "```\n"
-
+	longSum = ''
+	link = ''
 	#grab basic stock data
 	currentPrice = td["regularMarketPrice"]
 	name = td["shortName"]
@@ -30,15 +31,18 @@ async def getStock(client, message):
 
 	#if there are extra tags, append the desired data
 	input_data = message.content.split(' ')
+	#allow users to grab all data at once
+	allData = "all" in input_data
+
 	if(len(input_data) > 2):
 
-		if("vol" in input_data or "volume" in input_data):
+		if("vol" in input_data or "volume" in input_data or allData):
 			#Volumes
 			volume = td["volume"]
 			mktCap = td["marketCap"]
 			response = response + "Volume: {}\nMarket Cap: {}\n".format(volume, mktCap)
 
-		if("day" in input_data or "daily" in input_data):
+		if("day" in input_data or "daily" in input_data or allData):
 			#Daily info
 			dayHigh = td["dayHigh"]
 			dayLow = td["dayLow"]
@@ -46,7 +50,7 @@ async def getStock(client, message):
 			lastClose = td["previousClose"]
 			response = response + "Daily Info:\n\tHigh: {}\n\tLow: {}\n\tOpen: {}\n\tPrevious Close: {}\n".format(dayHigh, dayLow, lastOpen, lastClose)
 		
-		if("long" in input_data):
+		if("longTerm" in input_data or allData):
 			#LongTerm Data
 			yearHigh = td["fiftyTwoWeekHigh"]
 			yearLow = td["fiftyTwoWeekLow"]
@@ -57,7 +61,7 @@ async def getStock(client, message):
 		#greeks
 		beta=td["beta"]
 
-		if("short" in input_data):
+		if("short" in input_data or allData):
 			#shorts
 			shortPerc = td["shortPercentOfFloat"]
 			shortPerMonth = td["sharesShortPriorMonth"]
@@ -65,7 +69,7 @@ async def getStock(client, message):
 			outstanding = td["sharesOutstanding"]
 			response = response + "Short Data:\n\tShort Ratio: {}\n\tShort % of Float: {}\n\tShares Outstanding: {}\n\tShares Short Last Month: {}\n".format(shortRatio, shortPerc, outstanding, shortPerMonth)
 		
-		if("business" in input_data or "company" in input_data):
+		if("business" in input_data or "company" in input_data or allData):
 			#business info
 			numEmployees = td["fullTimeEmployees"]
 			industry = td["industry"]
@@ -82,11 +86,19 @@ async def getStock(client, message):
 
 			response = response +  "Business Information:\n\tName: {}\n\tIndustry and Sector: {}, {}\n\tNumber of Employees: {}\n\tAddress: {}, {} {}, {}, {}\n\tPhone: {}\n\tWebsite: {}\n".format(longName, industry, sector, numEmployees, address, city, state, zipCode, country, phone, website)
 
-			#response = response + "Summary: \t{}\n".format(longSum)
+			Summary = "```\nBusiness Summary: \n\t{}\n```".format(longSum)
+
+		if("more" in input_data or allData):
+			link = "Link for more information: https://www.finance.yahoo.com/quote/{}\n".format(tickerName.upper())
 
 	#Return the logo and data to the user
 	await message.channel.send(logo)
 	await message.channel.send(response+"\n```")
-# ticker_data = yf.Ticker('MSFT').info
-# for x in sorted(ticker_data):
-# 	print('{}: {}'.format(x, ticker_data[x]))
+	#add summary and link as extra so we don't exceed data limits and so link is clickable
+	if len(longSum) > 1:
+		if len(Summary) > 2000:
+			await message.channel.send("Summary is too long to send here, please use 'more' to get the link to view the summary.\n")
+		else:
+			await message.channel.send(Summary)
+	if len(link) > 1:
+		await message.channel.send(link)
