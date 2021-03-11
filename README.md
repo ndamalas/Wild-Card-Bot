@@ -42,8 +42,9 @@ To make commands in external files, follow the following format:
 Start each file with:
 
 ``` python
-# import the command class
+# import the command class and Discord library
 from command import Command
+import discord
 
 # instantiate the list that will hold all of the commands
 commandList = []
@@ -59,7 +60,7 @@ async def exampleFunction(client, message):
     response = "This is an example of a function setup."
     await message.channel.send(response)
 
-#Example Command and Function: command is !example, and the function name is exampleFunction
+# Example Command and Function: command is !example, and the function name is exampleFunction
 # Add the command to the command list, with the first argument being the command users will use and the second being the name of the function that will be called
 commandList.append(Command("!example", "exampleFunction"))
 ```
