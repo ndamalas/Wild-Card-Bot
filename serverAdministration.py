@@ -742,7 +742,7 @@ async def muteUser(ctx, message):
 
 
 
-commandList.append(Command("!join", "joinvc", ""))
+commandList.append(Command("!join", "joinvc", "TODO"))
 async def joinvc(ctx, message):
     guild = message.guild
     channel = None

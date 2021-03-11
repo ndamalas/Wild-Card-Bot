@@ -58,7 +58,6 @@ loadMainCommands()
 # Function to handle collisions with command names when being loaded from files
 def handleCollision(command, module):
 	newName = input("Command collision on {} when loading {}.\nPlease enter a new name for {}.\nWarning: this name will be changed in the internal python file.\n".format(command.name, module.__name__, command.name))
-	#writeToRename(command.name, newName)
 	oldName = command.name
 	command.name = newName
 	commandList[newName] = command
@@ -78,7 +77,6 @@ def handleCollision(command, module):
 	file = open(filename, "w")
 	for line in lines:
 		file.write(line)
-	#return command
 
 # Load commands from the serverAdministration.py file
 def loadAdminCommands():
@@ -657,7 +655,6 @@ async def help(client, message):
 			if count > 24:
 				await message.channel.send(embed=embed)
 				embed = discord.Embed(title = "Help cont.", colour = discord.Colour.green())
-				embed.clear_fields()
 				count = 0
 	await message.channel.send(embed=embed)
 
