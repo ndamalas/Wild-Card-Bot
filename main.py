@@ -376,7 +376,7 @@ async def roleCommands(client, message):
         response = "Please provide a role name, a command, and whether to allow or block the command!\n"
         response += "Command format: **!rolecommands allow/block role-name command**\n\n"
         response += "You may also view the commands the current role can call.\n"
-        response += "Command format: **!removecommands perms role-name**"
+        response += "Command format: **!rolecommands perms role-name**"
         embed = discord.Embed(title='!rolecommands Usage', description=response, colour=discord.Colour.blue())
         await message.channel.send(embed=embed)
         action = "error" # Prevent the prompt from being printed twice
