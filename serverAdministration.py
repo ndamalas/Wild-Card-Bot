@@ -3,6 +3,7 @@ import string
 import discord
 import asyncio
 import youtube_dl
+import os
 from googlesearch import search
 from discord.voice_client import VoiceClient
 from discord import FFmpegPCMAudio
@@ -582,7 +583,7 @@ async def banMember(client, message):
         #response+=message.content.split(" ")[i]
     #await message.channel.send(response)
     await guild.ban(member_to_ban)
-    #guild.ban(member, reason=message)  
+    #guild.ban(member, reason=message)
     await message.channel.send("User has been banned")
 
 commandList.append(Command("!kickMember", "kickMember", "Kicks member from server"))
@@ -609,7 +610,7 @@ async def kickMember(client, message):
         #response+=message.content.split(" ")[i]
     #await message.channel.send(response)
     await guild.ban(member_to_kick)
-    #guild.ban(member, reason=message)  
+    #guild.ban(member, reason=message)
     await message.channel.send("User has been kicked")
 
 # Display a list of all banned words
@@ -741,8 +742,7 @@ async def muteUser(ctx, message):
         await message.channel.send("Invalid input\nUsage: !timeout @USER <SECONDS>")
 
 
-
-commandList.append(Command("!join", "joinvc", ""))
+commandList.append(Command("!join", "joinvc", "Bot joins specified voice channel.\nUsage: !join <VOICE-CHANNEL>"))
 async def joinvc(ctx, message):
     guild = message.guild
     channel = None
@@ -755,25 +755,67 @@ async def joinvc(ctx, message):
 
     await channel.connect()
 
+commandList.append(Command("!leave", "leavevc", "Bot leaves voice channel.\nUsage: !leave"))
+async def leavevc(ctx, message):
+    guild = message.guild
+    if guild.voice_client is not None:
+        await guild.voice_client.disconnect()
 
-ytdl_format_options = {
-    'format': 'bestaudio/best',
-    'outtmpl': '%(extractor)s-%(id)s-%(title)s.%(ext)s',
-    'restrictfilenames': True,
-    'noplaylist': True,
-    'nocheckcertificate': True,
-    'ignoreerrors': False,
-    'logtostderr': False,
-    'quiet': True,
-    'no_warnings': True,
-    'default_search': 'auto',
-    'source_address': '0.0.0.0'
-}
+commandList.append(Command("!play", "playMusic", "Play audio from youtube links through the bot\nUsage: !play <URL>"))
+async def playMusic(ctx, message):
+    guild = message.guild
+    if guild.voice_client == None:
+        for vc in guild.voice_channels:
+            await vc.connect()
+            break
+    song = os.path.isfile("file.mp3")
+    try:
+        if song:
+            os.remove("file.mp3")
+    except PermissionError:
+        await message.channel.send("Wait")
+        return
+    msg = await message.channel.send("Getting everything ready, playing audio soon")
+    opts = {
+        'format': 'bestaudio/best',
+        'outtmpl': '%(extractor)s-%(id)s-%(title)s.%(ext)s',
+        'restrictfilenames': True,
+        'noplaylist': True,
+        'nocheckcertificate': True,
+        'ignoreerrors': False,
+        'logtostderr': False,
+        'quiet': True,
+        'no_warnings': True,
+        'default_search': 'auto',
+        'source_address': '0.0.0.0',
+        'postprocessors': [{
+            'key': 'FFmpegExtractAudio',
+            'preferredcodec': 'mp3',
+            'preferredquality': '192',
+        }],
+    }
+    with youtube_dl.YoutubeDL(opts) as ydl:
+        ydl.download([message.content.split(" ")[1]])
+    for file in os.listdir("./"):
+        if file.endswith(".mp3"):
+            os.rename(file, 'file.mp3')
+    guild.voice_client.play(discord.FFmpegPCMAudio("file.mp3"))
+    guild.voice_client.is_playing()
+    await msg.delete()
+    await message.channel.send("Now playing")
 
-ffmpeg_options = {
-    'options': '-vn'
-}
-
+# Work in progress. Issues: can decrease volume but not increase volume
+commandList.append(Command("!vol", "adjustVolume", "Allows users to adjust volume\nUsage: !vol <0-100>"))
+async def adjustVolume(ctx, message):
+    guild = message.guild
+    if guild.voice_client != None:
+        volume = float(max(0.0, min(1.0, float(message.content.split(" ")[1]) / 100.0)))
+        ctx.voice_clients[0].source = discord.PCMVolumeTransformer(ctx.voice_clients[0].source)
+        ctx.voice_clients[0].source.volume = volume
+        print(volume)
+        await message.channel.send("Set volume: {}%".format(message.content.split(" ")[1]))
+    else:
+        await message.channel.send("Bot is not connected to any voice channel")
 
 #def helperBlockFunction(ctx, args)
 # For testing ONLY
