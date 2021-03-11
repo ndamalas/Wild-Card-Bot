@@ -571,6 +571,30 @@ async def giveRole(client, message):
     await message.channel.send("ROLE GIVEN")
     return
 
+#Removes a role from a user
+commandList.append(Command("!removeRole", "removeRole", "Removes a role from user\nUsage: !removeRole <USER-NAME> <ROLE-NAME>"))
+async def removeRole(client, message):
+    guild = message.guild
+    if len(message.content.split(" ")) != 3:
+        await message.channel.send(">>> Please use format: \n !removeRole \"User#0000\" \"Role Name\"")
+    user_found = False
+    member=0
+    userList = message.guild.members
+    #await message.channel.send(userList[0])
+    for user in userList:
+        if str(user) == message.content.split(" ")[1]:
+            user_found = True
+            member = user
+    if user_found == False:
+        await message.channel.send("User not found")
+        return
+    for role in guild.roles:
+        if role.name == message.content.split(" ")[2]:
+            await member.remove_roles(role)
+            await message.channel.send("Role removed")
+            return
+    await message.channel.send("User does not have specified role")
+
 commandList.append(Command("!banMember", "banMember", "Bans member from server"))
 async def banMember(client, message):
     #await message.channel.send("IN BAN MEMBER")
