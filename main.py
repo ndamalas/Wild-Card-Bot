@@ -200,6 +200,10 @@ async def removeFile(message):
 	reload()
 	await message.channel.send("File {} successfully removed.".format(filename))
 
+async def getModules(client, message):
+	reponse = listModules()
+	await message.channel.send(reponse)
+
 def listModules():
 	response = "```\n"
 	for filename in os.listdir("modules"):
