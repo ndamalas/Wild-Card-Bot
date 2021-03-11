@@ -557,14 +557,14 @@ async def giveRole(client, message):
 
 commandList.append(Command("!banMember", "banMember", "Bans member from server"))
 async def banMember(client, message):
-    await message.channel.send("IN BAN MEMBER")
+    #await message.channel.send("IN BAN MEMBER")
     member = message.author
     guild = message.guild
     response=""
     if len(message.content.split(" ")) != 3:
         await message.channel.send(">>> Please use format:\n !banMember \"user\" \"reason\"")
         return
-    await message.channel.send("PASSED FORMAT CHECK")
+    #await message.channel.send("PASSED FORMAT CHECK")
     user_found = False
     member_to_ban = 0
     userList = message.guild.members
@@ -579,6 +579,33 @@ async def banMember(client, message):
         #response+=message.content.split(" ")[i]
     #await message.channel.send(response)
     await guild.ban(member_to_ban)
+    #guild.ban(member, reason=message)  
+    await message.channel.send("User has been banned")
+
+commandList.append(Command("!kickMember", "kickMember", "Kicks member from server"))
+async def kickMember(client, message):
+    #await message.channel.send("In Kick MEMBER")
+    #member = message.author
+    guild = message.guild
+    #response=""
+    if len(message.content.split(" ")) != 3:
+        await message.channel.send(">>> Please use format:\n !banMember \"user\" \"reason\"")
+        return
+    #await message.channel.send("PASSED FORMAT CHECK")
+    user_found = False
+    member_to_kick = 0
+    userList = message.guild.members
+    for user in userList:
+        if str(user) == message.content.split(" ")[1]:
+            user_found = True
+            member_to_kick = user
+    if user_found == False:
+        await message.channel.send("USER NOT FOUND")
+        return
+    #for i in range(3, len(message.content.split(" "))):
+        #response+=message.content.split(" ")[i]
+    #await message.channel.send(response)
+    await guild.ban(member_to_kick)
     #guild.ban(member, reason=message)  
     await message.channel.send("User has been kicked")
 
