@@ -144,6 +144,7 @@ moduleLen = len(os.listdir("modules"))
 def reload():
 	#error, accessing before assignment?
 	commandList.clear()
+	loadMainCommands()
 	loadAdminCommands()
 	loadCommands()
 
@@ -170,7 +171,7 @@ checkForChanges(f_stop)
 
 
 #Downloading function
-async def downloadFile(message):
+async def downloadFile(client, message):
 	#Check if user has administrator privleges
 	if(not message.author.guild_permissions.administrator):
 		await message.channel.send("You do not have permission to add files")
@@ -205,7 +206,7 @@ async def downloadFile(message):
 		await message.channel.send("No file attached!")
 
 #used to remove files
-async def removeFile(message):
+async def removeFile(client, message):
 	#check for admin priv
 	if(not message.author.guild_permissions.administrator):
 		await message.channel.send("You do not have permission to delete files")
@@ -762,8 +763,6 @@ async def on_message(message):
 			await commandList[name].callCommand(client, message)
 			return
 		await message.channel.send("Sorry that command was not recognized!")
-
-
 
 #Run the bot
 client.run(TOKEN)

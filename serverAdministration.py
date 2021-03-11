@@ -521,8 +521,8 @@ async def createRole(client, message):
     return
 
 # Delete a role
-commandList.append(Command("!dRole", "dRole"))
-async def dRole(client, message):
+commandList.append(Command("!delRole", "delRole"))
+async def delRole(client, message):
     guild = message.guild
     #member = message.author
     if len(message.content.split(" ")) != 2:
