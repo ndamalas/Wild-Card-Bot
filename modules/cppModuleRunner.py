@@ -9,7 +9,10 @@ import subprocess
 commandList = []
 
 # Command uses !cpp file-name command-name (any arguments)
-# First compile the code into a .exe file
+# How to use this module runner:
+# First compile the .cpp code into a .exe file
+# Add the .exe file to the modules folder
+# Use the above command format to the cpp module (Example: !cpp cppTest !cppTest)
 commandList.append(Command("!cpp", "cppRunner", "Runs a module that uses cpp. Format: !cpp file-name command-name (any arguments)"))
 async def cppRunner(client, message):
     if len(message.content.split(" ")) < 3:
