@@ -33,6 +33,18 @@ def readBannedWords():
     file.close()
 readBannedWords()
 
+# List of banned users
+bannedUsers = []
+# Will read in words into the bannedUsers list
+def readBannedUsers():
+    file = open("bannedUsers.txt", "r")
+    line = file.readline()
+    while (line):
+        bannedUsers.append(line[:len(line)-1])
+        line = file.readline()
+    file.close()
+readBannedUsers()
+
 # Display a list of either all Users or only Users with a certain role
 commandList.append(Command("!users", "displayAllUsers", "Will display all of the users if just given !users.\nUse !users <ROLE> to list users of a specific role."))
 async def displayAllUsers(client, message):
@@ -576,6 +588,10 @@ async def banMember(client, message):
         if str(user) == message.content.split(" ")[1]:
             user_found = True
             member_to_ban = user
+            bannedUsers.append(str(user.id))
+            file = open("bannedUsers.txt", "a")
+            file.write(str(user.id) + "\n")
+            file.close()
     if user_found == False:
         await message.channel.send("USER NOT FOUND")
         return
@@ -612,6 +628,15 @@ async def kickMember(client, message):
     await guild.ban(member_to_kick)
     #guild.ban(member, reason=message)
     await message.channel.send("User has been kicked")
+
+commandList.append(Command("!bannedMembers", "displayBannedMembers", "Shows list of banned users."))
+async def displayBannedMembers(client, message):
+    response = ""
+    for users in bannedUsers:
+        response += users + "\n"
+    if response == "":
+        response = "The banned users list is currently empty."
+    await message.channel.send(response)
 
 # Display a list of all banned words
 commandList.append(Command("!bannedWords", "displayBannedWords", "Can display, add, or remove words from banned words list.\nUsage: !bannedWords (optional) <ADD/REMOVE/CLEAR> <WORD>"))
