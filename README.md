@@ -7,6 +7,7 @@ pip3 install -U python-dotenv
 pip3 install -U importlib
 pip3 install -U beautifulsoup4
 pip3 install -U google
+pip3 install -U youtube_dl
 ```
 
 ## Making changes

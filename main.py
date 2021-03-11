@@ -57,24 +57,45 @@ loadMainCommands()
 
 # Function to handle collisions with command names when being loaded from files
 def handleCollision(command, module):
-	newName = input("Command collision on {} when loading {}.\nPlease enter a new name for {}.\n".format(command.name, module.__name__, command.name))
-	#writeToRename(command.name, newName)
+	newName = input("Command collision on {} when loading {}.\nPlease enter a new name for {}.\nWarning: this name will be changed in the internal python file.\n".format(command.name, module.__name__, command.name))
+	oldName = command.name
 	command.name = newName
-	commandList[command.name] = command
-	return command
+	commandList[newName] = command
+	# Change name in the python file
+	filename = command.module.__name__
+	filename = filename.replace('.', '/')
+	filename += ".py"
+	lines = []
+	with open(filename) as f:
+		lines = f.readlines()
+	for i in range(len(lines)):
+		# Goes line by line
+		if "Command(" in lines[i] and oldName in lines[i]:
+			newLine = lines[i]
+			newLine = newLine.replace(oldName, newName)
+			lines[i] = newLine
+	file = open(filename, "w")
+	for line in lines:
+		file.write(line)
 
 # Load commands from the serverAdministration.py file
 def loadAdminCommands():
 	for c in serverAdministration.commandList:
-		# Check for command collisions
-		if c.name in commandList:
-			c = handleCollision(c, serverAdministration)
-		# If no collisions, load the module
 		c.module = serverAdministration
+		# If no collisions, load the module
 		commandList[c.name] = c
 
 # Call to load the admin commands using the function above
 loadAdminCommands()
+
+#Now refresh function (when we make it) is just clearing commandList and calling loadAdminCommands and loadCommands()
+#Reload: clear command list and reload in commands
+def reload():
+	#error, accessing before assignment?
+	commandList.clear()
+	loadMainCommands()
+	loadAdminCommands()
+	loadCommands()
 
 #Function to load in commands
 def loadCommands():
@@ -88,9 +109,11 @@ def loadCommands():
 			module = importlib.import_module("modules." + filename)
 			# for each command in the module commandList, if not a collision, add it to the main commandList dictionary with the command as they key and module as the value
 			for c in module.commandList:
-				if c.name in commandList:
-					c = handleCollision(c, module)
 				c.module = module
+				if c.name in commandList:
+					handleCollision(c, module)
+					reload()
+					return
 				commandList[c.name] = c
 #Call function above to load the commands
 loadCommands()
@@ -115,13 +138,7 @@ getRenames()
 lastmodified = time.ctime(max(os.stat(root).st_mtime for root,_,_ in os.walk("modules")))
 moduleLen = len(os.listdir("modules"))
 print("Len {}\nTime {}\n".format(moduleLen, lastmodified))
-#Now refresh function (when we make it) is just clearing commandList and calling loadAdminCommands and loadCommands()
-#Reload: clear command list and reload in commands
-def reload():
-	#error, accessing before assignment?
-	commandList.clear()
-	loadAdminCommands()
-	loadCommands()
+
 
 #Check for changes in modules directory
 def checkForChanges(f_stop):
@@ -629,10 +646,16 @@ async def help(client, message):
 				return
 	else:
 		# This will display a response that will hold descriptions of all of the commands
+		count = 0
 		embed = discord.Embed(title = "Help", description = "**How to use all of the commands.**", colour = discord.Colour.green())
 		embed.set_author(name=message.author.display_name, icon_url=message.author.avatar_url)
 		for command in commandList:
 			embed.add_field(name='`'+command+'`', value=commandList[command].description, inline=False)
+			count += 1
+			if count > 24:
+				await message.channel.send(embed=embed)
+				embed = discord.Embed(title = "Help cont.", colour = discord.Colour.green())
+				count = 0
 	await message.channel.send(embed=embed)
 
 
