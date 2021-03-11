@@ -3,7 +3,7 @@ import discord
 import os
 import subprocess
 
-#Function to test sending data to external commands
+# Module that runs complied c++ programs
 
 # Every module has to have a command list
 commandList = []
