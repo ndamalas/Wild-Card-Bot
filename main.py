@@ -6,6 +6,7 @@ import importlib
 import asyncio
 import discord
 import serverAdministration
+import time
 from dotenv import load_dotenv
 
 #import requests for file download
@@ -706,11 +707,9 @@ async def on_message(message):
 		guild = message.guild
 		for member in guild.members:
 			if member.mention == user:
-				for role in guild.roles:
-					if role.name == "Muted":
-						await member.add_roles(role, reason = None)
-						await asyncio.sleep(5)
-						await member.remove_roles(role, reason = None)
+				timeout = time.time() + 10
+				while time.time() < timeout:
+					await message.channel.purge(limit = 20, check = lambda x: (x.author.mention == user))
 		return
 
 	# Remove links if the channel is currently being monitored
