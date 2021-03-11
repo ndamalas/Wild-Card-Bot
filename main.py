@@ -137,8 +137,19 @@ getRenames()
 #collect last modified for modules dir now that it is loaded
 lastmodified = time.ctime(max(os.stat(root).st_mtime for root,_,_ in os.walk("modules")))
 moduleLen = len(os.listdir("modules"))
+<<<<<<< HEAD
 print("Len {}\nTime {}\n".format(moduleLen, lastmodified))
 
+=======
+#print("Len {}\nTime {}\n".format(moduleLen, lastmodified))
+#Now refresh function (when we make it) is just clearing commandList and calling loadAdminCommands and loadCommands()
+#Reload: clear command list and reload in commands
+def reload():
+	#error, accessing before assignment?
+	commandList.clear()
+	loadAdminCommands()
+	loadCommands()
+>>>>>>> stocks
 
 #Check for changes in modules directory
 def checkForChanges(f_stop):
@@ -152,7 +163,7 @@ def checkForChanges(f_stop):
 			print("Change detected in module file!")
 			moduleLen = newLen
 			lastmodified = newmod
-			print("Len {}\nTime {}\n".format(moduleLen, lastmodified))
+			#print("Len {}\nTime {}\n".format(moduleLen, lastmodified))
 			reload()
 		#every 60 seconds
 		threading.Timer(60, checkForChanges, [f_stop]).start()
