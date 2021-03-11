@@ -3,6 +3,7 @@ import os
 import os.path
 import sys
 import importlib
+import asyncio
 import discord
 import serverAdministration
 from dotenv import load_dotenv
@@ -48,7 +49,7 @@ def loadMainCommands():
 	commandList["!rolecommands"] = Command("!rolecommands", "roleCommands", "TODO", sys.modules[__name__], permissions=["manage_permissions"])
 	commandList["!modules"] = Command("!modules", "getModules", "Lists all of the current modules that the user has on their bot.\nUsage: !modules", sys.modules[__name__], permissions=["administrator"])
 	commandList["!rename"] = Command("!rename", "rename", "Used to rename commands.\nUsage: !rename <OLDNAME> <NEWNAME>.", sys.modules[__name__], permissions=["administrator"])
-	
+
 
 
 # Call function above to load the main module commands
@@ -348,7 +349,7 @@ async def roleCommands(client, message):
         response += "Command format: **!removecommands perms role-name**"
         embed = discord.Embed(title='!rolecommands Usage', description=response, colour=discord.Colour.blue())
         await message.channel.send(embed=embed)
-        action = "error" # Prevent the prompt from being printed twice 
+        action = "error" # Prevent the prompt from being printed twice
 	# If an action was not specified or incorrectly specified, notify the user
     if action == 0:
         response = "Please specify whether you want to allow or block a role from a command!\n"
@@ -465,7 +466,7 @@ async def blockCommandFromRole(message, command, role, nameOrId):
 			bannedCommandsByRole[roleFound.id].append(command)
 			response = command + " has been blocked for " + roleFound.name + "!"
 			embed = discord.Embed(title='Command Blocked', description=response, colour=discord.Colour.blue())
-			await message.channel.send(embed=embed)	
+			await message.channel.send(embed=embed)
 	else:
 		bannedCommandsByRole[roleFound.id] = []
 		bannedCommandsByRole[roleFound.id].append(roleFound.permissions)
@@ -595,7 +596,7 @@ def writeToRename(oldName, newName):
 		file.write(oldName + " " + newName + "\n")
 
 # Makes a list of modules without ".py" at the end and stores them in moduleList
-def makeModuleList(): 
+def makeModuleList():
 	for filename in os.listdir("modules"):
 		# grab all .py files except for the init file
 		if (filename.endswith(".py") and not filename.startswith("__init__")):
@@ -615,7 +616,7 @@ async def help(client, message):
 				command = messageArray[i]
 				embed.add_field(name='`'+command+'`', value=commandList[command].description, inline=False)
 				#embed.add_field(name="Roles than can use this command:")
-			elif messageArray[i] in moduleList: 
+			elif messageArray[i] in moduleList:
 				module = importlib.import_module("modules." + messageArray[i])
 				for c in module.commandList:
 					embed.add_field(name='`'+c.name+'`', value=c.description, inline=False)
@@ -654,7 +655,7 @@ async def on_message(message):
 	#if message sender is the bot, don't check it
 	if message.author == client.user:
 		return
-	
+
 	# Remove messages with banned words
 	# True is returned if the message should be deleted for having a banned word
 	if serverAdministration.checkMessageForBannedWords(message) == True:
@@ -666,6 +667,14 @@ async def on_message(message):
 		embed.set_author(name=message.author.display_name, icon_url=message.author.avatar_url)
 		await message.channel.send(embed=embed)
 		await message.delete()
+		guild = message.guild
+		for member in guild.members:
+			if member.mention == user:
+				for role in guild.roles:
+					if role.name == "Muted":
+						await member.add_roles(role, reason = None)
+						await asyncio.sleep(5)
+						await member.remove_roles(role, reason = None)
 		return
 
 	# Remove links if the channel is currently being monitored
