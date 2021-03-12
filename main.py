@@ -637,12 +637,16 @@ def makeModuleList():
 def rolesThatCanUseEachCommand(message, command):
 	response = ""
 	for roleFound in message.guild.roles:
-		if roleFound.id in bannedCommandsByRole and len(bannedCommandsByRole[roleFound.id]) > 1:
+		if roleFound.id in bannedCommandsByRole:
 			if command not in bannedCommandsByRole[roleFound.id]:
-				if (roleFound.name == "@everyone"):
+				if roleFound.name == "@everyone":
 					response = roleFound.name
 					return response
-				response += roleFound.name + " "
+				response += roleFound.name + ", "
+	if len(response) == 0:
+		response = "***No roles can use this command.***"
+	else:
+		response = response[:-2]
 	return response
 
 # Display a list of either all command functionality
@@ -656,12 +660,12 @@ async def help(client, message):
 		for i in range(1, len(messageArray)):
 			if messageArray[i] in commandList:
 				command = messageArray[i]
-				rolesAllowed = "\n**Roles:**" + rolesThatCanUseEachCommand(message, command)
+				rolesAllowed = "\n**Roles:** " + rolesThatCanUseEachCommand(message, command)
 				if commandList[command].description == None:
-					commandList[command].description = rolesAllowed
+					descriptionAndRoles = rolesAllowed
 				else:
-					commandList[command].description = commandList[command].description + rolesAllowed
-				embed.add_field(name='`'+command+'`', value=commandList[command].description, inline=False)
+					descriptionAndRoles = commandList[command].description + rolesAllowed
+				embed.add_field(name='`'+command+'`', value=descriptionAndRoles, inline=False)
 				#embed.add_field(name="Roles than can use this command:")
 			elif messageArray[i] in moduleList:
 				module = importlib.import_module("modules." + messageArray[i])
@@ -676,12 +680,12 @@ async def help(client, message):
 		embed = discord.Embed(title = "Help", description = "**How to use all of the commands.**", colour = discord.Colour.green())
 		embed.set_author(name=message.author.display_name, icon_url=message.author.avatar_url)
 		for command in commandList:
-			rolesAllowed = "\n**Roles:**" + rolesThatCanUseEachCommand(message, command)
+			rolesAllowed = "\n**Roles:** " + rolesThatCanUseEachCommand(message, command)
 			if commandList[command].description == None:
-				commandList[command].description = rolesAllowed
+				descriptionAndRoles = rolesAllowed
 			else:
-				commandList[command].description = commandList[command].description + rolesAllowed
-			embed.add_field(name='`'+command+'`', value=commandList[command].description, inline=False)
+				descriptionAndRoles = commandList[command].description + rolesAllowed
+			embed.add_field(name='`'+command+'`', value=descriptionAndRoles, inline=False)
 			count += 1
 			if count > 24:
 				await message.channel.send(embed=embed)
