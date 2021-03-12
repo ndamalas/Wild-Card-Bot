@@ -91,12 +91,12 @@ loadAdminCommands()
 
 #Now refresh function (when we make it) is just clearing commandList and calling loadAdminCommands and loadCommands()
 #Reload: clear command list and reload in commands
-def reload():
-	#error, accessing before assignment?
-	commandList.clear()
-	loadMainCommands()
-	loadAdminCommands()
-	loadCommands()
+# def reload():
+# 	#error, accessing before assignment?
+# 	commandList.clear()
+# 	loadMainCommands()
+# 	loadAdminCommands()
+# 	loadCommands()
 
 #Function to load in commands
 def loadCommands():
@@ -135,9 +135,7 @@ def getRenames():
 getRenames()
 
 
-#collect last modified for modules dir now that it is loaded
-lastmodified = time.ctime(max(os.stat(root).st_mtime for root,_,_ in os.walk("modules")))
-moduleLen = len(os.listdir("modules"))
+
 
 #print("Len {}\nTime {}\n".format(moduleLen, lastmodified))
 #Now refresh function (when we make it) is just clearing commandList and calling loadAdminCommands and loadCommands()
@@ -149,7 +147,10 @@ def reload():
 	loadAdminCommands()
 	loadCommands()
 
-
+### MULTITHREADING
+#collect last modified for modules dir now that it is loaded
+lastmodified = time.ctime(max(os.stat(root).st_mtime for root,_,_ in os.walk("modules")))
+moduleLen = len(os.listdir("modules"))
 #Check for changes in modules directory
 def checkForChanges(f_stop):
 	global moduleLen
@@ -164,8 +165,8 @@ def checkForChanges(f_stop):
 			lastmodified = newmod
 			#print("Len {}\nTime {}\n".format(moduleLen, lastmodified))
 			reload()
-		#every 60 seconds
-		threading.Timer(60, checkForChanges, [f_stop]).start()
+		#every 5 seconds
+		threading.Timer(5, checkForChanges, [f_stop]).start()
 #have alternative threading event running to check for changes
 f_stop = threading.Event()
 checkForChanges(f_stop)
