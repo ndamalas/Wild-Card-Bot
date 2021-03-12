@@ -45,8 +45,8 @@ def getCommandList():
 def loadMainCommands():
 	commandList["!help"] = Command("!help", "help", "Will display all of the commands and descriptions if given no arguments.\nTo view only a specific command's description and usage: Use !help <COMMAND>.\nTo view specific modules' commands' descriptions and usages: Use !help <MODULENAME (without .py)>.", sys.modules[__name__])
 	commandList["!commands"] = Command("!commands", "getCommands", "Will display a list of all available comamnds.\nAn alias for this command is to just type \"!\".", sys.modules[__name__])
-	commandList["!add"] = Command("!add", "downloadFile", "TODO", sys.modules[__name__], permissions=["administrator"])
-	commandList["!del"] = Command("!del", "removeFile", "TODO", sys.modules[__name__], permissions=["administrator"])
+	commandList["!add"] = Command("!add", "downloadFile", "Place as a comment on an uploaded function file to add it to the modules folder", sys.modules[__name__], permissions=["administrator"])
+	commandList["!del"] = Command("!del", "removeFile", "Use with the name of a module to remove it from the modules folder. !del <filename>", sys.modules[__name__], permissions=["administrator"])
 	commandList["!rolecommands"] = Command("!rolecommands", "roleCommands", "TODO", sys.modules[__name__], permissions=["manage_permissions"])
 	commandList["!modules"] = Command("!modules", "getModules", "Lists all of the current modules that the user has on their bot.\nUsage: !modules", sys.modules[__name__], permissions=["administrator"])
 	commandList["!rename"] = Command("!rename", "rename", "Used to rename commands.\nUsage: !rename <OLDNAME> <NEWNAME>.", sys.modules[__name__], permissions=["administrator"])
