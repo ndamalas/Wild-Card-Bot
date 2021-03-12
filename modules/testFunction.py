@@ -9,7 +9,7 @@ prefix = '!external'
 commandList = []
 # Set the module to None, because it will be changed when added to the main
 # bot's command list
-commandList.append(Command("!test", "func"))
+commandList.append(Command("!test", "func", "Just a useless function for testing."))
 #function accepts the client and message
 #needs to be async
 #Since we can pass client and message we can have these functions do anything
@@ -19,7 +19,7 @@ async def func(client, message):
 
 
 
-commandList.append(Command("!testTest", "testFunc"))
+commandList.append(Command("!testTest", "testFunc", "Just a useless function for testing."))
 async def testFunc(client, message):
 	response = 'TestTest'
 	await message.channel.send(response)

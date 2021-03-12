@@ -635,12 +635,15 @@ def makeModuleList():
 			moduleList.append(fileAdded)
 
 def rolesThatCanUseEachCommand(message, command):
-    response = ""
-    for roleFound in message.guild.roles:
-        if roleFound.id in bannedCommandsByRole and len(bannedCommandsByRole[roleFound.id]) > 1:
-            if command not in bannedCommandsByRole[roleFound.id]:
-                response += roleFound.name + " "
-    return response
+	response = ""
+	for roleFound in message.guild.roles:
+		if roleFound.id in bannedCommandsByRole and len(bannedCommandsByRole[roleFound.id]) > 1:
+			if command not in bannedCommandsByRole[roleFound.id]:
+				if (roleFound.name == "@everyone"):
+					response = roleFound.name
+					return response
+				response += roleFound.name + " "
+	return response
 
 # Display a list of either all command functionality
 async def help(client, message):

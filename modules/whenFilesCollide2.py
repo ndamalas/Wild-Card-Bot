@@ -6,10 +6,10 @@ from command import Command
 
 
 commandList = []
-commandList.append(Command("!fixcollide1", "func"))
+commandList.append(Command("!fixcollide1", "func", "Just a useless function for testing."))
 async def func(client, message):
     response = 'In collide'
     await message.channel.send(response)
 
-commandList.append(Command("!fixcollide2", "func"))
+commandList.append(Command("!fixcollide2", "func", "Just a useless function for testing."))
     
