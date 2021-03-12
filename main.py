@@ -693,11 +693,12 @@ async def on_message(message):
 		return
 
 	# Check if user is muted
+	# True is returned if the author is currently muted
 	if serverAdministration.checkAuthorIsMuted(message) == True:
 		user = message.author.mention
 		response = user + " You are currently muted!\n"
 		response += "You may not send messages while muted. Please wait until your penalty is over."
-		embed = discord.Embed(title='Muted', description=response, colour=discord.Colour.red())
+		embed = discord.Embed(title='You Are Muted', description=response, colour=discord.Colour.red())
 		embed.set_author(name=message.author.display_name, icon_url=message.author.avatar_url)
 		await message.channel.send(embed=embed)
 		await message.delete()
@@ -710,11 +711,12 @@ async def on_message(message):
 		user = message.author.mention
 		response = user + " You have used a banned word. Your message has been deleted.\n"
 		response += "If you are unsure about the banned word you used, please contact server administrator(s).\n\n"
-		response += "You are muted for the next 30 seconds."
+		response += "You are muted for the next 10 seconds."
 		embed = discord.Embed(title='Banned Word Used', description=response, colour=discord.Colour.red())
 		embed.set_author(name=message.author.display_name, icon_url=message.author.avatar_url)
 		await message.channel.send(embed=embed)
 		await message.delete()
+		await serverAdministration.addUserToMutedList(message)
 		return
 
 	# Remove links if the channel is currently being monitored

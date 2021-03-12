@@ -13,6 +13,9 @@ commandList = []
 # List of channels to remove links from, stores only text channel ids
 removeLinksChannels = []
 
+# Muted members list, stores member ids
+mutedMembers = []
+
 # Example function:
 # Just make sure that the function name in a command is the same
 # Make sure every function is async and has both client, message as parameters, and that await is used when sending your response
@@ -749,6 +752,17 @@ def checkMessageForBannedWords(message):
         if bannedWord in reformattedMessageWords:
             return True
     return False
+
+# Temporarily adds the user to the muted list
+async def addUserToMutedList(message):
+    mutedMembers.append(message.author.id)
+    await asyncio.sleep(10)
+    mutedMembers.remove(message.author.id)
+
+# Checks if the author of the message is muted
+def checkAuthorIsMuted(message):
+    return message.author.id in mutedMembers
+
 commandList.append(Command("!downloadModules", "downloadAdditionalModules", "Gives the user links to where new modules for the bot can be downloaded or the user can specify modules they would like to search for and links are provided.\nUsage: !downloadModules <SPECIFIC-MODULE>"))
 # Function for additional module download command
 async def downloadAdditionalModules(ctx, message):
