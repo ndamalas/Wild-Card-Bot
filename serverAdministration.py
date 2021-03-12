@@ -796,16 +796,16 @@ async def muteUser(ctx, message):
     # Check if input has valid number of args
     if len(message.content.split(" ")) == 3:
         # Check if member exists in server
-        for member in guild.members:
-            if member.name == message.content.split(" ")[1]:
-                # Check if role exists in server
-                for role in guild.roles:
-                    if role.name == "Muted":
-                        await member.add_roles(role, reason = None)
-                        await asyncio.sleep(int(message.content.split(" ")[2]))
-                        await member.remove_roles(role, reason = None)
+        user = guild.get_member_named(message.content.split(" ")[1])
+        if user != None:
+            mutedMembers.append(user.id)
+            await message.channel.send(message.content.split(" ")[1] + " is now muted for " + message.content.split(" ")[2] + " seconds.")
+            await asyncio.sleep(int(message.content.split(" ")[2]))
+            mutedMembers.remove(user.id)
+        else:
+            await message.channel.send("User not found")
     else:
-        await message.channel.send("Invalid input\nUsage: !timeout @USER <SECONDS>")
+        await message.channel.send("Invalid input\nUsage: !timeout USER#0000 <SECONDS>")
 
 
 commandList.append(Command("!join", "joinvc", "Bot joins specified voice channel.\nUsage: !join <VOICE-CHANNEL>"))
