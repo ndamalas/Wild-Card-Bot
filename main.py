@@ -91,12 +91,12 @@ loadAdminCommands()
 
 #Now refresh function (when we make it) is just clearing commandList and calling loadAdminCommands and loadCommands()
 #Reload: clear command list and reload in commands
-# def reload():
-# 	#error, accessing before assignment?
-# 	commandList.clear()
-# 	loadMainCommands()
-# 	loadAdminCommands()
-# 	loadCommands()
+def reload():
+	#error, accessing before assignment?
+	commandList.clear()
+	loadMainCommands()
+	loadAdminCommands()
+	loadCommands()
 
 #Function to load in commands
 def loadCommands():
@@ -140,12 +140,12 @@ getRenames()
 #print("Len {}\nTime {}\n".format(moduleLen, lastmodified))
 #Now refresh function (when we make it) is just clearing commandList and calling loadAdminCommands and loadCommands()
 #Reload: clear command list and reload in commands
-def reload():
-	#error, accessing before assignment?
-	commandList.clear()
-	loadMainCommands()
-	loadAdminCommands()
-	loadCommands()
+# def reload():
+# 	#error, accessing before assignment?
+# 	commandList.clear()
+# 	loadMainCommands()
+# 	loadAdminCommands()
+# 	loadCommands()
 
 ### MULTITHREADING
 #collect last modified for modules dir now that it is loaded
