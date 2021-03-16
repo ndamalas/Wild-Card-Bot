@@ -697,11 +697,13 @@ async def addBannedWord(message):
         await message.channel.send("Please enter one or more words to add to the banned words list.\nUsage: !bannedWords add <WORD>")
         return
     words = message.content.split(" ")
+    file = open("bannedWords.txt", "a")
     for i in range(2, len(message.content.split(" "))):
         word = words[i]
+        if word in bannedWords:
+            continue
         bannedWords.append(word)
         # Write them to the file
-        file = open("bannedWords.txt", "a")
         file.write(word + "\n")
     file.close()
 

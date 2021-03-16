@@ -591,8 +591,11 @@ async def rename(client, message):
 	elif (contents[1] not in commandList):
 		response = "Error, no command with the name {}".format(contents[1])
 	else:
-		renameCommand(contents[1], contents[2])
-		response = "Successfully renamed {} to {}!".format(contents[1], contents[2])
+		if contents[2] in commandList:
+			response = "Error {} already exists.".format(contents[2])
+		else:
+			renameCommand(contents[1], contents[2])
+			response = "Successfully renamed {} to {}!".format(contents[1], contents[2])
 	await message.channel.send(response)
 
 # Helper function to actually rename the command and change it in the commandList
