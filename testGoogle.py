@@ -1,16 +1,36 @@
-try: 
-    from googlesearch import search 
-except ImportError:  
-    print("No module named 'google' found") 
-  
-# to search 
-query = "Purdue"
-  
-for j in search(query, tld="co.in", num=10, stop=10, pause=2): 
-    print(j)
+from bs4 import BeautifulSoup
+from command import Command
+import requests
+import discord
+from googlesearch import search 
 
-# from googlesearch.googlesearch import GoogleSearch
-# response = GoogleSearch().search("something")
-# for result in response.results:
-#     print("Title: " + result.title)
-#     print("Content: " + result.getText())
+
+#Function to test sending data to external commands
+
+# Every module has to have a command list
+
+# contents = message.split(" ")
+
+# to search 
+query = "How+large+is+earth"
+
+searchURL = "https://www.google.com/search?q=" + query
+print(searchURL)
+html = requests.get(searchURL)
+soup = BeautifulSoup(html.content, 'html.parser')
+
+for i in search(query.replace("+", " "), tld="co.in", num=10, stop=10, pause=2):
+    print(i)
+    index = i.find("www.")
+    name = i[index:]
+    print(name)
+
+
+## This may be used for ones with no description
+description = soup.find_all('div', class_="BNeawe s3v9rd AP7Wnd")
+#, class_='PZPZlf hb8SAc'
+print(description[0].text)
+# if description:
+#     print(description)
+# else:
+#     print("No description")
