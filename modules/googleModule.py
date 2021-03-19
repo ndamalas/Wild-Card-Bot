@@ -2,7 +2,6 @@ from bs4 import BeautifulSoup
 from command import Command
 import requests
 import discord
-import urllib,urllib2
 from googlesearch import search 
 
 
@@ -35,14 +34,16 @@ async def googleSearch(client, message):
         for i in search(query.replace("+", " "), tld="co.in", num=numResults, stop=numResults, pause=2):
             embed.add_field(name='\u200b', value=i, inline=False)
     elif (contents[1] == "images"):
-        searchURL = "https://www.bing.com/images/search?q=" + query + "&first=1&tsc=ImageHoverTitle"
+        searchURL = "https://www.google.com/search?q=" + query + "&rlz=1C1CHBF_enUS858US858&sxsrf=ALeKk02CkZmXlqPXeG1zYfhlNWziJkRu1Q:1616111833740&source=lnms&tbm=isch&sa=X&ved=2ahUKEwjsoZHehbvvAhXELc0KHXcKBN0Q_AUoA3oECCIQBQ&biw=1266&bih=557"
         html = requests.get(searchURL)
-        soup = BeautifulSoup(html.content, 'html.parser')
+        soup = BeautifulSoup(html.text, 'html.parser')
         # Show first 5 images
-        images = soup.find_all('img', class_='mimg')
-        for image in images:
-            src = image.attrs['src']
-            embed.add_field(name='\u200b', value=src, inline=False)
+        images = soup.find_all('img')
+        for i in range(2, 10):
+            src = images[i].attrs['src']
+            #embed.add_field(name='\u200b', value=src, inline=False)
+            await message.channel.send(src)
+        return
     else:
         description = soup.find_all('div', class_="BNeawe s3v9rd AP7Wnd")
         result = description[0].text
