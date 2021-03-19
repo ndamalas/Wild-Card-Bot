@@ -2,7 +2,9 @@ from bs4 import BeautifulSoup
 from command import Command
 import requests
 import discord
-from googlesearch import search 
+from googlesearch import search
+from youtubesearchpython import VideosSearch
+
 
 
 #Function to test sending data to external commands
@@ -17,7 +19,7 @@ async def googleSearch(client, message):
         await message.channel.send("Please give an argument to be searched on google.")
     
     start = 1
-    if (contents[1].isnumeric() or contents[1] == "images"):
+    if (contents[1].isnumeric() or contents[1] == "images" or contents[1] == "videos"):
         start = 2
     # to search 
     query = ""
@@ -43,6 +45,12 @@ async def googleSearch(client, message):
             src = images[i].attrs['src']
             #embed.add_field(name='\u200b', value=src, inline=False)
             await message.channel.send(src)
+        return
+    elif (contents[1] == "videos"):
+        videosSearch = VideosSearch(query.replace("+", " "), limit = 5)
+        results = videosSearch.result()['result']
+        for i in range(5):
+            await message.channel.send(results[i]['link'])
         return
     else:
         description = soup.find_all('div', class_="BNeawe s3v9rd AP7Wnd")

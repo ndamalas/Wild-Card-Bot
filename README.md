@@ -8,6 +8,7 @@ pip3 install -U importlib
 pip3 install -U beautifulsoup4
 pip3 install -U google
 pip3 install -U youtube_dl
+pip3 install -U youtube-search-python
 ```
 
 You will also need to install ffmpeg from https://ffmpeg.org/download.html
