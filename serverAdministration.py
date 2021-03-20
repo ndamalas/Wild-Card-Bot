@@ -4,6 +4,7 @@ import discord
 import asyncio
 import youtube_dl
 import os
+from riotwatcher import LolWatcher, ApiError
 from googlesearch import search
 from discord.voice_client import VoiceClient
 from discord import FFmpegPCMAudio
@@ -883,6 +884,20 @@ async def adjustVolume(ctx, message):
         await message.channel.send("Set volume: {}%".format(message.content.split(" ")[1]))
     else:
         await message.channel.send("Bot is not connected to any voice channel")
+
+commandList.append(Command("!profile", "get_league_profile"))
+lol_watcher = LolWatcher('RGAPI-08cc5b02-1c79-40b3-ad7c-da09791a7e6a')
+async def get_league_profile(ctx, message):
+    region = message.content.split(" ")[1]
+    name = message.content.split(" ")[2]
+    user = lol_watcher.summoner.by_name(region, name)
+    ranked_stats = lol_watcher.league.by_summoner(region, user['id'])
+    await message.channel.send(user['name'] + " Lvl " + str(user['summonerLevel']))
+    if len(ranked_stats) > 1:
+        await message.channel.send("Ranked Flex: " + ranked_stats[0]['tier'] + " " + ranked_stats[0]['rank'] + " " + str(ranked_stats[0]['wins']) + "W/" + str(ranked_stats[0]['losses']) + "L")
+        await message.channel.send("Ranked Solo: " + ranked_stats[1]['tier'] + " " + ranked_stats[1]['rank'] + " " + str(ranked_stats[1]['wins']) + "W/" + str(ranked_stats[1]['losses']) + "L")
+    elif len(ranked_stats) == 1:
+        await message.channel.send("Ranked Solo: " + ranked_stats[0]['tier'] + " " + ranked_stats[0]['rank'] + " " + str(ranked_stats[0]['wins']) + "W/" + str(ranked_stats[0]['losses']) + "L")
 
 #def helperBlockFunction(ctx, args)
 # For testing ONLY
