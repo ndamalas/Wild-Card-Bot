@@ -14,21 +14,23 @@ async def getPythonInfo(client, message):
 	terms = message.content.split(' ')
 	
 	searchURL = "https://www.google.com/search?q=python+{}".format("+".join(terms[1:]))
+	
+	#get search results
 	html = requests.get(searchURL)
 
-	# #Grab search results page
-	# #searchPage = urllib.request.urlopen(searchURL).read()
-
+	#parse results
 	soup = BeautifulSoup(html.content, 'html.parser')
 
+	#get text of first google result
 	response = soup.find_all('div')[31].get_text()
 
+	#Send info to user
 	embed = discord.Embed(title='Python {}'.format(" ".join(terms[1:])), description=response, colour=discord.Colour.blue())
 
 	await message.channel.send(embed=embed)
 
 ##python module search
-commandList.append(Command("!pydoc", "getPythonDocs", "Gets information from the python documentation. NUse !python <module> <class or method>"))
+commandList.append(Command("!pydoc", "getPythonDocs", "Gets information from the python documentation. Use !pydoc <module> <class or method>"))
 async def getPythonDocs(client, message):
 	#get module and class/method name
 	mod = message.content.split(' ')[1]
@@ -48,6 +50,7 @@ async def getPythonDocs(client, message):
 			foundResult = 1
 			break
 
+	#if not found, tell user
 	if not foundResult:
 		embed = discord.Embed(title='Python Doc Error', description="Module Not Found!", colour=discord.Colour.red())
 		await message.channel.send(embed=embed)
@@ -66,6 +69,8 @@ async def getPythonDocs(client, message):
 				itemTag = x
 				foundResult = 1
 				break
+
+		#if not found, tell user, otherwise display the info
 		if not foundResult:
 			embed = discord.Embed(title='Python Doc Error', description="Class/Method Not Found!", colour=discord.Colour.red())
 			await message.channel.send(embed=embed)
@@ -79,21 +84,26 @@ async def getPythonDocs(client, message):
 
 
 ##java stuff
-commandList.append(Command("!java", "getJavaInfo", "Gets information from java documentation. Use !java <search term>"))
+commandList.append(Command("!java", "getJavaInfo", "Gets information from google on java documentation. Use !java <search term>"))
 async def getJavaInfo(client, message):
 	#get search term (all words after command)
 	terms = message.content.split(' ')
 	
 	searchURL = "https://www.google.com/search?q=java+{}".format("+".join(terms[1:]))
+
+	#Grab search results page
 	html = requests.get(searchURL)
 
-	# #Grab search results page
-	# #searchPage = urllib.request.urlopen(searchURL).read()
-
+	
+	#Parse page
 	soup = BeautifulSoup(html.content, 'html.parser')
 
+	#Get text of first google response
 	response = soup.find_all('div')[31].get_text()
 
+	#Make and send response
 	embed = discord.Embed(title='Java {}'.format(" ".join(terms[1:])), description=response, colour=discord.Colour.blue())
 
 	await message.channel.send(embed=embed)
+
+#java doc stuff did not work as the only java docs I could find had js and bs4 does not mesh well with that.
