@@ -888,9 +888,11 @@ async def adjustVolume(ctx, message):
 commandList.append(Command("!profile", "get_league_profile"))
 lol_watcher = LolWatcher('RGAPI-08cc5b02-1c79-40b3-ad7c-da09791a7e6a')
 async def get_league_profile(ctx, message):
-    #messageArray = message.content.split(" ")
+    messageArray = message.content.split(" ")
     region = message.content.split(" ")[1]
-    name = message.content.split(" ")[2]
+    name = ""
+    for i in range(2, len(messageArray)):
+      name += message.content.split(" ")[i]
     print(name)
     version = lol_watcher.data_dragon.versions_for_region(region)
     user = lol_watcher.summoner.by_name(region, name)
