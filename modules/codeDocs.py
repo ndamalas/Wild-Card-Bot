@@ -25,7 +25,7 @@ async def getPythonInfo(client, message):
 	response = soup.find_all('div')[31].get_text()
 
 	#Send info to user
-	embed = discord.Embed(title='Python {}'.format(" ".join(terms[1:])), description=response, colour=discord.Colour.blue())
+	embed = discord.Embed(title='Python {}'.format(" ".join(terms[1:])), description=response, colour=discord.Colour.blue(), url=searchURL)
 
 	await message.channel.send(embed=embed)
 
@@ -102,7 +102,7 @@ async def getJavaInfo(client, message):
 	response = soup.find_all('div')[31].get_text()
 
 	#Make and send response
-	embed = discord.Embed(title='Java {}'.format(" ".join(terms[1:])), description=response, colour=discord.Colour.blue())
+	embed = discord.Embed(ti,tle='Java {}'.format(" ".join(terms[1:])), description=response, colour=discord.Colour.blue(), url=searchURL)
 
 	await message.channel.send(embed=embed)
 
