@@ -1,4 +1,8 @@
-from command import Command
+try:
+    from command import Command
+except:
+    print("Initiating Unit Tests for decisionMaker Module.")
+    print("")
 
 import discord
 import random
@@ -13,7 +17,13 @@ usage += "If you want to choose from custom options, use !decide (picks) custom 
 usage += "If you want your options to have spaces, please use quotes around your options."
 
 # Format: !decide (number of decisions) <number/custom> (low bound) (high bound) (options)
-commandList.append(Command("!decide", "decisionMaker", usage))
+try:
+    commandList.append(Command("!decide", "decisionMaker", usage))
+except:
+    print("Command Module correctly not imported.")
+    print("The Main Module is required for this to work.")
+    print("")
+
 async def decisionMaker(client, message):
     action = 0 # Specifies whether to use numbers or custom options
 
@@ -102,3 +112,155 @@ async def sendNumberResults(message, result, lowBound, highBound, count):
     embed = discord.Embed(title='Decision Results', description=response, colour=discord.Colour.random())
     embed.add_field(name="Chosen Number(s):", value=str(result), inline=False)
     await message.channel.send(embed=embed)
+
+# Unit tests
+if __name__=="__main__":
+    print("Begin Unit Testing.")
+    print("")
+    # Unit Tests for function generateRandNumber()
+    print("Testing random number generation:")
+    print("")
+    passed = 0
+    # Test 1: sanity check to see if random module is working
+    result = generateRandNumber(0, 0)
+    if result == 0 and type(result) == type(3):
+        passed += 1
+    else:
+        print("-x- Test 1 Failed")    
+    # Test 2: random number generated for two int args
+    result = generateRandNumber(0, 9)
+    if result >= 0 and result <= 9 and type(result) == type(3):
+        passed += 1
+    else:
+        print("-x- Test 2 Failed")    
+    # Test 3: random float generated for two float args
+    result = generateRandNumber(1.2, 2.4)
+    if result >= 1.2 and result <= 2.4 and type(result) == type(3.5):
+        passed += 1
+    else:
+        print("-x- Test 3 Failed")
+    # Test 4: random float generated for one float arg and one int arg
+    result = generateRandNumber(1.2, 3)
+    if result >= 1.2 and result <= 3.0 and type(result) == type(3.5):
+        passed += 1
+    else:
+        print("-x- Test 4 Failed")
+    # Test 5: random float generated for one int arg and one float arg
+    result = generateRandNumber(1, 3.4)
+    if result >= 1 and result <= 3.4 and type(result) == type(3.5):
+        passed += 1
+    else:
+        print("-x- Test 5 Failed")
+    
+    print("    Tests Complete for generateRandNumber()")
+    print("    Passed " + str(passed) + "/" + str(5) + " Tests")
+    print("")
+    # End tests for function generateRandNumber()
+
+    # Unit Tests for function assignBounds()
+    print("Testing bound assignment:")
+    print("")
+    passed = 0
+    # Test 1: check bound assignment when no bounds are given
+    input = ["!decide", "number"]
+    result = assignBounds(input)
+    if result == [0, 9]:
+        passed += 1
+    else:
+        print("-x- Test 1 Failed")
+    # Test 2: check bound assignment when one postive int bound given
+    input = ["!decide", "number", "5"]
+    result = assignBounds(input)
+    if result == [0, 5]:
+        passed += 1
+    else:
+        print("-x- Test 2 Failed")
+    # Test 3: check bound assignment when one negative int bound given
+    input = ["!decide", "number", "-2"]
+    result = assignBounds(input)
+    if result == [-2, 0]:
+        passed += 1
+    else:
+        print("-x- Test 3 Failed")
+    # Test 4: check bound assignment when one positive float bound given
+    input = ["!decide", "number", "3.5"]
+    result = assignBounds(input)
+    if result == [0, 3.5]:
+        passed += 1
+    else:
+        print("-x- Test 4 Failed")
+    # Test 5: check bound assignment when one negative float bound given
+    input = ["!decide", "number", "-3.5"]
+    result = assignBounds(input)
+    if result == [-3.5, 0]:
+        passed += 1
+    else:
+        print("-x- Test 5 Failed")
+    # Test 6: check bound assignment when two int bounds given in ascending order
+    input = ["!decide", "number", "-3", "2"]
+    result = assignBounds(input)
+    if result == [-3, 2]:
+        passed += 1
+    else:
+        print("-x- Test 6 Failed")
+    # Test 7: check bound assignment when two int bounds given in descending order
+    input = ["!decide", "number", "5", "-4"]
+    result = assignBounds(input)
+    if result == [-4, 5]:
+        passed += 1
+    else:
+        print("-x- Test 7 Failed")
+    # Test 8: check bound assignment when two float bounds given in ascending order
+    input = ["!decide", "number", "-3.5", "3.5"]
+    result = assignBounds(input)
+    if result == [-3.5, 3.5]:
+        passed += 1
+    else:
+        print("-x- Test 8 Failed")
+    # Test 9: check bound assignment when two float bounds given in descending order
+    input = ["!decide", "number", "3.5", "-3.5"]
+    result = assignBounds(input)
+    if result == [-3.5, 3.5]:
+        passed += 1
+    else:
+        print("-x- Test 9 Failed")
+    # Test 10: check bound assignment when one int bound given and one float bound given
+    input = ["!decide", "number", "-3", "3.5"]
+    result = assignBounds(input)
+    if result == [-3.0, 3.5]:
+        passed += 1
+    else:
+        print("-x- Test 10 Failed")
+    # Test 11: check bound assignment when one float bound given and int bound given
+    input = ["!decide", "number", "-3.5", "3"]
+    result = assignBounds(input)
+    if result == [-3.5, 3.0]:
+        passed += 1
+    else:
+        print("-x- Test 11 Failed")
+    # Test 12: check proper error handling for one invalid bound given
+    input = ["!decide", "number", "error"]
+    result = assignBounds(input)
+    if result == None:
+        passed += 1
+    else:
+        print("-x- Test 12 Failed")
+    # Test 13: check proper error handling for one invalid bound given and one valid bound given
+    input = ["!decide", "number", "error", "0"]
+    result = assignBounds(input)
+    if result == None:
+        passed += 1
+    else:
+        print("-x- Test 13 Failed")
+    # Test 14: check proper error handling for two invalid bounds given
+    input = ["!decide", "number", "error", "error2"]
+    result = assignBounds(input)
+    if result == None:
+        passed += 1
+    else:
+        print("-x- Test 14 Failed")
+    
+    print("    Tests Complete for assignBounds()")
+    print("    Passed " + str(passed) + "/" + str(14) + " Tests")
+    print("")
+    # End tests for function assignBounds()
