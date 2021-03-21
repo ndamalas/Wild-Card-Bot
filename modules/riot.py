@@ -11,6 +11,12 @@ riot_watcher = RiotWatcher(riot_api_key)
 lor_watcher = LorWatcher(riot_api_key)
 tft_watcher = TftWatcher(riot_api_key)
 
+commandList.append(Command("!regions", "get_regions", "Displays all regions"))
+async def get_regions(ctx, message):
+    response = "BR1\nEUN1\nEUW1\nJP1\nKR\nLA1\nLA2\nNA1\nOC1\nRU\nTR1"
+    embed = discord.Embed(title='Riot regions', description=response, colour=discord.Colour.dark_red())
+    await message.channel.send(embed=embed)
+
 commandList.append(Command("!league", "get_league_profile", "Displays a player's League of Legends profile\nUsage: !league <REGION> <IGN>"))
 async def get_league_profile(ctx, message):
     messageArray = message.content.split(" ")
