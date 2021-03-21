@@ -29,7 +29,17 @@ async def decisionMaker(client, message):
 
     messageArgs = message.content.split(" ")
     if len(messageArgs) >= 2:
-        # Check if the user wants to generate a number between 0 and 9
+        # Check if the user wants to specify custom options
+        if messageArgs[1] == "custom":
+            action = "custom"
+            options = parseCustomOptions(message.content)
+            # Check if the options list actually has options
+            if len(options) == 0:
+                action = "error"
+            if action != "error":
+                picked = pickOption(options)
+                await sendCustomResults(message, picked, options, 1)
+        # Check if the user wants to generate a number
         if messageArgs[1] == "number":
             action = "number"
             # Assign the bounds
@@ -59,6 +69,46 @@ async def decisionMaker(client, message):
         response += "specified by **!commands !decide**."
         embed = discord.Embed(title='Incorrect Usage of !decide', description=response, colour=discord.Colour.purple())
         await message.channel.send(embed=embed)
+
+# Parses the custom options from the message content
+def parseCustomOptions(content):
+    # Check if quotes are used to specify inputs, making sure the number of quotes is even
+    if content.count('"') > 0 and content.count('"') % 2 == 0:
+        options = []
+        inQuotes = False
+        currentOption = ""
+        for char in content:
+            if inQuotes == False and char == '"':
+                inQuotes = True
+            elif inQuotes == False:
+                if char != " ":
+                    currentOption += char
+                else:
+                    if currentOption != "":
+                        options.append(currentOption)
+                        currentOption = ""
+            elif inQuotes == True and char == '"':
+                inQuotes = False
+                if currentOption != "":
+                    options.append(currentOption)
+                    currentOption = ""
+            elif inQuotes == True:
+                currentOption += char
+        # Check if currentOption contains an option
+        if currentOption != "":
+            options.append(currentOption)
+        return options[2:] # Delete !decide and quotes
+    else:
+        # Since there are no quotes, parse using spaces
+        options = []
+        messageArgs = content.split(" ")
+        for i in range(2, len(messageArgs)):
+            options.append(messageArgs[i])
+        return options
+
+# Picks a option from the given list of options
+def pickOption(options):
+    return options[random.randrange(0, len(options))]
 
 # Generates a random integer or float between lowBound and highBound
 def generateRandNumber(lowBound, highBound):
@@ -111,6 +161,21 @@ async def sendNumberResults(message, result, lowBound, highBound, count):
     response += "and **" + str(highBound) + "**.\n\n"
     embed = discord.Embed(title='Decision Results', description=response, colour=discord.Colour.random())
     embed.add_field(name="Chosen Number(s):", value=str(result), inline=False)
+    embed.set_author(name=message.author.display_name, icon_url=message.author.avatar_url)
+    await message.channel.send(embed=embed)
+
+# Sends a message to the user with the custom option choices
+async def sendCustomResults(message, picked, options, count):
+    # Generate string of options
+    optionStr = ""
+    for option in options:
+        optionStr += option + "\n"
+    response = "Hello " + message.author.mention + "!\n"
+    response += "I have picked **" + str(count) + "** option(s) from the given options:"
+    embed = discord.Embed(title='Decision Results', description=response, colour=discord.Colour.random())
+    embed.add_field(name="Chosen Options(s):", value=str(picked), inline=False)
+    embed.add_field(name="All Possible Options(s):", value=str(optionStr), inline=False)
+    embed.set_author(name=message.author.display_name, icon_url=message.author.avatar_url)
     await message.channel.send(embed=embed)
 
 # Unit tests
