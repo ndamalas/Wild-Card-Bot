@@ -29,7 +29,17 @@ async def decisionMaker(client, message):
 
     messageArgs = message.content.split(" ")
     if len(messageArgs) >= 2:
-        # Check if the user wants to generate a number between 0 and 9
+        # Check if the user wants to specify custom options
+        if messageArgs[1] == "custom":
+            action = "custom"
+            options = parseCustomOptions(message.content)
+            # Check if the options list actually has options
+            if len(options) == 0:
+                action = "error"
+            if action != "error":
+                picked = pickOption(options)
+                await sendCustomResults(message, picked, options, 1)
+        # Check if the user wants to generate a number
         if messageArgs[1] == "number":
             action = "number"
             # Assign the bounds
@@ -59,6 +69,46 @@ async def decisionMaker(client, message):
         response += "specified by **!commands !decide**."
         embed = discord.Embed(title='Incorrect Usage of !decide', description=response, colour=discord.Colour.purple())
         await message.channel.send(embed=embed)
+
+# Parses the custom options from the message content
+def parseCustomOptions(content):
+    # Check if quotes are used to specify inputs, making sure the number of quotes is even
+    if content.count('"') > 0 and content.count('"') % 2 == 0:
+        options = []
+        inQuotes = False
+        currentOption = ""
+        for char in content:
+            if inQuotes == False and char == '"':
+                inQuotes = True
+            elif inQuotes == False:
+                if char != " ":
+                    currentOption += char
+                else:
+                    if currentOption != "":
+                        options.append(currentOption)
+                        currentOption = ""
+            elif inQuotes == True and char == '"':
+                inQuotes = False
+                if currentOption != "":
+                    options.append(currentOption)
+                    currentOption = ""
+            elif inQuotes == True:
+                currentOption += char
+        # Check if currentOption contains an option
+        if currentOption != "":
+            options.append(currentOption)
+        return options[2:] # Delete !decide and quotes
+    else:
+        # Since there are no quotes, parse using spaces
+        options = []
+        messageArgs = content.split(" ")
+        for i in range(2, len(messageArgs)):
+            options.append(messageArgs[i])
+        return options
+
+# Picks a option from the given list of options
+def pickOption(options):
+    return options[random.randrange(0, len(options))]
 
 # Generates a random integer or float between lowBound and highBound
 def generateRandNumber(lowBound, highBound):
@@ -111,6 +161,21 @@ async def sendNumberResults(message, result, lowBound, highBound, count):
     response += "and **" + str(highBound) + "**.\n\n"
     embed = discord.Embed(title='Decision Results', description=response, colour=discord.Colour.random())
     embed.add_field(name="Chosen Number(s):", value=str(result), inline=False)
+    embed.set_author(name=message.author.display_name, icon_url=message.author.avatar_url)
+    await message.channel.send(embed=embed)
+
+# Sends a message to the user with the custom option choices
+async def sendCustomResults(message, picked, options, count):
+    # Generate string of options
+    optionStr = ""
+    for option in options:
+        optionStr += option + "\n"
+    response = "Hello " + message.author.mention + "!\n"
+    response += "I have picked **" + str(count) + "** option(s) from the given options:"
+    embed = discord.Embed(title='Decision Results', description=response, colour=discord.Colour.random())
+    embed.add_field(name="Chosen Options(s):", value=str(picked), inline=False)
+    embed.add_field(name="All Possible Options(s):", value=str(optionStr), inline=False)
+    embed.set_author(name=message.author.display_name, icon_url=message.author.avatar_url)
     await message.channel.send(embed=embed)
 
 # Unit tests
@@ -264,3 +329,130 @@ if __name__=="__main__":
     print("    Passed " + str(passed) + "/" + str(14) + " Tests")
     print("")
     # End tests for function assignBounds()
+
+    # Unit Tests for function parseCustomOptions()
+    print("Testing custom options parsing:")
+    print("")
+    passed = 0
+    # Test 1: check that an message with no options is properly handled
+    input = "!decide custom"
+    result = parseCustomOptions(input)
+    if result == []:
+        passed += 1
+    else:
+        print("-x- Test 1 Failed")
+    # Test 2: check parsing for a message containing one option without spaces
+    input = "!decide custom one"
+    result = parseCustomOptions(input)
+    if result == ["one"]:
+        passed += 1
+    else:
+        print("-x- Test 2 Failed")
+    # Test 3: check parsing for a message containing one option with spaces
+    input = '!decide custom "one option"'
+    result = parseCustomOptions(input)
+    if result == ["one option"]:
+        passed += 1
+    else:
+        print("-x- Test 3 Failed")
+    # Test 4: check parsing for a message containing multiple options without spaces
+    input = '!decide custom one two three'
+    result = parseCustomOptions(input)
+    if result == ["one", "two", "three"]:
+        passed += 1
+    else:
+        print("-x- Test 4 Failed")
+    # Test 5: check parsing for a message containing multiple options with spaces
+    input = '!decide custom "one option" "two option" "three option"'
+    result = parseCustomOptions(input)
+    if result == ["one option", "two option", "three option"]:
+        passed += 1
+    else:
+        print("-x- Test 5 Failed")
+    # Test 6: check parsing for a message containing one option without spaces and one option with spaces
+    input = '!decide custom one "two option"'
+    result = parseCustomOptions(input)
+    if result == ["one", "two option"]:
+        passed += 1
+    else:
+        print("-x- Test 6 Failed")
+    # Test 7: check parsing for a message containing one option with spaces and one option without spaces
+    input = '!decide custom "one option" two'
+    result = parseCustomOptions(input)
+    if result == ["one option", "two"]:
+        passed += 1
+    else:
+        print("-x- Test 7 Failed")
+    # Test 8: check parsing for a message containing one option with spaces and two options without spaces
+    input = '!decide custom one "two option" three'
+    result = parseCustomOptions(input)
+    if result == ["one", "two option", "three"]:
+        passed += 1
+    else:
+        print("-x- Test 8 Failed")
+    # Test 9: check parsing for a message containing two options with spaces and one option without spaces
+    input = '!decide custom "one option" two "three option"'
+    result = parseCustomOptions(input)
+    if result == ["one option", "two", "three option"]:
+        passed += 1
+    else:
+        print("-x- Test 9 Failed")        
+    # Test 10: stress test the parsing capabilities for a message with ten different options
+    input = '!decide custom one two three "four option" five six seven "eight option" nine "ten option"'
+    result = parseCustomOptions(input)
+    if result == ["one", "two", "three", "four option", "five", "six", "seven", "eight option", "nine", "ten option"]:
+        passed += 1
+    else:
+        print("-x- Test 10 Failed")
+    # Test 11: check that empty quotes are not added into the options
+    input = '!decide custom ""'
+    result = parseCustomOptions(input)
+    if result == []:
+        passed += 1
+    else:
+        print("-x- Test 11 Failed")
+    # Test 12: check that an odd number of quotes defaults to parsing without considering quotes
+    input = '!decide custom "one option" "two'
+    result = parseCustomOptions(input)
+    if result == ['"one', 'option"', '"two']:
+        passed += 1
+    else:
+        print("-x- Test 12 Failed")
+    
+    print("    Tests Complete for parseCustomOptions()")
+    print("    Passed " + str(passed) + "/" + str(12) + " Tests")
+    print("")
+    # End tests for function parseCustomOptions()
+
+    # Unit Tests for function pickOption()
+    print("Testing custom options selection:")
+    print("")
+    passed = 0
+    # Test 1: selection of one option from a set of one custom option
+    input = ["one"]
+    result = pickOption(input)
+    if result == "one":
+        passed += 1
+    else:
+        print("-x- Test 1 Failed")
+    # Test 2: selection of one option from a set of multiple custom options
+    input = ["one", "two", "three"]
+    result = pickOption(input)
+    possibleOptions = ["one", "two", "three"]
+    if result in possibleOptions:
+        passed += 1
+    else:
+        print("-x- Test 2 Failed")
+    # Test 3: stress test the selection capabilities for selection of one option from a large set of options
+    input = ["one penny", "two", "three", "four", "five nickel", "six", "seven", "eight", "nine", "ten dime"]
+    result = pickOption(input)
+    possibleOptions = ["one penny", "two", "three", "four", "five nickel", "six", "seven", "eight", "nine", "ten dime"]
+    if result in possibleOptions:
+        passed += 1
+    else:
+        print("-x- Test 3 Failed")
+    
+    print("    Tests Complete for pickOption()")
+    print("    Passed " + str(passed) + "/" + str(3) + " Tests")
+    print("")
+    # End tests for function pickOption()
