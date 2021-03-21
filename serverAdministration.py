@@ -4,7 +4,7 @@ import discord
 import asyncio
 import youtube_dl
 import os
-from riotwatcher import LolWatcher, ApiError
+from riotwatcher import LolWatcher, ApiError, RiotWatcher, LorWatcher, TftWatcher
 from googlesearch import search
 from discord.voice_client import VoiceClient
 from discord import FFmpegPCMAudio
@@ -885,25 +885,44 @@ async def adjustVolume(ctx, message):
     else:
         await message.channel.send("Bot is not connected to any voice channel")
 
-commandList.append(Command("!profile", "get_league_profile"))
 lol_watcher = LolWatcher('RGAPI-08cc5b02-1c79-40b3-ad7c-da09791a7e6a')
+riot_watcher = RiotWatcher('RGAPI-08cc5b02-1c79-40b3-ad7c-da09791a7e6a')
+lor_watcher = LorWatcher('RGAPI-08cc5b02-1c79-40b3-ad7c-da09791a7e6a')
+tft_watcher = TftWatcher('RGAPI-08cc5b02-1c79-40b3-ad7c-da09791a7e6a')
+
+commandList.append(Command("!league", "get_league_profile"))
 async def get_league_profile(ctx, message):
     messageArray = message.content.split(" ")
     region = message.content.split(" ")[1]
     name = ""
     for i in range(2, len(messageArray)):
       name += message.content.split(" ")[i]
-    print(name)
+    # print(name)
     version = lol_watcher.data_dragon.versions_for_region(region)
     user = lol_watcher.summoner.by_name(region, name)
     ranked_stats = lol_watcher.league.by_summoner(region, user['id'])
     await message.channel.send(user['name'] + " Lvl " + str(user['summonerLevel']))
     await message.channel.send("http://ddragon.leagueoflegends.com/cdn/" + version['n']['profileicon'] + "/img/profileicon/" + str(user['profileIconId']) + ".png")
     if len(ranked_stats) > 1:
-        await message.channel.send("Ranked Flex: " + ranked_stats[0]['tier'] + " " + ranked_stats[0]['rank'] + " " + str(ranked_stats[0]['wins']) + "W/" + str(ranked_stats[0]['losses']) + "L")
-        await message.channel.send("Ranked Solo: " + ranked_stats[1]['tier'] + " " + ranked_stats[1]['rank'] + " " + str(ranked_stats[1]['wins']) + "W/" + str(ranked_stats[1]['losses']) + "L")
+        await message.channel.send("Ranked Flex: " + ranked_stats[0]['tier'] + " " + ranked_stats[0]['rank'] + " " + str(ranked_stats[0]['leaguePoints']) + "LP " + str(ranked_stats[0]['wins']) + "W/" + str(ranked_stats[0]['losses']) + "L")
+        await message.channel.send("Ranked Solo: " + ranked_stats[1]['tier'] + " " + ranked_stats[1]['rank'] + " " + str(ranked_stats[1]['leaguePoints']) + "LP " + str(ranked_stats[1]['wins']) + "W/" + str(ranked_stats[1]['losses']) + "L")
     elif len(ranked_stats) == 1:
-        await message.channel.send("Ranked Solo: " + ranked_stats[0]['tier'] + " " + ranked_stats[0]['rank'] + " " + str(ranked_stats[0]['wins']) + "W/" + str(ranked_stats[0]['losses']) + "L")
+        await message.channel.send("Ranked Solo: " + ranked_stats[0]['tier'] + " " + ranked_stats[0]['rank'] + " " + str(ranked_stats[0]['leaguePoints']) + "LP " + str(ranked_stats[0]['wins']) + "W/" + str(ranked_stats[0]['losses']) + "L")
+
+commandList.append(Command("!tft", "get_tft_profile"))
+async def get_tft_profile(ctx, message):
+    messageArray = message.content.split(" ")
+    region = message.content.split(" ")[1]
+    name = ""
+    for i in range(2, len(messageArray)):
+      name += message.content.split(" ")[i]
+    version = lol_watcher.data_dragon.versions_for_region(region)
+    user = tft_watcher.summoner.by_name(region, name)
+    ranked_stats = tft_watcher.league.by_summoner(region, user['id'])
+    await message.channel.send(user['name'] + " Lvl " + str(user['summonerLevel']))
+    await message.channel.send("http://ddragon.leagueoflegends.com/cdn/" + version['n']['profileicon'] + "/img/profileicon/" + str(user['profileIconId']) + ".png")
+    if len(ranked_stats) == 1:
+        await message.channel.send("Ranked TFT: " + ranked_stats[0]['tier'] + " " + ranked_stats[0]['rank'] + " " + str(ranked_stats[0]['leaguePoints']) + "LP " + str(ranked_stats[0]['wins']) + "W/" + str(ranked_stats[0]['losses']) + "L")
 
 #def helperBlockFunction(ctx, args)
 # For testing ONLY
