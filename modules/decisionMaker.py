@@ -329,3 +329,130 @@ if __name__=="__main__":
     print("    Passed " + str(passed) + "/" + str(14) + " Tests")
     print("")
     # End tests for function assignBounds()
+
+    # Unit Tests for function parseCustomOptions()
+    print("Testing custom options parsing:")
+    print("")
+    passed = 0
+    # Test 1: check that an message with no options is properly handled
+    input = "!decide custom"
+    result = parseCustomOptions(input)
+    if result == []:
+        passed += 1
+    else:
+        print("-x- Test 1 Failed")
+    # Test 2: check parsing for a message containing one option without spaces
+    input = "!decide custom one"
+    result = parseCustomOptions(input)
+    if result == ["one"]:
+        passed += 1
+    else:
+        print("-x- Test 2 Failed")
+    # Test 3: check parsing for a message containing one option with spaces
+    input = '!decide custom "one option"'
+    result = parseCustomOptions(input)
+    if result == ["one option"]:
+        passed += 1
+    else:
+        print("-x- Test 3 Failed")
+    # Test 4: check parsing for a message containing multiple options without spaces
+    input = '!decide custom one two three'
+    result = parseCustomOptions(input)
+    if result == ["one", "two", "three"]:
+        passed += 1
+    else:
+        print("-x- Test 4 Failed")
+    # Test 5: check parsing for a message containing multiple options with spaces
+    input = '!decide custom "one option" "two option" "three option"'
+    result = parseCustomOptions(input)
+    if result == ["one option", "two option", "three option"]:
+        passed += 1
+    else:
+        print("-x- Test 5 Failed")
+    # Test 6: check parsing for a message containing one option without spaces and one option with spaces
+    input = '!decide custom one "two option"'
+    result = parseCustomOptions(input)
+    if result == ["one", "two option"]:
+        passed += 1
+    else:
+        print("-x- Test 6 Failed")
+    # Test 7: check parsing for a message containing one option with spaces and one option without spaces
+    input = '!decide custom "one option" two'
+    result = parseCustomOptions(input)
+    if result == ["one option", "two"]:
+        passed += 1
+    else:
+        print("-x- Test 7 Failed")
+    # Test 8: check parsing for a message containing one option with spaces and two options without spaces
+    input = '!decide custom one "two option" three'
+    result = parseCustomOptions(input)
+    if result == ["one", "two option", "three"]:
+        passed += 1
+    else:
+        print("-x- Test 8 Failed")
+    # Test 9: check parsing for a message containing two options with spaces and one option without spaces
+    input = '!decide custom "one option" two "three option"'
+    result = parseCustomOptions(input)
+    if result == ["one option", "two", "three option"]:
+        passed += 1
+    else:
+        print("-x- Test 9 Failed")        
+    # Test 10: stress test the parsing capabilities for a message with ten different options
+    input = '!decide custom one two three "four option" five six seven "eight option" nine "ten option"'
+    result = parseCustomOptions(input)
+    if result == ["one", "two", "three", "four option", "five", "six", "seven", "eight option", "nine", "ten option"]:
+        passed += 1
+    else:
+        print("-x- Test 10 Failed")
+    # Test 11: check that empty quotes are not added into the options
+    input = '!decide custom ""'
+    result = parseCustomOptions(input)
+    if result == []:
+        passed += 1
+    else:
+        print("-x- Test 11 Failed")
+    # Test 12: check that an odd number of quotes defaults to parsing without considering quotes
+    input = '!decide custom "one option" "two'
+    result = parseCustomOptions(input)
+    if result == ['"one', 'option"', '"two']:
+        passed += 1
+    else:
+        print("-x- Test 12 Failed")
+    
+    print("    Tests Complete for parseCustomOptions()")
+    print("    Passed " + str(passed) + "/" + str(12) + " Tests")
+    print("")
+    # End tests for function parseCustomOptions()
+
+    # Unit Tests for function pickOption()
+    print("Testing custom options selection:")
+    print("")
+    passed = 0
+    # Test 1: selection of one option from a set of one custom option
+    input = ["one"]
+    result = pickOption(input)
+    if result == "one":
+        passed += 1
+    else:
+        print("-x- Test 1 Failed")
+    # Test 2: selection of one option from a set of multiple custom options
+    input = ["one", "two", "three"]
+    result = pickOption(input)
+    possibleOptions = ["one", "two", "three"]
+    if result in possibleOptions:
+        passed += 1
+    else:
+        print("-x- Test 2 Failed")
+    # Test 3: stress test the selection capabilities for selection of one option from a large set of options
+    input = ["one penny", "two", "three", "four", "five nickel", "six", "seven", "eight", "nine", "ten dime"]
+    result = pickOption(input)
+    possibleOptions = ["one penny", "two", "three", "four", "five nickel", "six", "seven", "eight", "nine", "ten dime"]
+    if result in possibleOptions:
+        passed += 1
+    else:
+        print("-x- Test 3 Failed")
+    
+    print("    Tests Complete for pickOption()")
+    print("    Passed " + str(passed) + "/" + str(3) + " Tests")
+    print("")
+    # End tests for function pickOption()
