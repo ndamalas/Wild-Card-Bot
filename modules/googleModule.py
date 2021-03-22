@@ -53,9 +53,11 @@ async def googleSearch(client, message):
             await message.channel.send(results[i]['link'])
         return
     else:
-        description = soup.find_all('div', class_="BNeawe s3v9rd AP7Wnd")
+        description = soup.find_all('div', class_="BNeawe iBp4i AP7Wnd")
+        if len(description) == 0:
+            description = soup.find_all('div', class_="BNeawe s3v9rd AP7Wnd")
         result = description[0].text
-        embed = discord.Embed(title = "Google", description=result, colour = discord.Colour.green())
+        embed = discord.Embed(title = "Search Results", description=result, colour = discord.Colour.green(), url = searchURL)
         embed.set_author(name=message.author.display_name, icon_url=message.author.avatar_url)
         
     await message.channel.send(embed=embed)
