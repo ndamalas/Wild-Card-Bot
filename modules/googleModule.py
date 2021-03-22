@@ -12,7 +12,7 @@ from youtubesearchpython import VideosSearch
 # Every module has to have a command list
 commandList = []
 
-commandList.append(Command("!google", "googleSearch", "TODO"))
+commandList.append(Command("!google", "googleSearch", "Used to search information up on google.\nTo perform a default search. Usage: !google <QUERY>\nTo display the top n search results. Usage: !google <n> <QUERY>\nTo display images. Usage: !google images <UQERY>\nTo display videos from youtube. Usage: !google videos <QUERY>"))
 async def googleSearch(client, message):
     contents = message.content.split(" ")
     if len(contents) == 1:
