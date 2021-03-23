@@ -134,19 +134,6 @@ def getRenames():
 #Call function
 getRenames()
 
-
-
-
-#print("Len {}\nTime {}\n".format(moduleLen, lastmodified))
-#Now refresh function (when we make it) is just clearing commandList and calling loadAdminCommands and loadCommands()
-#Reload: clear command list and reload in commands
-# def reload():
-# 	#error, accessing before assignment?
-# 	commandList.clear()
-# 	loadMainCommands()
-# 	loadAdminCommands()
-# 	loadCommands()
-
 ### MULTITHREADING
 #collect last modified for modules dir now that it is loaded
 lastmodified = time.ctime(max(os.stat(root).st_mtime for root,_,_ in os.walk("modules")))
