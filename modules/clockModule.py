@@ -27,11 +27,22 @@ async def timer(client, message):
         await message.channel.send("Please specify the amount of time you want on your timer and whether it is in minutes or seconds.\nUsage: !timer <min/sec> <TIME>")
         return
     if content[1] == 'delete':
+        hist = await message.channel.history(limit=30).flatten()
+        for old in hist:
+            if old.author == client.user and (old.content.find("remaining.") != -1):
+                lastTimer = old
+                print(lastTimer.content)
+        await lastTimer.delete()
+        await message.channel.send("Timer successfully deleted.")
+        return
+    if content[1] == 'pause':
         async for old in message.channel.history(limit=5):
             if old.author == client.user and old.content.find("remaining."):
                 lastTimer = old
-                await lastTimer.delete()
-                await message.channel.send("Timer successfully deleted.")
+        timeLeft = lastTimer.content.split(" ")[0]
+        print("timeleft=" + timeLeft)
+        await lastTimer.delete()
+        await message.channel.send("Timer successfully paused.")
         return
         
         
@@ -62,7 +73,7 @@ async def timer(client, message):
             return
     elif content[1] == 'min':
         left = "0:00"
-        newMessage = await message.channel.send("{} remaining.".format(left))
+        newMessage = await message.channel.send("Starting your timer.")
         while int(time.time() - start) < math.floor(float(end) * 60):
             secondsLeft = math.floor(float(end) * 60) - math.floor(time.time() - start)
             if (secondsLeft % 60 < 10):
@@ -74,7 +85,7 @@ async def timer(client, message):
             except:
                 return
             time.sleep(0.95)
-        await newMessage.edit(content="0 seconds remaining.")
+        await newMessage.edit(content="0:00 remaining.")
     await message.channel.send(message.author.mention + ", your timer is complete.")
 
 
