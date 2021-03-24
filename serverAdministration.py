@@ -850,17 +850,19 @@ async def leavevc(ctx, message):
 
 def checkForMusic(f_stop, ctx, message):
     global head
+    #get the voice client
     guild = message.guild
     vc = guild.voice_client
     if not f_stop.is_set():
         #check for changes
         if not vc.is_playing():
+            #head points towards current node
             if head.next != None:
                 head = head.next
-                print("Next Item: "+ str(playlist.next.title))
-                vc.play(discord.FFmpegPCMAudio("youtube/{}.mp3".format(head.title)))
+                print("Next Item: "+ str(head.title))
+                vc.play(discord.FFmpegPCMAudio("youtube/{}.mp3".format(head.title)), after=lambda e: os.remove("youtube/"+head.title+".mp3"))
                 ctx.voice_clients[0].source = discord.PCMVolumeTransformer(ctx.voice_clients[0].source)
-        #every 0.5 seconds
+        #every second check again
         threading.Timer(1, checkForMusic, [f_stop, ctx, message]).start()
 
 
@@ -890,11 +892,11 @@ async def playMusic(ctx, message):
         #connect
         voice_channel = message.author.voice.channel
         vc = await voice_channel.connect()
-
+        #Start multithreading
         f_stop = threading.Event()
         checkForMusic(f_stop, ctx, message)
 
-    msg = await message.channel.send("Getting everything ready, playing audio soon")
+    #Set options for ytdl
     opts = {
         'format': 'bestaudio/best',
         'outtmpl': 'youtube/%(title)s.%(ext)s',
@@ -915,11 +917,12 @@ async def playMusic(ctx, message):
     }
 
     with youtube_dl.YoutubeDL(opts) as ydl:
-        #download 
+        #download video
         ydl.download([video])
         #get title
         title = ydl.extract_info(video, download=False).get('title', None)
-        await msg.delete()
+        #Notify user that the video has been added
+        #await msg.delete()
         await message.channel.send("{} added to queue!".format(title))
         #replace symbols
         title = title.replace('?', '')
@@ -931,16 +934,6 @@ async def playMusic(ctx, message):
         tail.next = newVid
         newVid.prev = tail
         tail = newVid
-
-    #play the audio
-    # guild.voice_client.play(discord.FFmpegPCMAudio("youtube/{}.mp3".format(playlist.next.title)))
-    # # set volume source
-    # ctx.voice_clients[0].source = discord.PCMVolumeTransformer(ctx.voice_clients[0].source)
-    #guild.voice_client.is_playing()
-    
-    #tell user song is now playing
-    # await msg.delete()
-    # await message.channel.send("Now playing")
 
 commandList.append(Command("!vol", "adjustVolume", "Allows users to adjust volume\nUsage: !vol <0-100>"))
 async def adjustVolume(ctx, message):
