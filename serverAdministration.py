@@ -879,7 +879,6 @@ async def playMusic(ctx, message):
 
     #if not connected to voice, connect
     if guild.voice_client == None:
-        print("Only once?")
         firstime = 1
         #create playlist when joining
         global playlist
@@ -918,9 +917,24 @@ async def playMusic(ctx, message):
 
     with youtube_dl.YoutubeDL(opts) as ydl:
         #download video
-        ydl.download([video])
-        #get title
-        title = ydl.extract_info(video, download=False).get('title', None)
+        try:
+            title = ydl.extract_info(video, download=False).get('title', None)
+        except:
+            await message.channel.send("Error in youtube link provided!")
+            return
+
+        if title == None:
+            await message.channel.send("Error in youtube link provided!")
+            return
+
+        try:
+            
+            ydl.download([video])
+        except:
+            await message.channel.send("Error in youtube link provided!")
+            return
+       
+        
         #Notify user that the video has been added
         #await msg.delete()
         await message.channel.send("{} added to queue!".format(title))
