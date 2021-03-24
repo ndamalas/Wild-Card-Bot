@@ -27,7 +27,7 @@ async def getLastTimer(client, message):
             break
     return lastTimer
 
-commandList.append(Command("!timer", "timer", "TODO"))
+commandList.append(Command("!timer", "timer", "Used to start, pause, unpause, or delete a timer.\nTo create a new timer, use: `!timer <TIME>`. The amount of time given is in minutes, (ex: if you want a 30 second timer use 0.5)\nTo pause the most recent timer, use: `!timer pause`.\nTo unpause the most recent timer, use: `!timer unpause`.\nTo delete the most recent timer, use: `!timer delete`."))
 async def timer(client, message):
     content = message.content.split(' ')
     if len(content) < 2:
