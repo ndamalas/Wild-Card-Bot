@@ -833,21 +833,6 @@ async def leavevc(ctx, message):
     if guild.voice_client is not None:
         await guild.voice_client.disconnect()
 
-# @asyncio.coroutine
-# def playQueue(ctx, message):
-#     guild = message.guild
-#     vc = guild.voice_client
-#     while guild.voice_client != None:
-#         if not vc.is_playing():
-#             if playlist.next != None:
-#                 vc.play(discord.FFmpegPCMAudio("youtube/{}.mp3".format(playlist.next.title)))
-#                 ctx.voice_clients[0].source = discord.PCMVolumeTransformer(ctx.voice_clients[0].source)
-#                 playlist.next = playlist.next.next
-
-# def loopMusic(loop, ctx, message):
-#     asyncio.set_event_loop(loop)
-#     loop.run_until_complete(playQueue(ctx, message))
-
 def checkForMusic(f_stop, ctx, message):
     global head
     #get the voice client
@@ -859,19 +844,83 @@ def checkForMusic(f_stop, ctx, message):
             #head points towards current node
             if head.next != None:
                 head = head.next
-                print("Next Item: "+ str(head.title))
-                vc.play(discord.FFmpegPCMAudio("youtube/{}.mp3".format(head.title)), after=lambda e: os.remove("youtube/"+head.title+".mp3"))
+                vc.play(discord.FFmpegPCMAudio("youtube/{}.mp3".format(head.vidID)), after=lambda e: os.remove("youtube/"+head.vidID+".mp3"))
                 ctx.voice_clients[0].source = discord.PCMVolumeTransformer(ctx.voice_clients[0].source)
-        #every second check again
-        threading.Timer(1, checkForMusic, [f_stop, ctx, message]).start()
+    #every second check again
+    threading.Timer(1, checkForMusic, [f_stop, ctx, message]).start()
 
+
+commandList.append(Command("!queue", "listQueue", "List out queue of current songs."))
+async def listQueue(ctx, message):
+
+    response = ""
+    try:
+        pointer = head
+    except:
+        response = "No songs currently in queue!"
+        embed = discord.Embed(
+            title='Queued Songs',
+            description=response,
+            color = 0xff00ff
+        )
+        await message.channel.send(embed=embed)
+        return
+    
+    guild = message.guild
+    vc = guild.voice_client
+    if not vc.is_playing() and pointer.next == None:
+        response = "No songs currently in queue!"
+        embed = discord.Embed(
+            title='Queued Songs',
+            description=response,
+            color = 0xff00ff
+        )
+        await message.channel.send(embed=embed)
+        return
+    
+    else:
+        index = 1
+        current = " - **currently playing** "
+        while pointer != None:
+            if index != 1:
+                current = ""
+            response = response + "[" + str(index)+ "] - " + pointer.fulltitle + current + "\n"
+            index = index + 1
+            pointer = pointer.next
+
+    embed = discord.Embed(
+        title='Queued Songs',
+        description=response,
+        color = 0xff00ff
+    )
+    await message.channel.send(embed=embed)
+
+commandList.append(Command("!skip", "skipSong", "Skip current song"))
+async def skipSong(ctx, message):
+    global head
+    guild = message.guild
+    vc = guild.voice_client
+    if vc.is_playing():
+        vc.stop()
+    else:
+        embed = discord.Embed(
+                title='Skip Error',
+                description="No Songs to skip!",
+                color = discord.Colour.red()
+            )
+        await message.channel.send(embed=embed)
 
 
 commandList.append(Command("!play", "playMusic", "Play audio from youtube links through the bot\nUsage: !play <URL>"))
 async def playMusic(ctx, message):
     firstime = 0
     if(len(message.content.split(" ")) == 1):
-        await message.channel.send("No video link provided!")
+        embed = discord.Embed(
+                title='Video Link Error',
+                description="No Link Provided!",
+                color = discord.Colour.red()
+            )
+        await message.channel.send(embed=embed)
         return
     #get video url
     video = message.content.split(" ")[1]
@@ -889,16 +938,33 @@ async def playMusic(ctx, message):
         head = playlist
         tail = playlist
         #connect
-        voice_channel = message.author.voice.channel
-        vc = await voice_channel.connect()
+        try:
+            voice_channel = message.author.voice.channel
+            vc = await voice_channel.connect()
+        except:
+            embed = discord.Embed(
+                title='Voice Channel Error',
+                description="Calling user is not in a voice channel!",
+                color = discord.Colour.red()
+            )
+            await message.channel.send(embed=embed)
+            return
         #Start multithreading
         f_stop = threading.Event()
         checkForMusic(f_stop, ctx, message)
 
+        #Notify user of first time setup
+        embed = discord.Embed(
+                title='Initial Setup',
+                description="Music is being prepared, please wait!",
+                color = discord.Colour.green()
+            )
+        msg = await message.channel.send(embed=embed)
+
     #Set options for ytdl
     opts = {
         'format': 'bestaudio/best',
-        'outtmpl': 'youtube/%(title)s.%(ext)s',
+        'outtmpl': 'youtube/%(id)s.%(ext)s',
         'restrictfilenames': True,
         'noplaylist': True,
         'nocheckcertificate': True,
@@ -917,33 +983,47 @@ async def playMusic(ctx, message):
 
     with youtube_dl.YoutubeDL(opts) as ydl:
         #download video
+        #Make sure link is ok
+        embed = discord.Embed(
+                title='Video Link Error',
+                description="Bad/Incorrect Link Provided!",
+                color = discord.Colour.red()
+            )
         try:
-            title = ydl.extract_info(video, download=False).get('title', None)
+            fulltitle = ydl.extract_info(video, download=False).get('title', None)
+            vidID = ydl.extract_info(video, download=False).get('id', None)
         except:
-            await message.channel.send("Error in youtube link provided!")
+            await message.channel.send(embed=embed)
             return
 
-        if title == None:
-            await message.channel.send("Error in youtube link provided!")
+        if fulltitle == None:
+            await message.channel.send(embed=embed)
             return
 
         try:
             
             ydl.download([video])
         except:
-            await message.channel.send("Error in youtube link provided!")
+            await message.channel.send(embed=embed)
             return
-       
+
         
         #Notify user that the video has been added
-        #await msg.delete()
-        await message.channel.send("{} added to queue!".format(title))
+        if firstime:
+            await msg.delete()
+            firstime = 0
+        await message.channel.send("{} added to queue!".format(fulltitle))
         #replace symbols
-        title = title.replace('?', '')
-        title = title.replace(' ', '_')
-        title = title.replace(',', '')
+        # for x in string.punctuation:
+        #     if x in ['.', '-', '_', '\'', '~', ':']:
+        #         continue
+        #     title = title.replace(x, '')
+        # title = title.replace('\'', '_')
+        # title = title.replace(' ', '_')
+        # title = title.replace(':', '_-')
+        # title = title.replace('__', '_')
         #make new playlist node with title
-        newVid = Node(title=title)
+        newVid = Node(vidID=vidID, fulltitle=fulltitle)
         #update end of playlist
         tail.next = newVid
         newVid.prev = tail
