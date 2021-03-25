@@ -26,19 +26,39 @@ except:
 
 async def decisionMaker(client, message):
     action = 0 # Specifies whether to use numbers or custom options
-
+    picks = 1 # Determines the number of picks the user wants, 1 is default
     messageArgs = message.content.split(" ")
+    messageContent = message.content
+    # Check if number of picks specified   
+    if len(messageArgs) >= 2:
+        # Attempt to convert the second argument to a int
+        try:
+            messageArgs[1] = int(messageArgs[1])
+        except:
+            pass
+        # See if the second argument specifies the number of picks
+        if type(messageArgs[1]) == type(0):
+            # Delete the picks argument from the argument list
+            picks = messageArgs[1]
+            del messageArgs[1]
+            # Delete the picks argument from the content
+            firstSpace = messageContent.find(" ")
+            messageContent = messageContent[:firstSpace] + messageContent[messageContent.find(" ", firstSpace + 1):]
+    # Parse the message
     if len(messageArgs) >= 2:
         # Check if the user wants to specify custom options
         if messageArgs[1] == "custom":
             action = "custom"
-            options = parseCustomOptions(message.content)
+            options = parseCustomOptions(messageContent)
             # Check if the options list actually has options
             if len(options) == 0:
                 action = "error"
+            # Check if the number of picks exceeds the number of options
+            if checkPicksForCustomOptions(options, picks) == False:
+                action = "error"
             if action != "error":
-                picked = pickOption(options)
-                await sendCustomResults(message, picked, options, 1)
+                picked = pickOption(options, picks)
+                await sendCustomResults(message, picked, options, picks)
         # Check if the user wants to generate a number
         if messageArgs[1] == "number":
             action = "number"
@@ -50,24 +70,27 @@ async def decisionMaker(client, message):
             else:
                 lowBound = bounds[0]
                 highBound = bounds[1]
+            # Check if the number of picks exceeds the total possible integers
+            if checkPicksForNumbers(lowBound, highBound, picks) == False:
+                action = "error"
             # Only generate randomNumber if specified
             if action != "error":
-                randomNumber = generateRandNumber(lowBound, highBound)
-                await sendNumberResults(message, randomNumber, lowBound, highBound, 1)
+                randomNumber = generateRandNumber(lowBound, highBound, picks)
+                await sendNumberResults(message, randomNumber, lowBound, highBound, picks)
     else:
         response = "Incorrect usage of the command !decide. Please use **!commands !decide** to see the syntax of this command."
-        embed = discord.Embed(title='Incorrect Usage of !decide', description=response, colour=discord.Colour.purple())
+        embed = discord.Embed(title='Incorrect Usage of !decide', description=response, colour=discord.Colour.red())
         await message.channel.send(embed=embed)
         action = "syntax"
     # Print error message if there is a cast error or no action specified
     if action == 0:
         response = "Incorrect usage of the command !decide. Please use **!commands !decide** to see the syntax of this command."
-        embed = discord.Embed(title='Incorrect Usage of !decide', description=response, colour=discord.Colour.purple())
+        embed = discord.Embed(title='Incorrect Usage of !decide', description=response, colour=discord.Colour.red())
         await message.channel.send(embed=embed)
     elif action == "error":
         response = "There was an error with the arguments given! Please double check you have followed the specified format "
         response += "specified by **!commands !decide**."
-        embed = discord.Embed(title='Incorrect Usage of !decide', description=response, colour=discord.Colour.purple())
+        embed = discord.Embed(title='Incorrect Usage of !decide', description=response, colour=discord.Colour.red())
         await message.channel.send(embed=embed)
 
 # Parses the custom options from the message content
@@ -103,24 +126,57 @@ def parseCustomOptions(content):
         options = []
         messageArgs = content.split(" ")
         for i in range(2, len(messageArgs)):
-            options.append(messageArgs[i])
+            if messageArgs[i] != "":
+                options.append(messageArgs[i])
         return options
 
+# Checks if the number of picks is appropriate for the given options
+def checkPicksForCustomOptions(options, count):
+    # It is not possible to pick no options or a negative amount of options
+    if count <= 0:
+        return False
+    # Cannot pick more than the number of total options
+    if count > len(options):
+        return False
+    return True
+
 # Picks a option from the given list of options
-def pickOption(options):
-    return options[random.randrange(0, len(options))]
+def pickOption(options, count):
+    indices = random.sample(range(len(options)), count)
+    allOptions = []
+    for i in indices:
+        allOptions.append(options[i])
+    return allOptions
+
+# Checks if the number of picks is appropriate for the given bounds
+def checkPicksForNumbers(lowBound, highBound, count):
+    # It is not possible to pick no options or a negative amount of options
+    if count <= 0:
+        return False
+    # If lowBound and highBound are the same, then only one pick is possible
+    if highBound - lowBound == 0 and count > 1:
+        return False
+    # For integers, the number of picks cannot exceed the number of integers 
+    # within the bounds (includes the bounds)
+    if type(lowBound) == type(0) and type(highBound) == type(0):
+        if count > highBound - lowBound + 1:
+            return False
+    return True
 
 # Generates a random integer or float between lowBound and highBound
-def generateRandNumber(lowBound, highBound):
+def generateRandNumber(lowBound, highBound, picks):
     # Check if any of the bounds are floats
     numberType = 0 # Float or integer
     if type(lowBound) == type(1.5) or type(highBound) == type(1.5):
         numberType = "float"
     # Depending on the number type generate the random integer or float
     if numberType == "float":
-        return random.uniform(lowBound, highBound)
+        allNumbers = []
+        for _ in range(picks):
+            allNumbers.append(random.uniform(lowBound, highBound))
+        return allNumbers
     else:
-        return random.randint(lowBound, highBound)
+        return random.sample(range(lowBound, highBound + 1), picks)
 
 # Checks and assigns the bounds
 def assignBounds(messageArgs):
@@ -156,25 +212,33 @@ def assignBounds(messageArgs):
 
 # Sends a message to the user with the random number choices
 async def sendNumberResults(message, result, lowBound, highBound, count):
+    # Generate string of picked numbers
+    pickedStr = ""
+    for num in result:
+        pickedStr += str(num) + "\n"
     response = "Hello " + message.author.mention + "!\n"
     response += "I have generated **" + str(count) + "** random number(s) between **" + str(lowBound) + "** "
     response += "and **" + str(highBound) + "**.\n\n"
     embed = discord.Embed(title='Decision Results', description=response, colour=discord.Colour.random())
-    embed.add_field(name="Chosen Number(s):", value=str(result), inline=False)
+    embed.add_field(name="Chosen Number(s):", value=pickedStr, inline=False)
     embed.set_author(name=message.author.display_name, icon_url=message.author.avatar_url)
     await message.channel.send(embed=embed)
 
 # Sends a message to the user with the custom option choices
 async def sendCustomResults(message, picked, options, count):
-    # Generate string of options
+    # Generate string of picked options
+    pickedStr = ""
+    for option in picked:
+        pickedStr += str(option) + "\n"
+    # Generate string of all options
     optionStr = ""
     for option in options:
-        optionStr += option + "\n"
+        optionStr += str(option) + "\n"
     response = "Hello " + message.author.mention + "!\n"
     response += "I have picked **" + str(count) + "** option(s) from the given options:"
     embed = discord.Embed(title='Decision Results', description=response, colour=discord.Colour.random())
-    embed.add_field(name="Chosen Options(s):", value=str(picked), inline=False)
-    embed.add_field(name="All Possible Options(s):", value=str(optionStr), inline=False)
+    embed.add_field(name="Chosen Option(s):", value=pickedStr, inline=False)
+    embed.add_field(name="All Possible Option(s):", value=optionStr, inline=False)
     embed.set_author(name=message.author.display_name, icon_url=message.author.avatar_url)
     await message.channel.send(embed=embed)
 
@@ -187,38 +251,78 @@ if __name__=="__main__":
     print("")
     passed = 0
     # Test 1: sanity check to see if random module is working
-    result = generateRandNumber(0, 0)
-    if result == 0 and type(result) == type(3):
+    picks = 1
+    result = generateRandNumber(0, 0, picks)
+    if len(result) == 1 and result == [0]:
         passed += 1
     else:
         print("-x- Test 1 Failed")    
-    # Test 2: random number generated for two int args
-    result = generateRandNumber(0, 9)
-    if result >= 0 and result <= 9 and type(result) == type(3):
+    # Test 2: random number generated for two int args for one pick
+    picks = 1
+    result = generateRandNumber(0, 9, picks)
+    if len(result) == 1 and result[0] >= 0 and result[0] <= 9 and type(result[0]) == type(3):
         passed += 1
     else:
         print("-x- Test 2 Failed")    
-    # Test 3: random float generated for two float args
-    result = generateRandNumber(1.2, 2.4)
-    if result >= 1.2 and result <= 2.4 and type(result) == type(3.5):
+    # Test 3: random float generated for two float args for one pick
+    picks = 1
+    result = generateRandNumber(1.2, 2.4, picks)
+    if len(result) == 1 and result[0] >= 1.2 and result[0] <= 2.4 and type(result[0]) == type(3.5):
         passed += 1
     else:
         print("-x- Test 3 Failed")
-    # Test 4: random float generated for one float arg and one int arg
-    result = generateRandNumber(1.2, 3)
-    if result >= 1.2 and result <= 3.0 and type(result) == type(3.5):
+    # Test 4: random float generated for one float arg and one int arg for one pick
+    picks = 1
+    result = generateRandNumber(1.2, 3, picks)
+    if len(result) == 1 and result[0] >= 1.2 and result[0] <= 3.0 and type(result[0]) == type(3.5):
         passed += 1
     else:
         print("-x- Test 4 Failed")
-    # Test 5: random float generated for one int arg and one float arg
-    result = generateRandNumber(1, 3.4)
-    if result >= 1 and result <= 3.4 and type(result) == type(3.5):
+    # Test 5: random float generated for one int arg and one float arg for one pick
+    picks = 1
+    result = generateRandNumber(1, 3.4, picks)
+    if len(result) == 1 and result[0] >= 1 and result[0] <= 3.4 and type(result[0]) == type(3.5):
         passed += 1
     else:
         print("-x- Test 5 Failed")
+    # Test 6: random number generated for two int args for multiple picks
+    picks = 3
+    result = generateRandNumber(0, 9, picks)
+    if len(result) == 3 and [r for r in result if r >= 0 and r <= 9 and type(r) == type(3)] == result:
+        passed += 1
+    else:
+        print("-x- Test 6 Failed")    
+    # Test 7: random float generated for two float args for multiple picks
+    picks = 3
+    result = generateRandNumber(1.2, 2.4, picks)
+    if len(result) == 3 and [r for r in result if r >= 1.2 and r <= 2.4 and type(r) == type(3.5)] == result:
+        passed += 1
+    else:
+        print("-x- Test 7 Failed")
+    # Test 8: random float generated for one float arg and one int arg for one pick
+    picks = 3
+    result = generateRandNumber(1.2, 3, picks)
+    if len(result) == 3 and [r for r in result if r >= 1.2 and r <= 3.0 and type(r) == type(3.5)] == result:
+        passed += 1
+    else:
+        print("-x- Test 8 Failed")
+    # Test 9: random float generated for one int arg and one float arg for one pick
+    picks = 1
+    result = generateRandNumber(1, 3.4, picks)
+    if len(result) == 1 and [r for r in result if r >= 1 and r <= 3.4 and type(r) == type(3.5)] == result:
+        passed += 1
+    else:
+        print("-x- Test 9 Failed")
+    # Test 10: stress test the random number generation capabilities
+    picks = 1000
+    result = generateRandNumber(0, 10000, picks)
+    if len(result) == 1000 and [r for r in result if r >= 0 and r <= 10000 and type(r) == type(3)] == result:
+        passed += 1
+    else:
+        print("-x- Test 10 Failed")
     
     print("    Tests Complete for generateRandNumber()")
-    print("    Passed " + str(passed) + "/" + str(5) + " Tests")
+    print("    Passed " + str(passed) + "/" + str(10) + " Tests")
     print("")
     # End tests for function generateRandNumber()
 
@@ -397,10 +501,15 @@ if __name__=="__main__":
         passed += 1
     else:
         print("-x- Test 9 Failed")        
-    # Test 10: stress test the parsing capabilities for a message with ten different options
-    input = '!decide custom one two three "four option" five six seven "eight option" nine "ten option"'
+    # Test 10: stress test the parsing capabilities
+    input = '!decide custom '
+    for i in range(10000):
+        input += str(i) + " "
     result = parseCustomOptions(input)
-    if result == ["one", "two", "three", "four option", "five", "six", "seven", "eight option", "nine", "ten option"]:
+    expected = []
+    for i in range(10000):
+        expected.append(str(i))
+    if len(result) == 10000 and result == expected:
         passed += 1
     else:
         print("-x- Test 10 Failed")
@@ -429,30 +538,199 @@ if __name__=="__main__":
     print("")
     passed = 0
     # Test 1: selection of one option from a set of one custom option
+    picks = 1
     input = ["one"]
-    result = pickOption(input)
-    if result == "one":
+    result = pickOption(input, picks)
+    if len(result) == 1 and result == ["one"]:
         passed += 1
     else:
         print("-x- Test 1 Failed")
     # Test 2: selection of one option from a set of multiple custom options
+    picks = 1
     input = ["one", "two", "three"]
-    result = pickOption(input)
+    result = pickOption(input, picks)
     possibleOptions = ["one", "two", "three"]
-    if result in possibleOptions:
+    if len(result) == 1 and result[0] in possibleOptions:
         passed += 1
     else:
         print("-x- Test 2 Failed")
-    # Test 3: stress test the selection capabilities for selection of one option from a large set of options
-    input = ["one penny", "two", "three", "four", "five nickel", "six", "seven", "eight", "nine", "ten dime"]
-    result = pickOption(input)
-    possibleOptions = ["one penny", "two", "three", "four", "five nickel", "six", "seven", "eight", "nine", "ten dime"]
-    if result in possibleOptions:
+    # Test 3: selection of multiple options from a set with size exactly the number of specified picks
+    picks = 3
+    input = ["one", "two", "three"]
+    result = pickOption(input, picks)
+    possibleOptions = ["one", "two", "three"]
+    if len(result) == 3 and [r for r in result if r in possibleOptions] == result:
         passed += 1
     else:
         print("-x- Test 3 Failed")
+    # Test 4: selection of multiple options from a set of multiple custom options
+    picks = 3
+    input = ["one", "two", "three", "four", "five"]
+    result = pickOption(input, picks)
+    possibleOptions = ["one", "two", "three", "four", "five"]
+    if len(result) == 3 and [r for r in result if r in possibleOptions] == result:
+        passed += 1
+    else:
+        print("-x- Test 4 Failed")
+    # Test 5: stress test the selection capabilities for selection of one option from a large set of options
+    picks = 1
+    input = []
+    for i in range(10000):
+        input.append(str(i))
+    result = pickOption(input, picks)
+    possibleOptions = []
+    for i in range(10000):
+        possibleOptions.append(str(i))
+    if len(result) == 1 and result[0] in possibleOptions:
+        passed += 1
+    else:
+        print("-x- Test 5 Failed")
+    # Test 6: stress test the selection capabilities for selection of multiple options from a large set of options
+    picks = 1000
+    input = []
+    for i in range(10000):
+        input.append(str(i))
+    result = pickOption(input, picks)
+    possibleOptions = []
+    for i in range(10000):
+        possibleOptions.append(str(i))
+    if len(result) == 1000 and [r for r in result if r in possibleOptions] == result:
+        passed += 1
+    else:
+        print("-x- Test 6 Failed")
     
     print("    Tests Complete for pickOption()")
-    print("    Passed " + str(passed) + "/" + str(3) + " Tests")
+    print("    Passed " + str(passed) + "/" + str(6) + " Tests")
     print("")
     # End tests for function pickOption()
+
+    # Unit Tests for function checkPicksForCustomOptions()
+    print("Testing custom options number of picks verification:")
+    print("")
+    passed = 0
+    # Test 1: negative number of picks is given with multiple options
+    picks = -1
+    input = ["one", "two", "three"]
+    result = checkPicksForCustomOptions(input, picks)
+    if result == False:
+        passed += 1
+    else:
+        print("-x- Test 1 Failed")
+    # Test 2: zero number of picks is given with multiple options
+    picks = 0
+    input = ["one", "two", "three"]
+    result = checkPicksForCustomOptions(input, picks)
+    if result == False:
+        passed += 1
+    else:
+        print("-x- Test 2 Failed")
+    # Test 3: number of picks given is larger than total number of possible options
+    picks = 4
+    input = ["one", "two", "three"]
+    result = checkPicksForCustomOptions(input, picks)
+    if result == False:
+        passed += 1
+    else:
+        print("-x- Test 3 Failed")
+    # Test 4: number of picks given is less than to total number of possible options
+    picks = 1
+    input = ["one", "two", "three"]
+    result = checkPicksForCustomOptions(input, picks)
+    if result == True:
+        passed += 1
+    else:
+        print("-x- Test 4 Failed")
+    # Test 5: number of picks given is equal to total number of possible options
+    picks = 3
+    input = ["one", "two", "three"]
+    result = checkPicksForCustomOptions(input, picks)
+    if result == True:
+        passed += 1
+    else:
+        print("-x- Test 5 Failed")
+
+    print("    Tests Complete for checkPicksForCustomOptions()")
+    print("    Passed " + str(passed) + "/" + str(5) + " Tests")
+    print("")
+    # End tests for function checkPicksForCustomOptions()
+
+    # Unit Tests for function checkPicksForNumbers()
+    print("Testing random number generation number of picks verification:")
+    print("")
+    passed = 0
+    # Test 1: negative number of picks from a set of valid bounds
+    picks = -1
+    result = checkPicksForNumbers(0, 9, picks)
+    if result == False:
+        passed += 1
+    else:
+        print("-x- Test 1 Failed")
+    # Test 2: no picks from a set of valid bounds
+    picks = 0
+    result = checkPicksForNumbers(0, 9, picks)
+    if result == False:
+        passed += 1
+    else:
+        print("-x- Test 2 Failed")
+    # Test 3: number of picks given is larger than possible integers in integral bounds
+    picks = 11
+    result = checkPicksForNumbers(0, 9, picks)
+    if result == False:
+        passed += 1
+    else:
+        print("-x- Test 3 Failed")
+    # Test 4: number of picks given is within the possible integers in integral bounds
+    picks = 10
+    result = checkPicksForNumbers(0, 9, picks)
+    if result == True:
+        passed += 1
+    else:
+        print("-x- Test 4 Failed")
+    # Test 5: one pick for equivalent integral lower bound and integral upper bound
+    picks = 1
+    result = checkPicksForNumbers(0, 0, picks)
+    if result == True:
+        passed += 1
+    else:
+        print("-x- Test 5 Failed")
+    # Test 6: multiple picks for equivalent integral lower bound and integral upper bound
+    picks = 2
+    result = checkPicksForNumbers(0, 0, picks)
+    if result == False:
+        passed += 1
+    else:
+        print("-x- Test 6 Failed")
+    # Test 7: one pick for equivalent float lower bound and float upper bound
+    picks = 1
+    result = checkPicksForNumbers(1.4, 1.4, picks)
+    if result == True:
+        passed += 1
+    else:
+        print("-x- Test 7 Failed")
+    # Test 8: multiple picks for equivalent float lower bound and float upper bound
+    picks = 2
+    result = checkPicksForNumbers(1.4, 1.4, picks)
+    if result == False:
+        passed += 1
+    else:
+        print("-x- Test 8 Failed")
+    # Test 9: one pick from a set of valid float bounds
+    picks = 1
+    result = checkPicksForNumbers(1.4, 1.5, picks)
+    if result == True:
+        passed += 1
+    else:
+        print("-x- Test 9 Failed")
+    # Test 10: multiple picks from a set of valid float bounds
+    picks = 100
+    result = checkPicksForNumbers(1.4, 1.5, picks)
+    if result == True:
+        passed += 1
+    else:
+        print("-x- Test 10 Failed")
+
+
+    print("    Tests Complete for checkPicksForNumbers()")
+    print("    Passed " + str(passed) + "/" + str(10) + " Tests")
+    print("")
+    # End tests for function checkPicksForNumbers()
