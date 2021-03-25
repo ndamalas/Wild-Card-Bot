@@ -126,12 +126,13 @@ def parseCustomOptions(content):
         options = []
         messageArgs = content.split(" ")
         for i in range(2, len(messageArgs)):
-            options.append(messageArgs[i])
+            if messageArgs[i] != "":
+                options.append(messageArgs[i])
         return options
 
 # Checks if the number of picks is appropriate for the given options
 def checkPicksForCustomOptions(options, count):
-    # It is not possible to pick no options a negative amount of options
+    # It is not possible to pick no options or a negative amount of options
     if count <= 0:
         return False
     # Cannot pick more than the number of total options
@@ -149,7 +150,7 @@ def pickOption(options, count):
 
 # Checks if the number of picks is appropriate for the given bounds
 def checkPicksForNumbers(lowBound, highBound, count):
-    # It is not possible to pick no options a negative amount of options
+    # It is not possible to pick no options or a negative amount of options
     if count <= 0:
         return False
     # If lowBound and highBound are the same, then only one pick is possible
@@ -256,37 +257,72 @@ if __name__=="__main__":
         passed += 1
     else:
         print("-x- Test 1 Failed")    
-    # Test 2: random number generated for two int args
+    # Test 2: random number generated for two int args for one pick
     picks = 1
     result = generateRandNumber(0, 9, picks)
     if len(result) == 1 and result[0] >= 0 and result[0] <= 9 and type(result[0]) == type(3):
         passed += 1
     else:
         print("-x- Test 2 Failed")    
-    # Test 3: random float generated for two float args
+    # Test 3: random float generated for two float args for one pick
     picks = 1
     result = generateRandNumber(1.2, 2.4, picks)
     if len(result) == 1 and result[0] >= 1.2 and result[0] <= 2.4 and type(result[0]) == type(3.5):
         passed += 1
     else:
         print("-x- Test 3 Failed")
-    # Test 4: random float generated for one float arg and one int arg
+    # Test 4: random float generated for one float arg and one int arg for one pick
     picks = 1
     result = generateRandNumber(1.2, 3, picks)
     if len(result) == 1 and result[0] >= 1.2 and result[0] <= 3.0 and type(result[0]) == type(3.5):
         passed += 1
     else:
         print("-x- Test 4 Failed")
-    # Test 5: random float generated for one int arg and one float arg
+    # Test 5: random float generated for one int arg and one float arg for one pick
     picks = 1
     result = generateRandNumber(1, 3.4, picks)
     if len(result) == 1 and result[0] >= 1 and result[0] <= 3.4 and type(result[0]) == type(3.5):
         passed += 1
     else:
         print("-x- Test 5 Failed")
+    # Test 6: random number generated for two int args for multiple picks
+    picks = 3
+    result = generateRandNumber(0, 9, picks)
+    if len(result) == 3 and [r for r in result if r >= 0 and r <= 9 and type(r) == type(3)] == result:
+        passed += 1
+    else:
+        print("-x- Test 6 Failed")    
+    # Test 7: random float generated for two float args for multiple picks
+    picks = 3
+    result = generateRandNumber(1.2, 2.4, picks)
+    if len(result) == 3 and [r for r in result if r >= 1.2 and r <= 2.4 and type(r) == type(3.5)] == result:
+        passed += 1
+    else:
+        print("-x- Test 7 Failed")
+    # Test 8: random float generated for one float arg and one int arg for one pick
+    picks = 3
+    result = generateRandNumber(1.2, 3, picks)
+    if len(result) == 3 and [r for r in result if r >= 1.2 and r <= 3.0 and type(r) == type(3.5)] == result:
+        passed += 1
+    else:
+        print("-x- Test 8 Failed")
+    # Test 9: random float generated for one int arg and one float arg for one pick
+    picks = 1
+    result = generateRandNumber(1, 3.4, picks)
+    if len(result) == 1 and [r for r in result if r >= 1 and r <= 3.4 and type(r) == type(3.5)] == result:
+        passed += 1
+    else:
+        print("-x- Test 9 Failed")
+    # Test 10: stress test the random number generation capabilities
+    picks = 1000
+    result = generateRandNumber(0, 10000, picks)
+    if len(result) == 1000 and [r for r in result if r >= 0 and r <= 10000 and type(r) == type(3)] == result:
+        passed += 1
+    else:
+        print("-x- Test 10 Failed")
     
     print("    Tests Complete for generateRandNumber()")
-    print("    Passed " + str(passed) + "/" + str(5) + " Tests")
+    print("    Passed " + str(passed) + "/" + str(10) + " Tests")
     print("")
     # End tests for function generateRandNumber()
 
@@ -465,10 +501,15 @@ if __name__=="__main__":
         passed += 1
     else:
         print("-x- Test 9 Failed")        
-    # Test 10: stress test the parsing capabilities for a message with ten different options
-    input = '!decide custom one two three "four option" five six seven "eight option" nine "ten option"'
+    # Test 10: stress test the parsing capabilities
+    input = '!decide custom '
+    for i in range(10000):
+        input += str(i) + " "
     result = parseCustomOptions(input)
-    if result == ["one", "two", "three", "four option", "five", "six", "seven", "eight option", "nine", "ten option"]:
+    expected = []
+    for i in range(10000):
+        expected.append(str(i))
+    if len(result) == 10000 and result == expected:
         passed += 1
     else:
         print("-x- Test 10 Failed")
@@ -513,17 +554,183 @@ if __name__=="__main__":
         passed += 1
     else:
         print("-x- Test 2 Failed")
-    # Test 3: stress test the selection capabilities for selection of one option from a large set of options
-    picks = 1
-    input = ["one penny", "two", "three", "four", "five nickel", "six", "seven", "eight", "nine", "ten dime"]
+    # Test 3: selection of multiple options from a set with size exactly the number of specified picks
+    picks = 3
+    input = ["one", "two", "three"]
     result = pickOption(input, picks)
-    possibleOptions = ["one penny", "two", "three", "four", "five nickel", "six", "seven", "eight", "nine", "ten dime"]
-    if len(result) == 1 and result[0] in possibleOptions:
+    possibleOptions = ["one", "two", "three"]
+    if len(result) == 3 and [r for r in result if r in possibleOptions] == result:
         passed += 1
     else:
         print("-x- Test 3 Failed")
+    # Test 4: selection of multiple options from a set of multiple custom options
+    picks = 3
+    input = ["one", "two", "three", "four", "five"]
+    result = pickOption(input, picks)
+    possibleOptions = ["one", "two", "three", "four", "five"]
+    if len(result) == 3 and [r for r in result if r in possibleOptions] == result:
+        passed += 1
+    else:
+        print("-x- Test 4 Failed")
+    # Test 5: stress test the selection capabilities for selection of one option from a large set of options
+    picks = 1
+    input = []
+    for i in range(10000):
+        input.append(str(i))
+    result = pickOption(input, picks)
+    possibleOptions = []
+    for i in range(10000):
+        possibleOptions.append(str(i))
+    if len(result) == 1 and result[0] in possibleOptions:
+        passed += 1
+    else:
+        print("-x- Test 5 Failed")
+    # Test 6: stress test the selection capabilities for selection of multiple options from a large set of options
+    picks = 1000
+    input = []
+    for i in range(10000):
+        input.append(str(i))
+    result = pickOption(input, picks)
+    possibleOptions = []
+    for i in range(10000):
+        possibleOptions.append(str(i))
+    if len(result) == 1000 and [r for r in result if r in possibleOptions] == result:
+        passed += 1
+    else:
+        print("-x- Test 6 Failed")
     
     print("    Tests Complete for pickOption()")
-    print("    Passed " + str(passed) + "/" + str(3) + " Tests")
+    print("    Passed " + str(passed) + "/" + str(6) + " Tests")
     print("")
     # End tests for function pickOption()
+
+    # Unit Tests for function checkPicksForCustomOptions()
+    print("Testing custom options number of picks verification:")
+    print("")
+    passed = 0
+    # Test 1: negative number of picks is given with multiple options
+    picks = -1
+    input = ["one", "two", "three"]
+    result = checkPicksForCustomOptions(input, picks)
+    if result == False:
+        passed += 1
+    else:
+        print("-x- Test 1 Failed")
+    # Test 2: zero number of picks is given with multiple options
+    picks = 0
+    input = ["one", "two", "three"]
+    result = checkPicksForCustomOptions(input, picks)
+    if result == False:
+        passed += 1
+    else:
+        print("-x- Test 2 Failed")
+    # Test 3: number of picks given is larger than total number of possible options
+    picks = 4
+    input = ["one", "two", "three"]
+    result = checkPicksForCustomOptions(input, picks)
+    if result == False:
+        passed += 1
+    else:
+        print("-x- Test 3 Failed")
+    # Test 4: number of picks given is less than to total number of possible options
+    picks = 1
+    input = ["one", "two", "three"]
+    result = checkPicksForCustomOptions(input, picks)
+    if result == True:
+        passed += 1
+    else:
+        print("-x- Test 4 Failed")
+    # Test 5: number of picks given is equal to total number of possible options
+    picks = 3
+    input = ["one", "two", "three"]
+    result = checkPicksForCustomOptions(input, picks)
+    if result == True:
+        passed += 1
+    else:
+        print("-x- Test 5 Failed")
+
+    print("    Tests Complete for checkPicksForCustomOptions()")
+    print("    Passed " + str(passed) + "/" + str(5) + " Tests")
+    print("")
+    # End tests for function checkPicksForCustomOptions()
+
+    # Unit Tests for function checkPicksForNumbers()
+    print("Testing random number generation number of picks verification:")
+    print("")
+    passed = 0
+    # Test 1: negative number of picks from a set of valid bounds
+    picks = -1
+    result = checkPicksForNumbers(0, 9, picks)
+    if result == False:
+        passed += 1
+    else:
+        print("-x- Test 1 Failed")
+    # Test 2: no picks from a set of valid bounds
+    picks = 0
+    result = checkPicksForNumbers(0, 9, picks)
+    if result == False:
+        passed += 1
+    else:
+        print("-x- Test 2 Failed")
+    # Test 3: number of picks given is larger than possible integers in integral bounds
+    picks = 11
+    result = checkPicksForNumbers(0, 9, picks)
+    if result == False:
+        passed += 1
+    else:
+        print("-x- Test 3 Failed")
+    # Test 4: number of picks given is within the possible integers in integral bounds
+    picks = 10
+    result = checkPicksForNumbers(0, 9, picks)
+    if result == True:
+        passed += 1
+    else:
+        print("-x- Test 4 Failed")
+    # Test 5: one pick for equivalent integral lower bound and integral upper bound
+    picks = 1
+    result = checkPicksForNumbers(0, 0, picks)
+    if result == True:
+        passed += 1
+    else:
+        print("-x- Test 5 Failed")
+    # Test 6: multiple picks for equivalent integral lower bound and integral upper bound
+    picks = 2
+    result = checkPicksForNumbers(0, 0, picks)
+    if result == False:
+        passed += 1
+    else:
+        print("-x- Test 6 Failed")
+    # Test 7: one pick for equivalent float lower bound and float upper bound
+    picks = 1
+    result = checkPicksForNumbers(1.4, 1.4, picks)
+    if result == True:
+        passed += 1
+    else:
+        print("-x- Test 7 Failed")
+    # Test 8: multiple picks for equivalent float lower bound and float upper bound
+    picks = 2
+    result = checkPicksForNumbers(1.4, 1.4, picks)
+    if result == False:
+        passed += 1
+    else:
+        print("-x- Test 8 Failed")
+    # Test 9: one pick from a set of valid float bounds
+    picks = 1
+    result = checkPicksForNumbers(1.4, 1.5, picks)
+    if result == True:
+        passed += 1
+    else:
+        print("-x- Test 9 Failed")
+    # Test 10: multiple picks from a set of valid float bounds
+    picks = 100
+    result = checkPicksForNumbers(1.4, 1.5, picks)
+    if result == True:
+        passed += 1
+    else:
+        print("-x- Test 10 Failed")
+
+
+    print("    Tests Complete for checkPicksForNumbers()")
+    print("    Passed " + str(passed) + "/" + str(10) + " Tests")
+    print("")
+    # End tests for function checkPicksForNumbers()
