@@ -173,7 +173,13 @@ def generateRandNumber(lowBound, highBound, picks):
     if numberType == "float":
         allNumbers = []
         for _ in range(picks):
-            allNumbers.append(random.uniform(lowBound, highBound))
+            randomFloat = random.uniform(lowBound, highBound)
+            if randomFloat not in allNumbers:
+                allNumbers.append(randomFloat)
+            else:
+                # Extremely unlikely for this occur, but if there are same floats regenerate
+                randomFloat = random.uniform(lowBound, highBound)
+                allNumbers.append(randomFloat)
         return allNumbers
     else:
         return random.sample(range(lowBound, highBound + 1), picks)
@@ -313,16 +319,23 @@ if __name__=="__main__":
         passed += 1
     else:
         print("-x- Test 9 Failed")
-    # Test 10: stress test the random number generation capabilities
+    # Test 10: stress test the random number generation capabilities for ints
     picks = 1000
     result = generateRandNumber(0, 10000, picks)
     if len(result) == 1000 and [r for r in result if r >= 0 and r <= 10000 and type(r) == type(3)] == result:
         passed += 1
     else:
         print("-x- Test 10 Failed")
+    # Test 11: stress test the random number generation capabilities for floats
+    picks = 1000
+    result = generateRandNumber(0, 9999.99, picks)
+    if len(result) == 1000 and [r for r in result if r >= 0 and r <= 9999.99 and type(r) == type(3.5)] == result:
+        passed += 1
+    else:
+        print("-x- Test 11 Failed")
     
     print("    Tests Complete for generateRandNumber()")
-    print("    Passed " + str(passed) + "/" + str(10) + " Tests")
+    print("    Passed " + str(passed) + "/" + str(11) + " Tests")
     print("")
     # End tests for function generateRandNumber()
 
