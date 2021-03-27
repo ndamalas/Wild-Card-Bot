@@ -42,8 +42,8 @@ except:
 async def createPoll(client, message):
     user = message.author
     # Create the poll and message the user if recieved !createpoll from a channel
-    if message.channel != None and message.content.split(" ")[0] == "!createpoll":
-        userPolls[user.id] = Poll
+    if checkCreationConditions(message, user) == True:
+        userPolls[user.id] = Poll()
         response = "Hello " + user.mention + "!\n\n"
         response += "To initiate the poll creation process, please give your poll a title.\n\n"
         response += "If at any point you want to cancel poll creation, message **cancel**."
@@ -61,3 +61,8 @@ async def directMessageUser(user, title, response):
     embed = discord.Embed(title=title, description=response, colour=discord.Colour.blue())
     embed.set_author(name=user.display_name, icon_url=user.avatar_url)
     await user.send(embed=embed)
+
+# Checks if the user matches the conditions necessary for poll creation
+def checkCreationConditions(message, user):
+    alreadyCreatingPoll = len([p for p in userPolls[user.id] if p.complete == False]) == 0
+    return message.channel != None and message.content.split(" ")[0] == "!createpoll" and alreadyCreatingPoll
