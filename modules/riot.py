@@ -157,3 +157,20 @@ async def get_champion_mastery(ctx, message):
       await message.channel.send("Champion: " + championArray[i] +
       #await message.channel.send(championdata['data'][championArray[i]]['image']['sprite'])
       "\nTotal Mastery Points: " + str(championmastery[i]['championPoints']) + "\nMastery Level: " + str(championmastery[i]['championLevel']))
+
+
+commandList.append(Command("!matchhistory", "get_match_history", "Displays a player's League of Legends match history\nUsage: !matchhistory <REGION> <IGN>"))
+async def get_match_history(ctx, message):
+    messageArray = message.content.split(" ")
+    region = message.content.split(" ")[1]
+    name = ""
+    for i in range(2, len(messageArray)):
+      name += message.content.split(" ")[i]
+    # print(name)
+    version = lol_watcher.data_dragon.versions_for_region(region)
+    user = lol_watcher.summoner.by_name(region, name)
+    print(user)
+    matchlist = lol_watcher.match.matchlist_by_account(region, user['accountId'])
+    await message.channel.send(">>> MATCH HISTORY: \n")
+    for i in range(5):
+      await message.channel.send(">>> \n" + str(i + 1) + ".\nQueue: " + get_queue_type(matchlist['matches'][i]['queue']) + "\nChampion: " + str(matchlist['matches'][i]['champion']) + "\n")
