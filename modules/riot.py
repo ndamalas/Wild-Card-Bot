@@ -6,7 +6,11 @@ from riotwatcher import LolWatcher, ApiError, RiotWatcher, LorWatcher, TftWatche
 
 commandList = []
 
+<<<<<<< Updated upstream
 riot_api_key = "RGAPI-654cbb73-cbb2-4bfb-9437-2b73fda6b689"
+=======
+riot_api_key = "RGAPI-699f4344-49e5-4e99-8a76-362b6a39c1ad"
+>>>>>>> Stashed changes
 lol_watcher = LolWatcher(riot_api_key)
 riot_watcher = RiotWatcher(riot_api_key)
 lor_watcher = LorWatcher(riot_api_key)
@@ -107,3 +111,43 @@ async def get_tft_profile(ctx, message):
     await message.channel.send("http://ddragon.leagueoflegends.com/cdn/" + version['n']['profileicon'] + "/img/profileicon/" + str(user['profileIconId']) + ".png")
     if len(ranked_stats) == 1:
         await message.channel.send("Ranked TFT: " + ranked_stats[0]['tier'] + " " + ranked_stats[0]['rank'] + " " + str(ranked_stats[0]['leaguePoints']) + "LP " + str(ranked_stats[0]['wins']) + "W/" + str(ranked_stats[0]['losses']) + "L")
+commandList.append(Command("!mastery", "get_champion_mastery", "Displays the specified player's top 3 champion masteries.\nUsage: !mastery <REGION> <IGN>"))
+async def get_champion_mastery(ctx, message):
+    #Splits string into !command region username
+    messageArray = message.content.split(" ")
+    region = message.content.split(" ")[1]
+    #print(region)
+    name = ""
+    for i in range(2, len(messageArray)):
+      name += message.content.split(" ")[i]
+    #Get the version (what patch league is on)
+    version = lol_watcher.data_dragon.versions_for_region(region)
+    #print(version)
+    #Gets the user data using the region and username
+    user = lol_watcher.summoner.by_name(region, name)
+    #Gets the champion mastery
+    championmastery = lol_watcher.champion_mastery.by_summoner(region, user['id'])
+    #Gets the total mastery score like returns as an int (i.e. 577)
+    totalmastery = lol_watcher.champion_mastery.scores_by_summoner(region, user['id'])
+    #Gets the list of all champions/abilites/descriptions
+    championdata = lol_watcher.data_dragon.champions(version ['n']['champion'], False, None)
+    championList = []
+    for champion in championdata['data']:
+      championList.append(championdata['data'][champion])
+    print(championList[0]['id'])
+    #Array of top 3 champions
+    championArray = []
+    #For loop goes through all the champions matching the champion by championID to get names
+    for j in range(3):
+      for i in range(len(championList)):
+        if (str(championdata['data'][championList[i]['id']]['key']) == str(championmastery[j]['championId'])):
+          #print("hi")
+          #print(championmastery[j]['championId'])
+          championArray.append(championdata['data'][championList[i]['id']]['id'])
+    #Prints out username, total mastery score, top 3 champion names each with total mastery points + level of mastery
+    await message.channel.send(user['name'])
+    await message.channel.send("Total Mastery Score: " + str(totalmastery))
+    for i in range(3):
+      await message.channel.send("Champion: " + championArray[i] +
+      #await message.channel.send(championdata['data'][championArray[i]]['image']['sprite'])
+      "\nTotal Mastery Points: " + str(championmastery[i]['championPoints']) + "\nMastery Level: " + str(championmastery[i]['championLevel']))
