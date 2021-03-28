@@ -15,7 +15,9 @@ lor_watcher = LorWatcher(riot_api_key)
 tft_watcher = TftWatcher(riot_api_key)
 
 pd.set_option('display.max_columns', 5)
-myDf = pd.read_json('./leaguedata/11.6.1/data/en_US/champion.json')
+championDf = pd.read_json('./leaguedata/11.6.1/data/en_US/champion.json')
+summonerDf = pd.read_json('./leaguedata/11.6.1/data/en_US/summoner.json')
+runesDf = pd.read_json('./leaguedata/11.6.1/data/en_US/runesReforged.json')
 
 commandList.append(Command("!regions", "get_regions", "Displays all regions"))
 async def get_regions(ctx, message):
@@ -39,49 +41,22 @@ async def live_game(ctx, message):
     i = 0
     while i < 5:
         player = spectator['participants'][i]
-        output += player['summonerName'] + " " + search_champion_by_id(str(player['championId'])) + " " + str(player['spell1Id']) + " " + str(player['spell2Id']) + " "
-        output += str(player['perks']['perkStyle']) + " " + str(player['perks']['perkIds'][0]) + " " + str(player['perks']['perkIds'][1]) + " " + str(player['perks']['perkIds'][2]) + " "
-        output += str(player['perks']['perkSubStyle']) + " " + str(player['perks']['perkIds'][3]) + " " + str(player['perks']['perkIds'][4]) + " " + str(player['perks']['perkIds'][5]) + " "
-        output += str(player['perks']['perkIds'][6]) + " " + str(player['perks']['perkIds'][7]) + " " + str(player['perks']['perkIds'][8])
+        output += player['summonerName'] + " " + search_champion_by_id(str(player['championId'])) + " " + search_summoner_spell_by_id(str(player['spell1Id'])) + " " + search_summoner_spell_by_id(str(player['spell2Id'])) + " "
+        output += search_runes_by_id(player['perks']['perkStyle']) + " " + search_runes_by_id(player['perks']['perkIds'][0]) + " " + search_runes_by_id(player['perks']['perkIds'][1]) + " " + search_runes_by_id(player['perks']['perkIds'][2]) + " " + search_runes_by_id(player['perks']['perkIds'][3]) + " "
+        output += search_runes_by_id(player['perks']['perkSubStyle']) + " " + search_runes_by_id(player['perks']['perkIds'][4]) + " " + search_runes_by_id(player['perks']['perkIds'][5]) + " "
+        output += search_runes_by_id(player['perks']['perkIds'][6]) + " " + search_runes_by_id(player['perks']['perkIds'][7]) + " " + search_runes_by_id(player['perks']['perkIds'][8])
         output += "\n"
         i += 1
     output += "Red Side\n"
     while i < 10:
         player = spectator['participants'][i]
-        output += player['summonerName'] + " " + search_champion_by_id(str(player['championId'])) + " " + str(player['spell1Id']) + " " + str(player['spell2Id']) + " "
-        output += str(player['perks']['perkStyle']) + " " + str(player['perks']['perkIds'][0]) + " " + str(player['perks']['perkIds'][1]) + " " + str(player['perks']['perkIds'][2]) + " "
-        output += str(player['perks']['perkSubStyle']) + " " + str(player['perks']['perkIds'][3]) + " " + str(player['perks']['perkIds'][4]) + " " + str(player['perks']['perkIds'][5]) + " "
-        output += str(player['perks']['perkIds'][6]) + " " + str(player['perks']['perkIds'][7]) + " " + str(player['perks']['perkIds'][8])
+        output += player['summonerName'] + " " + search_champion_by_id(str(player['championId'])) + " " + search_summoner_spell_by_id(str(player['spell1Id'])) + " " + search_summoner_spell_by_id(str(player['spell2Id'])) + " "
+        output += search_runes_by_id(player['perks']['perkStyle']) + " " + search_runes_by_id(player['perks']['perkIds'][0]) + " " + search_runes_by_id(player['perks']['perkIds'][1]) + " " + search_runes_by_id(player['perks']['perkIds'][2]) + " " + search_runes_by_id(player['perks']['perkIds'][3]) + " "
+        output += search_runes_by_id(player['perks']['perkSubStyle']) + " " + search_runes_by_id(player['perks']['perkIds'][4]) + " " + search_runes_by_id(player['perks']['perkIds'][5]) + " "
+        output += search_runes_by_id(player['perks']['perkIds'][6]) + " " + search_runes_by_id(player['perks']['perkIds'][7]) + " " + search_runes_by_id(player['perks']['perkIds'][8])
         output += "\n"
         i += 1
     await message.channel.send(output)
-
-def get_queue_type(id: int) -> str:
-    mode = ""
-    if id == 0:
-        mode += "Custom"
-    elif id == 400:
-        mode += "Normal Draft"
-    elif id == 420:
-        mode += "Ranked Solo/Duo"
-    elif id == 430:
-        mode += "Normal Blind"
-    elif id == 440:
-        mode += "Ranked Flex"
-    elif id == 450:
-        mode += "ARAM"
-    elif id == 700:
-        mode += "Clash"
-    elif id == 900:
-        mode += "URF"
-    else:
-        mode += "Other"
-    return mode
-
-def search_champion_by_id(id: str) -> str:
-    for i in myDf['data']:
-        if i['key'] == id:
-            return i['id']
 
 commandList.append(Command("!league", "get_league_profile", "Displays a player's League of Legends profile\nUsage: !league <REGION> <IGN>"))
 async def get_league_profile(ctx, message):
@@ -174,3 +149,66 @@ async def get_match_history(ctx, message):
     await message.channel.send(">>> MATCH HISTORY: \n")
     for i in range(5):
       await message.channel.send(">>> \n" + str(i + 1) + ".\nQueue: " + get_queue_type(matchlist['matches'][i]['queue']) + "\nChampion: " + search_champion_by_id(str(matchlist['matches'][i]['champion'])) + "\n")
+
+
+
+def get_queue_type(id: int) -> str:
+    mode = ""
+    if id == 0:
+        mode += "Custom"
+    elif id == 400:
+        mode += "Normal Draft"
+    elif id == 420:
+        mode += "Ranked Solo/Duo"
+    elif id == 430:
+        mode += "Normal Blind"
+    elif id == 440:
+        mode += "Ranked Flex"
+    elif id == 450:
+        mode += "ARAM"
+    elif id == 700:
+        mode += "Clash"
+    elif id == 900:
+        mode += "URF"
+    else:
+        mode += "Other"
+    return mode
+
+def search_champion_by_id(id: str) -> str:
+    for i in championDf['data']:
+        if i['key'] == id:
+            return i['id']
+
+def search_summoner_spell_by_id(id: str) -> str:
+    for i in summonerDf['data']:
+        if i['key'] == id:
+            return i['name']
+
+def search_runes_by_id(id: int) -> str:
+    if id == 8100:
+        return "Domination"
+    elif id == 8300:
+        return "Inspiration"
+    elif id == 8000:
+        return "Precision"
+    elif id == 8400:
+        return "Resolve"
+    elif id == 8200:
+        return "Sorcery"
+    elif id == 5008:
+        return "AF"
+    elif id == 5003:
+        return "MR"
+    elif id == 5002:
+        return "Armor"
+    elif id == 5005:
+        return "AS"
+    elif id == 5007:
+        return "Haste"
+    elif id == 5001:
+        return "HP"
+    for i in runesDf['slots']:
+        for j in i:
+            for k in j['runes']:
+                if k['id'] == id:
+                    return k['key']
