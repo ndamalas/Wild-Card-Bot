@@ -117,6 +117,7 @@ async def get_tft_profile(ctx, message):
     await message.channel.send("http://ddragon.leagueoflegends.com/cdn/" + version['n']['profileicon'] + "/img/profileicon/" + str(user['profileIconId']) + ".png")
     if len(ranked_stats) == 1:
         await message.channel.send("Ranked TFT: " + ranked_stats[0]['tier'] + " " + ranked_stats[0]['rank'] + " " + str(ranked_stats[0]['leaguePoints']) + "LP " + str(ranked_stats[0]['wins']) + "W/" + str(ranked_stats[0]['losses']) + "L")
+
 commandList.append(Command("!mastery", "get_champion_mastery", "Displays the specified player's top 3 champion masteries.\nUsage: !mastery <REGION> <IGN>"))
 async def get_champion_mastery(ctx, message):
     #Splits string into !command region username
@@ -167,10 +168,9 @@ async def get_match_history(ctx, message):
     for i in range(2, len(messageArray)):
       name += message.content.split(" ")[i]
     # print(name)
-    version = lol_watcher.data_dragon.versions_for_region(region)
     user = lol_watcher.summoner.by_name(region, name)
-    print(user)
+    # print(user)
     matchlist = lol_watcher.match.matchlist_by_account(region, user['accountId'])
     await message.channel.send(">>> MATCH HISTORY: \n")
     for i in range(5):
-      await message.channel.send(">>> \n" + str(i + 1) + ".\nQueue: " + get_queue_type(matchlist['matches'][i]['queue']) + "\nChampion: " + str(matchlist['matches'][i]['champion']) + "\n")
+      await message.channel.send(">>> \n" + str(i + 1) + ".\nQueue: " + get_queue_type(matchlist['matches'][i]['queue']) + "\nChampion: " + search_champion_by_id(str(matchlist['matches'][i]['champion'])) + "\n")
