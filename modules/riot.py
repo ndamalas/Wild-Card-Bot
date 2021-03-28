@@ -1,6 +1,7 @@
 import string
 import discord
 import os
+import pandas as pd
 from command import Command
 from riotwatcher import LolWatcher, ApiError, RiotWatcher, LorWatcher, TftWatcher
 
@@ -11,6 +12,9 @@ lol_watcher = LolWatcher(riot_api_key)
 riot_watcher = RiotWatcher(riot_api_key)
 lor_watcher = LorWatcher(riot_api_key)
 tft_watcher = TftWatcher(riot_api_key)
+
+pd.set_option('display.max_columns', 5)
+myDf = pd.read_json('./leaguedata/11.6.1/data/en_US/champion.json')
 
 commandList.append(Command("!regions", "get_regions", "Displays all regions"))
 async def get_regions(ctx, message):
@@ -34,7 +38,7 @@ async def live_game(ctx, message):
     i = 0
     while i < 5:
         player = spectator['participants'][i]
-        output += player['summonerName'] + " " + str(player['championId']) + " " + str(player['spell1Id']) + " " + str(player['spell2Id']) + " "
+        output += player['summonerName'] + " " + search_champion_by_id(str(player['championId'])) + " " + str(player['spell1Id']) + " " + str(player['spell2Id']) + " "
         output += str(player['perks']['perkStyle']) + " " + str(player['perks']['perkIds'][0]) + " " + str(player['perks']['perkIds'][1]) + " " + str(player['perks']['perkIds'][2]) + " "
         output += str(player['perks']['perkSubStyle']) + " " + str(player['perks']['perkIds'][3]) + " " + str(player['perks']['perkIds'][4]) + " " + str(player['perks']['perkIds'][5]) + " "
         output += str(player['perks']['perkIds'][6]) + " " + str(player['perks']['perkIds'][7]) + " " + str(player['perks']['perkIds'][8])
@@ -43,7 +47,7 @@ async def live_game(ctx, message):
     output += "Red Side\n"
     while i < 10:
         player = spectator['participants'][i]
-        output += player['summonerName'] + " " + str(player['championId']) + " " + str(player['spell1Id']) + " " + str(player['spell2Id']) + " "
+        output += player['summonerName'] + " " + search_champion_by_id(str(player['championId'])) + " " + str(player['spell1Id']) + " " + str(player['spell2Id']) + " "
         output += str(player['perks']['perkStyle']) + " " + str(player['perks']['perkIds'][0]) + " " + str(player['perks']['perkIds'][1]) + " " + str(player['perks']['perkIds'][2]) + " "
         output += str(player['perks']['perkSubStyle']) + " " + str(player['perks']['perkIds'][3]) + " " + str(player['perks']['perkIds'][4]) + " " + str(player['perks']['perkIds'][5]) + " "
         output += str(player['perks']['perkIds'][6]) + " " + str(player['perks']['perkIds'][7]) + " " + str(player['perks']['perkIds'][8])
@@ -72,6 +76,11 @@ def get_queue_type(id: int) -> str:
     else:
         mode += "Other"
     return mode
+
+def search_champion_by_id(id: str) -> str:
+    for i in myDf['data']:
+        if i['key'] == id:
+            return i['id']
 
 commandList.append(Command("!league", "get_league_profile", "Displays a player's League of Legends profile\nUsage: !league <REGION> <IGN>"))
 async def get_league_profile(ctx, message):
