@@ -33,6 +33,11 @@ bannedCommandsByRole = {}
 # List of Modules that are available
 moduleList = []
 
+# Stores the last used command of each user
+# Key: user id
+# Value: command name
+lastUsedCommand = {}
+
 # Function to get out all commands to the user
 def getCommandList():
 	response = "```"
@@ -545,19 +550,19 @@ def autoSetPermissionsForRoles(message):
 			if role.permissions.administrator == False:
 				for command in commandList:
 					commandObj = commandList[command]
-					if "administrator" in commandObj.permissions:
+					if "administrator" in commandObj.permissions and command not in bannedCommandsByRole[role.id]:
 						bannedCommandsByRole[role.id].append(command)
 				# If role does not have permissions to manage channels, block all such commands
 				if role.permissions.manage_channels == False:
 					for command in commandList:
 						commandObj = commandList[command]
-						if "manage_channels" in commandObj.permissions:
+						if "manage_channels" in commandObj.permissions and command not in bannedCommandsByRole[role.id]:
 							bannedCommandsByRole[role.id].append(command)
 				# If role does not have permissions to manage permissions, block all such commands
 				if role.permissions.manage_permissions == False:
 					for command in commandList:
 						commandObj = commandList[command]
-						if "manage_permissions" in commandObj.permissions or "manage_roles" in commandObj.permissions:
+						if "manage_permissions" in commandObj.permissions or "manage_roles" in commandObj.permissions and command not in bannedCommandsByRole[role.id]:
 							bannedCommandsByRole[role.id].append(command)
 				# Add more permissions check here
 		else:
@@ -709,6 +714,16 @@ async def on_message(message):
 	if message.author == client.user:
 		return
 
+	# Check for dm and if the user has a used a command recently
+	if message.guild == None and message.author.id in lastUsedCommand:
+		if "direct_message" in commandList[lastUsedCommand[message.author.id]].permissions:
+			await commandList[lastUsedCommand[message.author.id]].callCommand(client, message)
+			return
+	
+	# Do not consider other dms
+	if message.guild == None:
+		return
+
 	# Check if user is muted
 	# True is returned if the author is currently muted
 	if serverAdministration.checkAuthorIsMuted(message) == True:
@@ -784,6 +799,7 @@ async def on_message(message):
 		# If it exists, call the command, otherwise warn user it was not recognized
 		if name in commandList:
 			await commandList[name].callCommand(client, message)
+			lastUsedCommand[message.author.id] = name
 			return
 		await message.channel.send("Sorry that command was not recognized!")
 
