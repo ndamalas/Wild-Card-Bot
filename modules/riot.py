@@ -1,11 +1,12 @@
 import string
 import discord
+import os
 from command import Command
 from riotwatcher import LolWatcher, ApiError, RiotWatcher, LorWatcher, TftWatcher
 
 commandList = []
 
-riot_api_key = "RGAPI-08cc5b02-1c79-40b3-ad7c-da09791a7e6a"
+riot_api_key = "RGAPI-654cbb73-cbb2-4bfb-9437-2b73fda6b689"
 lol_watcher = LolWatcher(riot_api_key)
 riot_watcher = RiotWatcher(riot_api_key)
 lor_watcher = LorWatcher(riot_api_key)
@@ -17,6 +18,61 @@ async def get_regions(ctx, message):
     embed = discord.Embed(title='Riot regions', description=response, colour=discord.Colour.dark_red())
     await message.channel.send(embed=embed)
 
+
+commandList.append(Command("!live", "live_game", "Displays live game stats\nUsage: !live <REGION> <IGN>"))
+async def live_game(ctx, message):
+    messageArray = message.content.split(" ")
+    region = message.content.split(" ")[1]
+    name = ""
+    for i in range(2, len(messageArray)):
+      name += message.content.split(" ")[i]
+    user = lol_watcher.summoner.by_name(region, name)
+    spectator = lol_watcher.spectator.by_summoner(region, user['id'])
+    output = ""
+    output += get_queue_type(spectator['gameQueueConfigId']) + "\n"
+    output += "Blue Side\n"
+    i = 0
+    while i < 5:
+        player = spectator['participants'][i]
+        output += player['summonerName'] + " " + str(player['championId']) + " " + str(player['spell1Id']) + " " + str(player['spell2Id']) + " "
+        output += str(player['perks']['perkStyle']) + " " + str(player['perks']['perkIds'][0]) + " " + str(player['perks']['perkIds'][1]) + " " + str(player['perks']['perkIds'][2]) + " "
+        output += str(player['perks']['perkSubStyle']) + " " + str(player['perks']['perkIds'][3]) + " " + str(player['perks']['perkIds'][4]) + " " + str(player['perks']['perkIds'][5]) + " "
+        output += str(player['perks']['perkIds'][6]) + " " + str(player['perks']['perkIds'][7]) + " " + str(player['perks']['perkIds'][8])
+        output += "\n"
+        i += 1
+    output += "Red Side\n"
+    while i < 10:
+        player = spectator['participants'][i]
+        output += player['summonerName'] + " " + str(player['championId']) + " " + str(player['spell1Id']) + " " + str(player['spell2Id']) + " "
+        output += str(player['perks']['perkStyle']) + " " + str(player['perks']['perkIds'][0]) + " " + str(player['perks']['perkIds'][1]) + " " + str(player['perks']['perkIds'][2]) + " "
+        output += str(player['perks']['perkSubStyle']) + " " + str(player['perks']['perkIds'][3]) + " " + str(player['perks']['perkIds'][4]) + " " + str(player['perks']['perkIds'][5]) + " "
+        output += str(player['perks']['perkIds'][6]) + " " + str(player['perks']['perkIds'][7]) + " " + str(player['perks']['perkIds'][8])
+        output += "\n"
+        i += 1
+    await message.channel.send(output)
+
+def get_queue_type(id: int) -> str:
+    mode = ""
+    if id == 0:
+        mode += "Custom"
+    elif id == 400:
+        mode += "Normal Draft"
+    elif id == 420:
+        mode += "Ranked Solo/Duo"
+    elif id == 430:
+        mode += "Normal Blind"
+    elif id == 440:
+        mode += "Ranked Flex"
+    elif id == 450:
+        mode += "ARAM"
+    elif id == 700:
+        mode += "Clash"
+    elif id == 900:
+        mode += "URF"
+    else:
+        mode += "Other"
+    return mode
+
 commandList.append(Command("!league", "get_league_profile", "Displays a player's League of Legends profile\nUsage: !league <REGION> <IGN>"))
 async def get_league_profile(ctx, message):
     messageArray = message.content.split(" ")
@@ -26,6 +82,7 @@ async def get_league_profile(ctx, message):
       name += message.content.split(" ")[i]
     # print(name)
     version = lol_watcher.data_dragon.versions_for_region(region)
+    await message.channel.send(version)
     user = lol_watcher.summoner.by_name(region, name)
     ranked_stats = lol_watcher.league.by_summoner(region, user['id'])
     await message.channel.send(user['name'] + " Lvl " + str(user['summonerLevel']))
