@@ -12,14 +12,17 @@ import asyncio
 # Poll class that represents a poll
 class Poll:
     # In each situation, None indicates that the user has not specified it yet
-    def __init__(self):
+    def __init__(self, guild):
+        self.guild = guild    # The server the poll was requested from
+        self.id = None        # Used internally to identify polls
         self.complete = False # Whether the poll is complete or not
         self.title = None     # The title of the poll
         self.question = None  # The question associated with the poll
         self.options = None   # List of all possible options
         self.reactions = None # List of reactions that the people will use to vote
-        self.time = None      # The time limit of the poll, -1 indicates no time limit
+        self.time = None      # The time limit of the poll, 0 indicates no time limit
         self.channel = None   # The id of the text channel that the poll is sent to
+        self.rm = None        # The message containing the reactions
 
 # Every module has to have a command list
 commandList = []
@@ -31,6 +34,12 @@ usage = "Command used to initiate the process of creating a poll. The creation p
 # Key: user id
 # Value: list of Poll objects
 userPolls = {}
+
+# Keeps track of the currently assigned poll id
+idAssignment = 0
+
+# Default reactions to use
+defaultReactions = [u"\U0001F34E", u"\U0001F350", u"\U0001F34A", u"\U0001F34B", u"\U0001F349"]
 
 # Format: !createpoll
 try:
@@ -46,10 +55,10 @@ async def createPoll(client, message):
     # Create the poll and message the user if recieved !createpoll from a channel
     if checkCreationConditions(message, user) == True:
         if user.id in userPolls:
-            userPolls[user.id].append(Poll())
+            userPolls[user.id].append(Poll(message.guild))
         else:
             userPolls[user.id] = []
-            userPolls[user.id].append(Poll())
+            userPolls[user.id].append(Poll(message.guild))
         response = "Hello " + user.mention + "!\n\n"
         response += "To initiate the poll creation process, please give your poll a title.\n\n"
         response += "If at any point you want to cancel poll creation, message **cancel**.\n"
@@ -63,7 +72,7 @@ async def createPoll(client, message):
         embed.set_author(name=user.display_name, icon_url=user.avatar_url)
         await message.channel.send(embed=embed)
     elif checkForUnfinishedPoll(message, user) == True:
-        await completePoll(client, message, user)
+        await completePoll(message, user)
 
 # Direct messages the given user with an embed created from the title and response arguments
 async def directMessageUser(user, title, response):
@@ -86,11 +95,11 @@ def checkForUnfinishedPoll(message, user):
     return False
 
 # Completes the next incremental step in the poll
-async def completePoll(client, message, user):
+async def completePoll(message, user):
     poll = [p for p in userPolls[user.id] if p.complete == False][0]
     # Order in which the poll info should be completed
     # title->question->options->reactions->time->channel
-    if message.content == 'cancel':
+    if message.content.lower() == 'cancel':
         userPolls[user.id].remove(poll)
         response = "Poll creation successfully canceled."
         await directMessageUser(user, "Poll Creation Cancelled", response)
@@ -113,7 +122,42 @@ async def completePoll(client, message, user):
         response = "Here are the options to be included in your poll:\n"
         response += optionStr
         await directMessageUser(user, "Options Added", response)
-        await setReactions(client, user, poll)
+        await setReactions(message, user, poll)
+    elif message.content.lower() == 'auto':
+        for i in range(len(poll.options)):
+            await poll.rm.add_reaction(defaultReactions[i])
+    elif poll.time == None:
+        # Check if reactions are actually set properly
+        if len(poll.reactions) < len(poll.options):
+            return
+        poll.time = parseTime(message.content)
+        # Check if the time limit was properly specified
+        if poll.time == None:
+            response = "There was an error parsing your time limit.\n"
+            response += "Please reenter the time limit. It must be an integer."
+            await directMessageUser(user, "Time Limit Error", response)
+        else:
+            if poll.time == 0:
+                response = "The poll will run until you ask it to stop.\n"
+            else:
+                response = "The poll will run for **" + str(poll.time) + "** seconds.\n"
+            response += "Please specify the name or id of the text channel that you would like to send the poll to.\n"
+            response += "If you want to specify using text channel id, please message **<channel-id> id**."
+            await directMessageUser(user, "Time Limit Added", response)
+    elif poll.channel == None:
+        poll.channel = await parseChannel(user, message.content, poll)
+        if poll.channel != None:
+            global idAssignment
+            poll.id = idAssignment
+            idAssignment += 1
+            poll.complete = True
+            # Send the poll
+            response = "Success! The poll will be send to the text channel **" + poll.guild.get_channel(poll.channel).name
+            response += "**!\n"
+            if poll.time == 0:
+                response += "The id of this poll is **" + str(poll.id) + "**. To end the poll, message "
+                response += "**done** **" + str(poll.id) + "**."
+            await directMessageUser(user, "Poll Sent", response)
 
 # Parses the options from the message content
 def parseOptions(content):
@@ -154,7 +198,7 @@ def parseOptions(content):
 
 # Sends a dm to the user and asks them to react to it
 # The reactions are then parsed for use by the poll
-async def setReactions(client, user, poll):
+async def setReactions(message, user, poll):
     # Create message for the user to react to
     response = "Please react to this message with the reactions you would like to use for your poll.\n"
     response += "You have specified **" + str(len(poll.options)) + "** options. Please react with **" 
@@ -162,13 +206,80 @@ async def setReactions(client, user, poll):
     response += "If you want the bot to choose for you,  message **auto**."
     embed = discord.Embed(title="Set Reactions", description=response, colour=discord.Colour.blue())
     embed.set_author(name=user.display_name, icon_url=user.avatar_url)
-    await user.send(embed=embed)
+    msg = await user.send(embed=embed)
+    poll.rm = msg
     # Continuously check the message to see if the user has added a reaction
     poll.reactions = []
     while poll != None and len(poll.reactions) < len(poll.options):
-        reaction, user = await client.wait_for('reaction_add')
-        poll.reactions.append(reaction)
+        msg = await message.channel.fetch_message(msg.id)
+        poll.reactions = msg.reactions
+        await asyncio.sleep(1)
     # Notify user that the reactions have been successfully added
     response = ""
     response = "Reactions successfully added to your poll!\n"
+    response += "Please specify a time limit in seconds for the poll. Message **none** if you want no time limit."
     await directMessageUser(user, "Reactions Added", response)
+
+# Parses the time limit from the message content
+# None is returned if there is an error with the value specified
+def parseTime(content):
+    # None specifies no time limit
+    if content.lower() == "none":
+        return 0
+    try:
+        timeLimit = int(content)
+    except:
+        return None
+    if timeLimit > 0:
+        return timeLimit
+    return None
+
+# Parses the channel name or id and returns the channel id
+# None is returned if there is an error or the channel is not found
+async def parseChannel(user, content, poll):
+    # Determine if we are parsing id or name
+    if len(content.split(" ")) >= 2 and content.split(" ")[1] == "id":
+        try:
+            channelId = int(content.split(" ")[1])
+        except:
+            response = "There was an error with your channel ID! Make sure it is an integer."
+            await directMessageUser(user, "Multiple Channels Found", response)
+            return None
+        channelFound = False
+        for tc in poll.guild.text_channels:
+            if tc.id == channelId:
+                channelFound = True
+                return tc.id
+        # Notify user if the channel was not found
+        if channelFound == False:
+            response = "Text channel with id **" + str(channelId) + "** was not found!"
+            await directMessageUser(user, "Text Channel Not Found", response)
+            return None
+    else:
+        nameMatchCount = 0
+        for tc in poll.guild.text_channels:
+            if tc.name == content:
+                nameMatchCount += 1
+        # Determine action based on how many name matches
+        if nameMatchCount > 1:
+            # If multiple matches, notify user and print all matches
+            response = "Multiple matches found for **" + content + "**. Please specify using channel ID.\n"
+            responseCount = 1
+            for tc in poll.guild.text_channels:
+                if tc.name == content:
+                    response += str(responseCount) + ". " + str(tc.id) + "\n"
+                    responseCount += 1
+            response += "The format is **<channel-id> id**."
+            await directMessageUser(user, "Multiple Channels Found", response)
+            return None
+        elif nameMatchCount == 1:
+            # Return the channel id matching the name specified
+            for tc in poll.guild.text_channels:
+                if tc.name == content:
+                    return tc.id
+        else:
+            # No text channel with the given name was found
+            response = "Text channel with name **" + content + "** was not found!"
+            await directMessageUser(user, "Text Channel Not Found", response)
+            return None
+    return None
