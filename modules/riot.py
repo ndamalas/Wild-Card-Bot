@@ -10,7 +10,11 @@ commandList = []
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 riot_api_key = "RGAPI-654cbb73-cbb2-4bfb-9437-2b73fda6b689"
+=======
+riot_api_key = "RGAPI-699f4344-49e5-4e99-8a76-362b6a39c1ad"
+>>>>>>> Stashed changes
 =======
 riot_api_key = "RGAPI-699f4344-49e5-4e99-8a76-362b6a39c1ad"
 >>>>>>> Stashed changes
