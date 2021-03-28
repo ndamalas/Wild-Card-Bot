@@ -5,11 +5,12 @@ from riotwatcher import LolWatcher, ApiError, RiotWatcher, LorWatcher, TftWatche
 
 commandList = []
 
-riot_api_key = "RGAPI-08cc5b02-1c79-40b3-ad7c-da09791a7e6a"
+riot_api_key = "RGAPI-654cbb73-cbb2-4bfb-9437-2b73fda6b689"
 lol_watcher = LolWatcher(riot_api_key)
 riot_watcher = RiotWatcher(riot_api_key)
 lor_watcher = LorWatcher(riot_api_key)
 tft_watcher = TftWatcher(riot_api_key)
+
 
 commandList.append(Command("!regions", "get_regions", "Displays all regions"))
 async def get_regions(ctx, message):
@@ -50,3 +51,41 @@ async def get_tft_profile(ctx, message):
     await message.channel.send("http://ddragon.leagueoflegends.com/cdn/" + version['n']['profileicon'] + "/img/profileicon/" + str(user['profileIconId']) + ".png")
     if len(ranked_stats) == 1:
         await message.channel.send("Ranked TFT: " + ranked_stats[0]['tier'] + " " + ranked_stats[0]['rank'] + " " + str(ranked_stats[0]['leaguePoints']) + "LP " + str(ranked_stats[0]['wins']) + "W/" + str(ranked_stats[0]['losses']) + "L")
+
+commandList.append(Command("!matchhistory", "get_match_history", "Displays a player's League of Legends match history\nUsage: !matchhistory <REGION> <IGN>"))
+async def get_match_history(ctx, message):
+    messageArray = message.content.split(" ")
+    region = message.content.split(" ")[1]
+    name = ""
+    for i in range(2, len(messageArray)):
+      name += message.content.split(" ")[i]
+    # print(name)
+    version = lol_watcher.data_dragon.versions_for_region(region)
+    user = lol_watcher.summoner.by_name(region, name)
+    print(user)    
+    matchlist = lol_watcher.match.matchlist_by_account(region, user['accountId'])
+    await message.channel.send(">>> MATCH HISTORY: \n")
+    for i in range(5):
+      await message.channel.send(">>> \n" + str(i + 1) + ".\nQueue: " + get_queue_type(matchlist['matches'][i]['queue']) + "\nChampion: " + str(matchlist['matches'][i]['champion']) + "\n")
+
+def get_queue_type(id: int) -> str:
+    mode = ""
+    if id == 0:
+        mode += "Custom"
+    elif id == 400:
+        mode += "Normal Draft"
+    elif id == 420:
+        mode += "Ranked Solo/Duo"
+    elif id == 430:
+        mode += "Normal Blind"
+    elif id == 440:
+        mode += "Ranked Flex"
+    elif id == 450:
+        mode += "ARAM"
+    elif id == 700:
+        mode += "Clash"
+    elif id == 900:
+        mode += "URF"
+    else:
+        mode += "Other"
+    return mode
