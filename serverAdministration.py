@@ -840,7 +840,7 @@ def checkForMusic(f_stop, ctx, message):
     vc = guild.voice_client
     if not f_stop.is_set():
         #check for changes
-        if not vc.is_playing():
+        if not vc.is_playing() and not vc.is_paused():
             #head points towards current node
             if head.next != None:
                 head = head.next
@@ -849,6 +849,33 @@ def checkForMusic(f_stop, ctx, message):
     #every second check again
     threading.Timer(1, checkForMusic, [f_stop, ctx, message]).start()
 
+commandList.append(Command("!pause", "pauseMusic", "Pauses the current song"))
+async def pauseMusic(ctx, message):
+    guild = message.guild
+    vc = guild.voice_client
+    if not vc.is_paused():
+        vc.pause()
+    else:
+        embed = discord.Embed(
+            title='Pause Error',
+            description="Nothing to Pause!",
+            color = 0xff00ff
+        )
+        await message.channel.send(embed=embed)
+
+commandList.append(Command("!resume", "resumeMusic", "Resumes the current song"))
+async def resumeMusic(ctx, message):
+    guild = message.guild
+    vc = guild.voice_client
+    if vc.is_paused():
+        vc.resume()
+    else:
+        embed = discord.Embed(
+            title='Resume Error',
+            description="Nothing to Resume!",
+            color = 0xff00ff
+        )
+        await message.channel.send(embed=embed)
 
 commandList.append(Command("!queue", "listQueue", "List out queue of current songs."))
 async def listQueue(ctx, message):
@@ -879,12 +906,14 @@ async def listQueue(ctx, message):
         return
     
     else:
-        index = 1
-        current = " - **currently playing** "
+        index = 0
+        current = ""
         while pointer != None:
-            if index != 1:
-                current = ""
-            response = response + "[" + str(index)+ "] - " + pointer.fulltitle + current + "\n"
+            if index == 0:
+                current = pointer.fulltitle + " - **currently playing**\n"
+            elif index != 0:
+                current = "[" + str(index)+ "] - " + pointer.fulltitle + "\n"
+            response = response + current
             index = index + 1
             pointer = pointer.next
 
@@ -895,11 +924,41 @@ async def listQueue(ctx, message):
     )
     await message.channel.send(embed=embed)
 
+commandList.append(Command("!removeSong", "removeSong", "Removes song number X from the queue"))
+async def removeSong(ctx, message):
+    embed = discord.Embed(
+        title='Remove Song Error',
+        description="Error removing song, perhaps an invalid index or empty queue",
+        color = discord.Colour.red()
+    )
+    try:
+        toRemove = int(message.content.split(' ')[1])
+    except:
+        await message.channel.send(embed=embed)
+        return
+    index = 0
+    pointer = head
+    while pointer != None:
+        if index == toRemove:
+            pointer.prev.next = pointer.next
+            embed = discord.Embed(
+                title='Song Removed',
+                description="{} removed successfully".format(pointer.fulltitle),
+                color = discord.Colour.green()
+            )
+            break
+        index = index + 1
+        pointer = pointer.next
+    await message.channel.send(embed=embed)
+
+
 commandList.append(Command("!skip", "skipSong", "Skip current song"))
 async def skipSong(ctx, message):
     global head
     guild = message.guild
     vc = guild.voice_client
+    if vc.is_paused():
+        vc.resume()
     if vc.is_playing():
         vc.stop()
     else:
@@ -910,6 +969,18 @@ async def skipSong(ctx, message):
             )
         await message.channel.send(embed=embed)
 
+commandList.append(Command("!clear", "clearQueue", "Clears the queue (Except the current song)"))
+async def clearQueue(ctf, message):
+    global head
+    global tail
+    head.next = None
+    tail = head
+    embed = discord.Embed(
+                title='Queue Cleared',
+                description="The music queue has been cleared!",
+                color = discord.Colour.red()
+            )
+    await message.channel.send(embed=embed)
 
 commandList.append(Command("!play", "playMusic", "Play audio from youtube links through the bot\nUsage: !play <URL>"))
 async def playMusic(ctx, message):
@@ -953,14 +1024,6 @@ async def playMusic(ctx, message):
         f_stop = threading.Event()
         checkForMusic(f_stop, ctx, message)
 
-        #Notify user of first time setup
-        embed = discord.Embed(
-                title='Initial Setup',
-                description="Music is being prepared, please wait!",
-                color = discord.Colour.green()
-            )
-        msg = await message.channel.send(embed=embed)
-
     #Set options for ytdl
     opts = {
         'format': 'bestaudio/best',
@@ -982,6 +1045,12 @@ async def playMusic(ctx, message):
     }
 
     with youtube_dl.YoutubeDL(opts) as ydl:
+        embed = discord.Embed(
+                title='Music Being Added!',
+                description="Music is being prepared, please wait!",
+                color = discord.Colour.green()
+            )
+        msg = await message.channel.send(embed=embed)
         #download video
         #Make sure link is ok
         embed = discord.Embed(
@@ -1010,19 +1079,14 @@ async def playMusic(ctx, message):
         
         #Notify user that the video has been added
         if firstime:
-            await msg.delete()
             firstime = 0
-        await message.channel.send("{} added to queue!".format(fulltitle))
-        #replace symbols
-        # for x in string.punctuation:
-        #     if x in ['.', '-', '_', '\'', '~', ':']:
-        #         continue
-        #     title = title.replace(x, '')
-        # title = title.replace('\'', '_')
-        # title = title.replace(' ', '_')
-        # title = title.replace(':', '_-')
-        # title = title.replace('__', '_')
-        #make new playlist node with title
+        await msg.delete()
+        embed = discord.Embed(
+                title='Music Added!',
+                description="{} added to queue!".format(fulltitle),
+                color = discord.Colour.green()
+            )
+        await message.channel.send(embed=embed)
         newVid = Node(vidID=vidID, fulltitle=fulltitle)
         #update end of playlist
         tail.next = newVid
