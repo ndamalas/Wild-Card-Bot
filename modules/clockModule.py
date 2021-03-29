@@ -60,8 +60,40 @@ async def stopwatch(client, message):
             await lastStopwatch.delete()
             await message.channel.send("Stopwatch successfully deleted.")
             return
-        elif content[1] == "pause":
-            pass
+        elif content[1] == "stop":
+            lastStopwatch = await getLastStopwatch(message)
+            if lastStopwatch == None:
+                await message.channel.send("No stopwatch found.")
+                return
+            description = lastStopwatch.embeds[0].description
+            timeElapsed = description.split(" ")[0]
+            await lastStopwatch.delete()
+            msg = "{} elapsed. (Stopped)".format(timeElapsed)
+            embed = discord.Embed(title = "Timer", description=msg, colour = discord.Colour.red())
+            await message.channel.send(embed=embed)
+            return
+        elif content[1] == "unpause":
+            lastStopwatch = await getLastStopwatch(message)
+            if lastStopwatch == None:
+                await message.channel.send("No stopwatch found.")
+                return
+            description = lastStopwatch.embeds[0].description
+            if description.find("(Stopped)") == -1:
+                await message.channel.send("Cannot unpause a running stopwatch.")
+                return
+            elapsedString = description.split(" ")[0]
+            elapsedNum = (int(elapsedString[0]) * 60) + int(elapsedString[2] + elapsedString[3])
+            start = time.time()
+            while True:
+                secondsElapsed = math.floor(time.time() - start) + elapsedNum
+                elapsed = getTimeString(secondsElapsed)
+                msg = "{} elapsed.".format(elapsed)
+                embed = discord.Embed(title = "Stopwatch", description=msg, colour = discord.Colour.red())
+                try:
+                    await lastStopwatch.edit(embed=embed)
+                except:
+                    return
+                time.sleep(0.95)
 
 # Helper to get the most recent timer
 async def getLastTimer(message):
@@ -97,7 +129,7 @@ async def timer(client, message):
         description = lastTimer.embeds[0].description
         timeLeft = description.split(" ")[0]
         await lastTimer.delete()
-        msg = "{} remaining.".format(timeLeft)
+        msg = "{} remaining. (Paused)".format(timeLeft)
         embed = discord.Embed(title = "Timer", description=msg, colour = discord.Colour.purple())
         await message.channel.send(embed=embed)
         return
@@ -107,6 +139,9 @@ async def timer(client, message):
             await message.channel.send("No timer found.")
             return
         description = lastTimer.embeds[0].description
+        if description.find("(Paused)") == -1:
+            await message.channel.send("Cannot unpause a running timer.")
+            return
         left = description.split(" ")[0]
         start = time.time()
         end = float(left.split(":")[0]) + (float(left.split(":")[1]) / 60)
