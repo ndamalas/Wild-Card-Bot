@@ -7,6 +7,8 @@ from riotwatcher import LolWatcher, ApiError, RiotWatcher, LorWatcher, TftWatche
 
 commandList = []
 
+
+# Unnest nested columns in data frame. myDf is dataframe to unnest and columns is name of column to unnest
 def unnest(myDf: pd.DataFrame, columns: list) -> pd.DataFrame:
   tempDf = pd.DataFrame()
   for i in columns:
@@ -23,12 +25,9 @@ lor_watcher = LorWatcher(riot_api_key)
 tft_watcher = TftWatcher(riot_api_key)
 
 pd.set_option('display.max_columns', 5)
-# championDf = pd.read_json('./leaguedata/11.6.1/data/en_US/champion.json')
-# summonerDf = pd.read_json('./leaguedata/11.6.1/data/en_US/summoner.json')
-# runesDf = pd.read_json('./leaguedata/11.6.1/data/en_US/runesReforged.json')
-championDf = unnest(pd.read_json('./champion.json'),["data"])
-summonerDf = pd.read_json('./summoner.json')
-runesDf = pd.read_json('./runesReforged.json')
+championDf = unnest(pd.read_json('./leaguedata/11.6.1/data/en_US/champion.json'), ["data"])
+summonerDf = pd.read_json('./leaguedata/11.6.1/data/en_US/summoner.json')
+runesDf = pd.read_json('./leaguedata/11.6.1/data/en_US/runesReforged.json')
 
 commandList.append(Command("!regions", "get_regions", "Displays all regions"))
 async def get_regions(ctx, message):
@@ -52,7 +51,7 @@ async def live_game(ctx, message):
     i = 0
     while i < 5:
         player = spectator['participants'][i]
-        output += player['summonerName'] + " " + search_champion_by_id(str(player['championId'])) + " " + search_summoner_spell_by_id(str(player['spell1Id'])) + " " + search_summoner_spell_by_id(str(player['spell2Id'])) + " "
+        output += search_champion_by_id(str(player['championId']), "name") + " " + player['summonerName'] + " " + search_summoner_spell_by_id(str(player['spell1Id'])) + " " + search_summoner_spell_by_id(str(player['spell2Id'])) + " "
         output += search_runes_by_id(player['perks']['perkStyle']) + " " + search_runes_by_id(player['perks']['perkIds'][0]) + " " + search_runes_by_id(player['perks']['perkIds'][1]) + " " + search_runes_by_id(player['perks']['perkIds'][2]) + " " + search_runes_by_id(player['perks']['perkIds'][3]) + " "
         output += search_runes_by_id(player['perks']['perkSubStyle']) + " " + search_runes_by_id(player['perks']['perkIds'][4]) + " " + search_runes_by_id(player['perks']['perkIds'][5]) + " "
         output += search_runes_by_id(player['perks']['perkIds'][6]) + " " + search_runes_by_id(player['perks']['perkIds'][7]) + " " + search_runes_by_id(player['perks']['perkIds'][8])
@@ -61,7 +60,7 @@ async def live_game(ctx, message):
     output += "Red Side\n"
     while i < 10:
         player = spectator['participants'][i]
-        output += player['summonerName'] + " " + search_champion_by_id(str(player['championId'])) + " " + search_summoner_spell_by_id(str(player['spell1Id'])) + " " + search_summoner_spell_by_id(str(player['spell2Id'])) + " "
+        output += search_champion_by_id(str(player['championId']), "name") + " " + player['summonerName'] + " " + search_summoner_spell_by_id(str(player['spell1Id'])) + " " + search_summoner_spell_by_id(str(player['spell2Id'])) + " "
         output += search_runes_by_id(player['perks']['perkStyle']) + " " + search_runes_by_id(player['perks']['perkIds'][0]) + " " + search_runes_by_id(player['perks']['perkIds'][1]) + " " + search_runes_by_id(player['perks']['perkIds'][2]) + " " + search_runes_by_id(player['perks']['perkIds'][3]) + " "
         output += search_runes_by_id(player['perks']['perkSubStyle']) + " " + search_runes_by_id(player['perks']['perkIds'][4]) + " " + search_runes_by_id(player['perks']['perkIds'][5]) + " "
         output += search_runes_by_id(player['perks']['perkIds'][6]) + " " + search_runes_by_id(player['perks']['perkIds'][7]) + " " + search_runes_by_id(player['perks']['perkIds'][8])
@@ -159,10 +158,10 @@ async def get_match_history(ctx, message):
     matchlist = lol_watcher.match.matchlist_by_account(region, user['accountId'])
     await message.channel.send(">>> MATCH HISTORY: \n")
     for i in range(5):
-      await message.channel.send(">>> \n" + str(i + 1) + ".\nQueue: " + get_queue_type(matchlist['matches'][i]['queue']) + "\nChampion: " + search_champion_by_id(str(matchlist['matches'][i]['champion'])) + "\n")
+      await message.channel.send(">>> \n" + str(i + 1) + ".\nQueue: " + get_queue_type(matchlist['matches'][i]['queue']) + "\nChampion: " + search_champion_by_id(str(matchlist['matches'][i]['champion']), "name") + "\n")
 
 
-
+# Helper function to get queue type by id
 def get_queue_type(id: int) -> str:
     mode = ""
     if id == 0:
@@ -185,16 +184,18 @@ def get_queue_type(id: int) -> str:
         mode += "Other"
     return mode
 
-def search_champion_by_id(id: str) -> str:
-    for i in championDf['data']:
-        if i['key'] == id:
-            return i['id']
+# Helper function to get champion by id
+def search_champion_by_id(id: str, value: str):
+    champ = championDf.loc[championDf['key'] == id, value].item()
+    return champ
 
+# Helper function to get summoner spells by id
 def search_summoner_spell_by_id(id: str) -> str:
     for i in summonerDf['data']:
         if i['key'] == id:
             return i['name']
 
+# Helper function to get runes by id
 def search_runes_by_id(id: int) -> str:
     if id == 8100:
         return "Domination"
