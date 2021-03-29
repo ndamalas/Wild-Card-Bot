@@ -7,6 +7,14 @@ from riotwatcher import LolWatcher, ApiError, RiotWatcher, LorWatcher, TftWatche
 
 commandList = []
 
+def unnest(myDf: pd.DataFrame, columns: list) -> pd.DataFrame:
+  tempDf = pd.DataFrame()
+  for i in columns:
+    if i in myDf:
+      if isinstance(myDf.loc[:, i].iloc[0], dict):
+        x = myDf[i].apply(pd.Series)
+        tempDf = pd.concat([tempDf, x], axis = 1)
+  return tempDf
 
 riot_api_key = "RGAPI-699f4344-49e5-4e99-8a76-362b6a39c1ad"
 lol_watcher = LolWatcher(riot_api_key)
@@ -15,9 +23,12 @@ lor_watcher = LorWatcher(riot_api_key)
 tft_watcher = TftWatcher(riot_api_key)
 
 pd.set_option('display.max_columns', 5)
-championDf = pd.read_json('./leaguedata/11.6.1/data/en_US/champion.json')
-summonerDf = pd.read_json('./leaguedata/11.6.1/data/en_US/summoner.json')
-runesDf = pd.read_json('./leaguedata/11.6.1/data/en_US/runesReforged.json')
+# championDf = pd.read_json('./leaguedata/11.6.1/data/en_US/champion.json')
+# summonerDf = pd.read_json('./leaguedata/11.6.1/data/en_US/summoner.json')
+# runesDf = pd.read_json('./leaguedata/11.6.1/data/en_US/runesReforged.json')
+championDf = unnest(pd.read_json('./champion.json'),["data"])
+summonerDf = pd.read_json('./summoner.json')
+runesDf = pd.read_json('./runesReforged.json')
 
 commandList.append(Command("!regions", "get_regions", "Displays all regions"))
 async def get_regions(ctx, message):

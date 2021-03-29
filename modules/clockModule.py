@@ -18,10 +18,25 @@ def getTimeString(seconds):
         s = str(math.floor(seconds / 60)) + ":" + str(seconds % 60)
     return s
 
+async def getLastStopwatch(message):
+    hist = await message.channel.history(limit=100).flatten()
+    lastStopwatch = None
+    for old in hist:
+        if old.embeds:
+            description = old.embeds[0].description
+            if description.find("elapsed.") != -1:
+                lastStopwatch = old
+                break
+    return lastStopwatch
+
 commandList.append(Command("!stopwatch", "stopwatch", "TODO"))
 async def stopwatch(client, message):
     content = message.content.split(' ')
     if len(content) < 2:
+        # Delete old timer
+        old = await getLastStopwatch(message)
+        if old:
+            await old.delete()
         msg = "Starting your stopwatch"
         embed = discord.Embed(title = "Stopwatch", description=msg, colour = discord.Colour.red())
         newMessage = await message.channel.send(embed=embed)
@@ -37,7 +52,16 @@ async def stopwatch(client, message):
                 return
             time.sleep(0.95)
     else:
-        pass
+        if content[1] == "delete":
+            lastStopwatch = await getLastStopwatch(message)
+            if lastStopwatch == None:
+                await message.channel.send("No stopwatch found.")
+                return
+            await lastStopwatch.delete()
+            await message.channel.send("Stopwatch successfully deleted.")
+            return
+        elif content[1] == "pause":
+            pass
 
 # Helper to get the most recent timer
 async def getLastTimer(message):
