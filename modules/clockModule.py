@@ -11,14 +11,35 @@ import asyncio
 # Every module has to have a command list
 commandList = []
 
+def getTimeString(seconds):
+    if (seconds % 60 < 10):
+        s = str(math.floor(seconds / 60)) + ":0" + str(seconds % 60)
+    else:
+        s = str(math.floor(seconds / 60)) + ":" + str(seconds % 60)
+    return s
+
 commandList.append(Command("!stopwatch", "stopwatch", "TODO"))
 async def stopwatch(client, message):
-    pass
-    # start = time.time()
-    # while int(time.time() - start) < int(10):
-    #     time.sleep(1)
-    #     print(math.floor(time.time() - start))
-    # Helper to get the most recent timer
+    content = message.content.split(' ')
+    if len(content) < 2:
+        msg = "Starting your stopwatch"
+        embed = discord.Embed(title = "Stopwatch", description=msg, colour = discord.Colour.red())
+        newMessage = await message.channel.send(embed=embed)
+        start = time.time()
+        while True:
+            secondsElapsed = math.floor(time.time() - start)
+            elapsed = getTimeString(secondsElapsed)
+            msg = "{} elapsed.".format(elapsed)
+            embed = discord.Embed(title = "Stopwatch", description=msg, colour = discord.Colour.red())
+            try:
+                await newMessage.edit(embed=embed)
+            except:
+                return
+            time.sleep(0.95)
+    else:
+        pass
+
+# Helper to get the most recent timer
 async def getLastTimer(message):
     hist = await message.channel.history(limit=100).flatten()
     lastTimer = None
@@ -67,10 +88,7 @@ async def timer(client, message):
         end = float(left.split(":")[0]) + (float(left.split(":")[1]) / 60)
         while int(time.time() - start) < math.floor(float(end) * 60):
             secondsLeft = math.floor(float(end) * 60) - math.floor(time.time() - start)
-            if (secondsLeft % 60 < 10):
-                left = str(math.floor(secondsLeft / 60)) + ":0" + str(secondsLeft % 60)
-            else:
-                left = str(math.floor(secondsLeft / 60)) + ":" + str(secondsLeft % 60)
+            left = getTimeString(secondsLeft)
             msg = "{} remaining.".format(left)
             embed = discord.Embed(title = "Timer", description=msg, colour = discord.Colour.purple())
             try:
@@ -101,16 +119,12 @@ async def timer(client, message):
     if old:
         await old.delete()
     start = time.time()
-    left = "0:00"
     msg = "Starting your timer."
     embed = discord.Embed(title = "Timer", description=msg, colour = discord.Colour.purple())
     newMessage = await message.channel.send(embed=embed)
     while int(time.time() - start) < math.floor(float(end) * 60):
         secondsLeft = math.floor(float(end) * 60) - math.floor(time.time() - start)
-        if (secondsLeft % 60 < 10):
-            left = str(math.floor(secondsLeft / 60)) + ":0" + str(secondsLeft % 60)
-        else:
-            left = str(math.floor(secondsLeft / 60)) + ":" + str(secondsLeft % 60)
+        left = getTimeString(secondsLeft)
         msg = "{} remaining.".format(left)
         embed = discord.Embed(title = "Timer", description=msg, colour = discord.Colour.purple())
         try:
