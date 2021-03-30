@@ -2,8 +2,10 @@ import string
 import discord
 import os
 import pandas as pd
+import requests
 from command import Command
 from riotwatcher import LolWatcher, ApiError, RiotWatcher, LorWatcher, TftWatcher
+from bs4 import BeautifulSoup
 
 commandList = []
 
@@ -25,9 +27,9 @@ lor_watcher = LorWatcher(riot_api_key)
 tft_watcher = TftWatcher(riot_api_key)
 
 pd.set_option('display.max_columns', 5)
-championDf = unnest(pd.read_json('./leaguedata/11.6.1/data/en_US/champion.json'), ["data"])
-summonerDf = pd.read_json('./leaguedata/11.6.1/data/en_US/summoner.json')
-runesDf = pd.read_json('./leaguedata/11.6.1/data/en_US/runesReforged.json')
+championDf = unnest(pd.read_json('C:\\Users\\liehr\\OneDrive\\Wild-Card-Bot\\leaguedata\\champion.json'), ["data"])
+summonerDf = pd.read_json('C:\\Users\\liehr\\OneDrive\\Wild-Card-Bot\\leaguedata\\summoner.json')
+runesDf = pd.read_json('C:\\Users\\liehr\\OneDrive\\Wild-Card-Bot\\leaguedata\\runesReforged.json')
 
 commandList.append(Command("!regions", "get_regions", "Displays all regions"))
 async def get_regions(ctx, message):
@@ -160,6 +162,52 @@ async def get_match_history(ctx, message):
     for i in range(5):
       await message.channel.send(">>> \n" + str(i + 1) + ".\nQueue: " + get_queue_type(matchlist['matches'][i]['queue']) + "\nChampion: " + search_champion_by_id(str(matchlist['matches'][i]['champion']), "name") + "\n")
 
+
+commandList.append(Command("!skillorder", "get_skill_order", "Displays the skill order of specified League of Legends champion.\nUsage: !skillorder <CHAMPION_NAME>"))
+async def get_skill_order(ctx, message):
+    #Gets the desired champion name
+    champion_name = message.content.split(" ")[1]
+
+    #List of skillorder and the counter for that list 1 = First skill to be leveled
+    skillOrderList = [] 
+    counter = 1
+
+    #Data is obtained from u.gg which uses Riot API 
+    URL = 'https://u.gg/lol/champions/' + champion_name + '/build'
+    #page is the way to access the webpage
+    page = requests.get(URL)
+
+    #Soup parses the page into html sections
+    soup = BeautifulSoup(page.content, 'html.parser')
+
+    #Searches for the skill order tab on u.gg 
+    results = soup.find_all('div', class_= 'skill-order-row')
+    #Gets the skills from the skilltable
+    for i in range(18):
+        for result in results:
+            skillups = result.find_all('div', class_='skill-up')
+            if (None in skillups):
+                continue
+            skillname = result.find('div', class_='skill-label bottom-right')
+            print(skillname)
+            for skillup in skillups:
+                print(skillup)
+                if str(skillup) == '<div class="skill-up"><div>' + str(counter) + '</div></div>' or str(skillup) == '<div class="skill-up rec"><div>' + str(counter) + '</div></div>':
+                    skillOrderList.append(str(skillname)[38:39])
+                    counter += 1
+    print(skillOrderList)
+
+    #Final formatted string
+    skillOrderString = ""
+
+    #Makes the string Q->E->W->R as an example
+    for i in range(len(skillOrderList)):
+        if i == len(skillOrderList) - 1:
+            skillOrderString += skillOrderList[i]
+        else:
+            skillOrderString += skillOrderList[i] + "->"
+    
+    await message.channel.send(skillOrderString)
 
 # Helper function to get queue type by id
 def get_queue_type(id: int) -> str:
