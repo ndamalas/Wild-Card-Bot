@@ -321,20 +321,28 @@ async def sendPoll(poll):
     optionsAndReactions = ""
     for i in range(len(poll.options)):
         optionsAndReactions += str(poll.reactions[i]) + " for " + poll.options[i] + "\n"
-    embed.add_field(name="Vote:", value=optionsAndReactions, inline=False)
+    embed.add_field(name="Vote", value=optionsAndReactions, inline=False)
     poll.pm = await poll.guild.get_channel(poll.channel).send(embed=embed)
     # React to the poll to make it easier for people to vote
     for i in range(len(poll.options)):
             await poll.pm.add_reaction(poll.reactions[i])
     # Consider the time limit
-    await enforceTimeLimit(poll)
+    await enforceTimeLimit(poll, embed)
     
 # Enforces the time limit if necessary
-async def enforceTimeLimit(poll):
+async def enforceTimeLimit(poll, embed):
     # If no time limit, do not wait
     if poll.time == 0:
         return
-    await asyncio.sleep(poll.time)
+    # Append the time remaining at the bottom
+    # Countdown the time
+    timeRemaining = poll.time
+    for _ in range(poll.time):
+        embed.add_field(name="Time", value=str(timeRemaining) + " seconds remaining", inline=False)
+        await poll.pm.edit(embed=embed)
+        embed.remove_field(len(embed.fields) - 1)
+        timeRemaining -= 1
+        await asyncio.sleep(1)
     await sendResults(poll)
 
 # Sets up the poll for poll results 
