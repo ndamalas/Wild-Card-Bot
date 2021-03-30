@@ -24,9 +24,12 @@ async def getLastStopwatch(message):
     for old in hist:
         if old.embeds:
             description = old.embeds[0].description
-            if description.find("elapsed.") != -1:
-                lastStopwatch = old
-                break
+            try:
+                if description.find("elapsed.") != -1:
+                    lastStopwatch = old
+                    break
+            except:
+                return None
     return lastStopwatch
 
 commandList.append(Command("!stopwatch", "stopwatch", "TODO"))
@@ -94,6 +97,8 @@ async def stopwatch(client, message):
                 except:
                     return
                 time.sleep(0.95)
+        else:
+            await message.channel.send("Please enter a valid argument.")
 
 # Helper to get the most recent timer
 async def getLastTimer(message):
@@ -102,9 +107,12 @@ async def getLastTimer(message):
     for old in hist:
         if old.embeds:
             description = old.embeds[0].description
-            if description.find("remaining.") != -1:
-                lastTimer = old
-                break
+            try:
+                if description.find("remaining.") != -1:
+                    lastTimer = old
+                    break
+            except:
+                return None
     return lastTimer
 
 commandList.append(Command("!timer", "timer", "Used to start, pause, unpause, or delete a timer.\nTo create a new timer, use: `!timer <TIME>`. The amount of time given is in minutes, (ex: if you want a 30 second timer use 0.5)\nTo pause the most recent timer, use: `!timer pause`.\nTo unpause the most recent timer, use: `!timer unpause`.\nTo delete the most recent timer, use: `!timer delete`."))
