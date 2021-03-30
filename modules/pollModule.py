@@ -4,7 +4,6 @@ except:
     pass
 
 import discord
-import random
 import asyncio
 
 # Module that creates and monitors polls
@@ -23,6 +22,7 @@ class Poll:
         self.time = None      # The time limit of the poll, 0 indicates no time limit
         self.channel = None   # The id of the text channel that the poll is sent to
         self.rm = None        # The message containing the reactions
+        self.pm = None        # The message containing the poll
 
 # Every module has to have a command list
 commandList = []
@@ -43,7 +43,7 @@ defaultReactions = [u"\U0001F34E", u"\U0001F350", u"\U0001F34A", u"\U0001F34B", 
 
 # Format: !createpoll
 try:
-    commandList.append(Command("!createpoll", "createPoll", usage, permissions=["direct_message"]))
+    commandList.append(Command("!createpoll", "createPoll", usage, permissions=["direct_message", "mention_everyone"]))
 except:
     print("Command Module correctly not imported.")
     print("The Main Module is required for this to work.")
@@ -71,7 +71,12 @@ async def createPoll(client, message):
         embed = discord.Embed(title="Poll Creation", description=response, colour=discord.Colour.blue())
         embed.set_author(name=user.display_name, icon_url=user.avatar_url)
         await message.channel.send(embed=embed)
+    elif checkForDone(message, user) == True:
+        # Check if the user has specified for a poll to be finished
+        pollId = int(message.content.split(" ")[1])
+        await concludePoll(user, pollId)
     elif checkForUnfinishedPoll(message, user) == True:
+        # If there is an unfinished poll and the user has send input
         await completePoll(message, user)
 
 # Direct messages the given user with an embed created from the title and response arguments
@@ -87,6 +92,19 @@ def checkCreationConditions(message, user):
     else:
         notAlreadyCreatingPoll = True
     return message.guild != None and message.content.split(" ")[0] == "!createpoll" and notAlreadyCreatingPoll
+
+# Checks if the user is requesting a poll to be concluded
+def checkForDone(message, user):
+    if len(message.content.split(" ")) >= 2:
+        # done <poll-id> must be called, user must have a completed poll with no time limit
+        if message.content.split(" ")[0].lower() == "done" and message.content.split(" ")[1].isnumeric():
+            if user.id in userPolls:
+                try:
+                    pollId = int(message.content.split(" ")[1])
+                except:
+                    return False
+                return len([r for r in userPolls[user.id] if r.id == pollId and r.complete == True and r.time == 0]) > 0
+    return False
 
 # Checks if the user is currently creating a poll
 def checkForUnfinishedPoll(message, user):
@@ -158,6 +176,7 @@ async def completePoll(message, user):
                 response += "The id of this poll is **" + str(poll.id) + "**. To end the poll, message "
                 response += "**done** **" + str(poll.id) + "**."
             await directMessageUser(user, "Poll Sent", response)
+            await sendPoll(user, poll)
 
 # Parses the options from the message content
 def parseOptions(content):
@@ -199,10 +218,18 @@ def parseOptions(content):
 # Sends a dm to the user and asks them to react to it
 # The reactions are then parsed for use by the poll
 async def setReactions(message, user, poll):
+    # Build string of all options
+    optionsStr = ""
+    for option in poll.options:
+        optionsStr += option + " -> "
+    optionsStr = optionsStr[:-4] + "\n"
     # Create message for the user to react to
     response = "Please react to this message with the reactions you would like to use for your poll.\n"
     response += "You have specified **" + str(len(poll.options)) + "** options. Please react with **" 
     response += str(len(poll.options)) + "** reactions.\n"
+    response += "The order in which you react matters. The first reaction corresponds with the first option.\n"
+    response += "Order of options:\n"
+    response += optionsStr
     response += "If you want the bot to choose for you,  message **auto**."
     embed = discord.Embed(title="Set Reactions", description=response, colour=discord.Colour.blue())
     embed.set_author(name=user.display_name, icon_url=user.avatar_url)
@@ -283,3 +310,106 @@ async def parseChannel(user, content, poll):
             await directMessageUser(user, "Text Channel Not Found", response)
             return None
     return None
+
+# Sends the poll to the designated channel
+async def sendPoll(user, poll):
+    # Format: Title -> Question -> Reactions and Options
+    embed = discord.Embed(title="Poll", description = "\n", colour=discord.Colour.orange())
+    # Display title and question
+    embed.add_field(name=poll.title, value=poll.question + "\n\n", inline=False)
+    # Display which reaction corresponds with which option
+    optionsAndReactions = ""
+    for i in range(len(poll.options)):
+        optionsAndReactions += str(poll.reactions[i]) + " for " + poll.options[i] + "\n\n"
+    embed.add_field(name="Vote", value=optionsAndReactions, inline=False)
+    poll.pm = await poll.guild.get_channel(poll.channel).send(embed=embed)
+    # React to the poll to make it easier for people to vote
+    for i in range(len(poll.options)):
+            await poll.pm.add_reaction(poll.reactions[i])
+    # Consider the time limit
+    await enforceTimeLimit(user, poll, embed)
+    
+# Enforces the time limit if necessary
+async def enforceTimeLimit(user, poll, embed):
+    # If no time limit, do not wait
+    if poll.time == 0:
+        return
+    # Append the time remaining at the bottom
+    # Countdown the time
+    timeRemaining = poll.time
+    for _ in range(poll.time):
+        embed.add_field(name="Time", value=str(timeRemaining) + " seconds remaining", inline=False)
+        await poll.pm.edit(embed=embed)
+        embed.remove_field(len(embed.fields) - 1)
+        timeRemaining -= 1
+        await asyncio.sleep(1)
+    await sendResults(user, poll)
+
+# Sets up the poll for poll results 
+async def concludePoll(user, pollId):
+    poll = [r for r in userPolls[user.id] if r.id == pollId and r.complete == True and r.time == 0][0]
+    await sendResults(user, poll)
+
+# Sends the results of the poll after parsing the given votes
+# Deletes the poll as well
+async def sendResults(user, poll):
+    poll.pm = await poll.guild.get_channel(poll.channel).fetch_message(poll.pm.id)
+    finalCount = {}
+    for i in range(len(poll.options)):
+        # Get all votes excluding the bot vote
+        finalCount[poll.options[i]] = [p for p in poll.pm.reactions if p.emoji == poll.reactions[i].emoji][0]
+    # Parse the counts
+    countStr = ""
+    for option in finalCount:
+        countStr += "**" + option + "** obtained **" + str(finalCount[option].count - 1) + "** vote(s)\n"
+        if finalCount[option].count - 1 > 0:
+            voters = await finalCount[option].users().flatten()
+            countStr += "Voters: "
+            for voter in voters:
+                # Do not consider Wild Card Bot vote
+                if voter.bot == False:
+                    countStr += voter.display_name + ", "
+            countStr = countStr[:-2] + "\n\n"
+        else:
+            countStr += "No Voters\n\n"
+    # Obtain most picked option
+    maxCount = 0
+    for option in finalCount:
+        if finalCount[option].count - 1 > maxCount:
+            maxCount = finalCount[option].count - 1
+    # Find winning options
+    winningOptions = []
+    for option in finalCount:
+        if finalCount[option].count - 1 == maxCount:
+            winningOptions.append(option)
+    # Count the total number of votes
+    totalCount = 0
+    for option in finalCount:
+        totalCount += finalCount[option].count - 1
+    totalStr = "Total: **" + str(totalCount) + "** vote(s)\n"
+    # Parse the winning options
+    winStr = ""
+    if len(winningOptions) == 1:
+        winStr = "The option **" + winningOptions[0] + "** has won!"
+    elif len(winningOptions) == 2:
+        winStr = "There was a tie between the options **" + winningOptions[0] + "** and **" + winningOptions[1] + "**."
+    elif len(winningOptions) > 0:
+        winStr = "There was a tie between the options "
+        for i in range(len(winningOptions)):
+            if i == len(winningOptions) - 1:
+                winStr += "and **" + winningOptions[i] + "**."
+            else:
+                winStr += "**" + winningOptions[i] + "**, "
+    # Create embed
+    embed = discord.Embed(title="Poll Results for " + poll.title, description="@everyone\n" + winStr, colour=discord.Colour.orange())
+    embed.add_field(name="Final Count", value=countStr + totalStr, inline=False)
+    embed.add_field(name="Question Asked", value=poll.question, inline=False)
+    # Notify user via dms that the poll has concluded
+    response = "The poll titled **" + poll.title + "** has concluded! Please see the results in the "
+    response += "**" + poll.guild.get_channel(poll.channel).name + "** text channel!"
+    await directMessageUser(user, "Poll Concluded", response)
+    # Delete poll and send results
+    await poll.pm.delete()
+    await poll.guild.get_channel(poll.channel).send(embed=embed)
+    # Delete poll object for space conservation
+    del poll
