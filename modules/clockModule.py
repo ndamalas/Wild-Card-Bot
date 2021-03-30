@@ -1,3 +1,4 @@
+from typing import AsyncIterable
 from discord.message import Message
 from command import Command
 import discord
@@ -10,6 +11,16 @@ import asyncio
 
 # Every module has to have a command list
 commandList = []
+
+"""userTimers = {}
+
+class Timer:
+    def __init__(self, guild):
+        self.guild = guild
+        self.message = None
+        self.time = None
+"""
+
 
 def getTimeString(seconds):
     if (seconds % 60 < 10):
@@ -27,9 +38,9 @@ async def getLastStopwatch(message):
             try:
                 if description.find("elapsed.") != -1:
                     lastStopwatch = old
-                    break
+                    return lastStopwatch
             except:
-                return None
+                continue
     return lastStopwatch
 
 commandList.append(Command("!stopwatch", "stopwatch", "TODO"))
@@ -53,7 +64,7 @@ async def stopwatch(client, message):
                 await newMessage.edit(embed=embed)
             except:
                 return
-            time.sleep(0.95)
+            time.sleep(0.9)
     else:
         if content[1] == "delete":
             lastStopwatch = await getLastStopwatch(message)
@@ -96,7 +107,7 @@ async def stopwatch(client, message):
                     await lastStopwatch.edit(embed=embed)
                 except:
                     return
-                time.sleep(0.95)
+                time.sleep(0.9)
         else:
             await message.channel.send("Please enter a valid argument.")
 
@@ -112,7 +123,7 @@ async def getLastTimer(message):
                     lastTimer = old
                     break
             except:
-                return None
+                continue
     return lastTimer
 
 commandList.append(Command("!timer", "timer", "Used to start, pause, unpause, or delete a timer.\nTo create a new timer, use: `!timer <TIME>`. The amount of time given is in minutes, (ex: if you want a 30 second timer use 0.5)\nTo pause the most recent timer, use: `!timer pause`.\nTo unpause the most recent timer, use: `!timer unpause`.\nTo delete the most recent timer, use: `!timer delete`."))
@@ -162,7 +173,7 @@ async def timer(client, message):
                 await lastTimer.edit(embed=embed)
             except:
                 return
-            time.sleep(0.95)
+            time.sleep(0.9)
         msg = "0:00 remaining."
         embed = discord.Embed(title = "Timer", description=msg, colour = discord.Colour.purple())
         await lastTimer.edit(embed=embed)
@@ -198,7 +209,7 @@ async def timer(client, message):
             await newMessage.edit(embed=embed)
         except:
             return
-        time.sleep(0.95)
+        time.sleep(0.9)
     msg = "0:00 remaining."
     embed = discord.Embed(title = "Timer", description=msg, colour = discord.Colour.purple())
     await newMessage.edit(embed=embed)
