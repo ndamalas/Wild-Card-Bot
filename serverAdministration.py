@@ -941,6 +941,7 @@ async def removeSong(ctx, message):
     while pointer != None:
         if index == toRemove:
             pointer.prev.next = pointer.next
+            os.remove("youtube/"+pointer.vidID+".mp3")
             embed = discord.Embed(
                 title='Song Removed',
                 description="{} removed successfully".format(pointer.fulltitle),
@@ -973,8 +974,12 @@ commandList.append(Command("!clear", "clearQueue", "Clears the queue (Except the
 async def clearQueue(ctf, message):
     global head
     global tail
+    pointer = head.next
     head.next = None
     tail = head
+    #Remove all the files
+    while pointer != None:
+        os.remove("youtube/{}.mp3".format(pointer.vidID))
     embed = discord.Embed(
                 title='Queue Cleared',
                 description="The music queue has been cleared!",
@@ -988,13 +993,15 @@ async def playMusic(ctx, message):
     if(len(message.content.split(" ")) == 1):
         embed = discord.Embed(
                 title='Video Link Error',
-                description="No Link Provided!",
+                description="No Link or Title Provided!",
                 color = discord.Colour.red()
             )
         await message.channel.send(embed=embed)
         return
     #get video url
     video = message.content.split(" ")[1]
+    if not video.startswith('https://'):
+        video = search("Youtube "+" ".join(message.content.split(" ")[1:]), lang='en')[0]
     guild = message.guild
 
     #if not connected to voice, connect
@@ -1055,7 +1062,7 @@ async def playMusic(ctx, message):
         #Make sure link is ok
         embed = discord.Embed(
                 title='Video Link Error',
-                description="Bad/Incorrect Link Provided!",
+                description="Error Loading Provided Video!",
                 color = discord.Colour.red()
             )
         try:
@@ -1084,7 +1091,8 @@ async def playMusic(ctx, message):
         embed = discord.Embed(
                 title='Music Added!',
                 description="{} added to queue!".format(fulltitle),
-                color = discord.Colour.green()
+                color = discord.Colour.green(),
+                url = video
             )
         await message.channel.send(embed=embed)
         newVid = Node(vidID=vidID, fulltitle=fulltitle)
