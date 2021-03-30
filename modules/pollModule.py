@@ -314,13 +314,13 @@ async def parseChannel(user, content, poll):
 # Sends the poll to the designated channel
 async def sendPoll(user, poll):
     # Format: Title -> Question -> Reactions and Options
-    embed = discord.Embed(title="Poll", description = "\n", colour=discord.Colour.green())
+    embed = discord.Embed(title="Poll", description = "\n", colour=discord.Colour.orange())
     # Display title and question
     embed.add_field(name=poll.title, value=poll.question + "\n\n", inline=False)
     # Display which reaction corresponds with which option
     optionsAndReactions = ""
     for i in range(len(poll.options)):
-        optionsAndReactions += str(poll.reactions[i]) + " for " + poll.options[i] + "\n"
+        optionsAndReactions += str(poll.reactions[i]) + " for " + poll.options[i] + "\n\n"
     embed.add_field(name="Vote", value=optionsAndReactions, inline=False)
     poll.pm = await poll.guild.get_channel(poll.channel).send(embed=embed)
     # React to the poll to make it easier for people to vote
@@ -357,27 +357,42 @@ async def sendResults(user, poll):
     finalCount = {}
     for i in range(len(poll.options)):
         # Get all votes excluding the bot vote
-        finalCount[poll.options[i]] = [p for p in poll.pm.reactions if p.emoji == poll.reactions[i].emoji][0].count - 1
+        finalCount[poll.options[i]] = [p for p in poll.pm.reactions if p.emoji == poll.reactions[i].emoji][0]
     # Parse the counts
     countStr = ""
     for option in finalCount:
-        countStr += option + " obtained " + str(finalCount[option]) + " vote(s)\n"
+        countStr += "**" + option + "** obtained **" + str(finalCount[option].count - 1) + "** vote(s)\n"
+        if finalCount[option].count - 1 > 0:
+            voters = await finalCount[option].users().flatten()
+            countStr += "Voters: "
+            for voter in voters:
+                # Do not consider Wild Card Bot vote
+                if voter.bot == False:
+                    countStr += voter.display_name + ", "
+            countStr = countStr[:-2] + "\n\n"
+        else:
+            countStr += "No Voters\n\n"
     # Obtain most picked option
     maxCount = 0
     for option in finalCount:
-        if finalCount[option] > maxCount:
-            maxCount = finalCount[option]
+        if finalCount[option].count - 1 > maxCount:
+            maxCount = finalCount[option].count - 1
     # Find winning options
     winningOptions = []
     for option in finalCount:
-        if finalCount[option] == maxCount:
+        if finalCount[option].count - 1 == maxCount:
             winningOptions.append(option)
+    # Count the total number of votes
+    totalCount = 0
+    for option in finalCount:
+        totalCount += finalCount[option].count - 1
+    totalStr = "Total: **" + str(totalCount) + "** vote(s)\n"
     # Parse the winning options
     winStr = ""
     if len(winningOptions) == 1:
         winStr = "The option **" + winningOptions[0] + "** has won!"
     elif len(winningOptions) == 2:
-        winStr = "There was a tie between the options **" + winningOptions[0] + "** and **" + winningOptions[1] + "."
+        winStr = "There was a tie between the options **" + winningOptions[0] + "** and **" + winningOptions[1] + "**."
     elif len(winningOptions) > 0:
         winStr = "There was a tie between the options "
         for i in range(len(winningOptions)):
@@ -386,8 +401,8 @@ async def sendResults(user, poll):
             else:
                 winStr += "**" + winningOptions[i] + "**, "
     # Create embed
-    embed = discord.Embed(title="Poll Results for " + poll.title, description="@everyone\n" + winStr, colour=discord.Colour.green())
-    embed.add_field(name="Final Count", value=countStr + "\n\n", inline=False)
+    embed = discord.Embed(title="Poll Results for " + poll.title, description="@everyone\n" + winStr, colour=discord.Colour.orange())
+    embed.add_field(name="Final Count", value=countStr + totalStr, inline=False)
     embed.add_field(name="Question Asked", value=poll.question, inline=False)
     # Notify user via dms that the poll has concluded
     response = "The poll titled **" + poll.title + "** has concluded! Please see the results in the "
@@ -396,3 +411,5 @@ async def sendResults(user, poll):
     # Delete poll and send results
     await poll.pm.delete()
     await poll.guild.get_channel(poll.channel).send(embed=embed)
+    # Delete poll object for space conservation
+    del poll
