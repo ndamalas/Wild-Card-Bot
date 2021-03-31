@@ -32,7 +32,7 @@ async def getLastStopwatch(message):
                 continue
     return lastStopwatch
 
-commandList.append(Command("!stopwatch", "stopwatch", "Used to create and interact with a stopwatch.\nTo create and start a stopwatch use: `!stopwatch`\nTo stop a stopwatch use: `!stopwatch stop`\nTo unpause a stopwatch use: `!stopwatch unpause`\nTo delete a stopwatch use: `!stopwatch delete`"))
+commandList.append(Command("!stopwatch", "stopwatch", "Used to create and interact with a stopwatch.\nTo create and start a stopwatch use: `!stopwatch`\nTo stop a stopwatch use: `!stopwatch stop`\nTo unpause a stopwatch use: `!stopwatch unpause`\nTo reset a stopwatch use: `!stopwatch reset`.\nTo delete a stopwatch use: `!stopwatch delete`"))
 async def stopwatch(client, message):
     content = message.content.split(' ')
     if len(content) < 2:
@@ -94,6 +94,26 @@ async def stopwatch(client, message):
                 embed = discord.Embed(title = "Stopwatch", description=msg, colour = discord.Colour.red())
                 try:
                     await lastStopwatch.edit(embed=embed)
+                except:
+                    return
+                time.sleep(0.9)
+        elif content[1] == "reset":
+            lastStopwatch = await getLastStopwatch(message)
+            if lastStopwatch == None:
+                await message.channel.send("No stopwatch found.")
+                return
+            await lastStopwatch.delete()
+            msg = "Starting your stopwatch"
+            embed = discord.Embed(title = "Stopwatch", description=msg, colour = discord.Colour.red())
+            newMessage = await message.channel.send(embed=embed)
+            start = time.time()
+            while True:
+                secondsElapsed = math.floor(time.time() - start)
+                elapsed = getTimeString(secondsElapsed)
+                msg = "{} elapsed.".format(elapsed)
+                embed = discord.Embed(title = "Stopwatch", description=msg, colour = discord.Colour.red())
+                try:
+                    await newMessage.edit(embed=embed)
                 except:
                     return
                 time.sleep(0.9)
