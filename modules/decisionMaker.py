@@ -71,7 +71,7 @@ async def decisionMaker(client, message):
                 lowBound = bounds[0]
                 highBound = bounds[1]
             # Check if the number of picks exceeds the total possible integers
-            if checkPicksForNumbers(lowBound, highBound, picks) == False:
+            if bounds != None and checkPicksForNumbers(lowBound, highBound, picks) == False:
                 action = "error"
             # Only generate randomNumber if specified
             if action != "error":
