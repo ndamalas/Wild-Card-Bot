@@ -78,18 +78,18 @@ async def decisionMaker(client, message):
                 randomNumber = generateRandNumber(lowBound, highBound, picks)
                 await sendNumberResults(message, randomNumber, lowBound, highBound, picks)
     else:
-        response = "Incorrect usage of the command !decide. Please use **!commands !decide** to see the syntax of this command."
+        response = "Incorrect usage of the command !decide. Please use **!help !decide** to see the syntax of this command."
         embed = discord.Embed(title='Incorrect Usage of !decide', description=response, colour=discord.Colour.red())
         await message.channel.send(embed=embed)
         action = "syntax"
     # Print error message if there is a cast error or no action specified
     if action == 0:
-        response = "Incorrect usage of the command !decide. Please use **!commands !decide** to see the syntax of this command."
+        response = "Incorrect usage of the command !decide. Please use **!help !decide** to see the syntax of this command."
         embed = discord.Embed(title='Incorrect Usage of !decide', description=response, colour=discord.Colour.red())
         await message.channel.send(embed=embed)
     elif action == "error":
         response = "There was an error with the arguments given! Please double check you have followed the specified format "
-        response += "specified by **!commands !decide**."
+        response += "specified by **!help !decide**."
         embed = discord.Embed(title='Incorrect Usage of !decide', description=response, colour=discord.Colour.red())
         await message.channel.send(embed=embed)
 
