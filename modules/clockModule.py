@@ -32,7 +32,7 @@ async def getLastStopwatch(message):
                 continue
     return lastStopwatch
 
-commandList.append(Command("!stopwatch", "stopwatch", "TODO"))
+commandList.append(Command("!stopwatch", "stopwatch", "Used to create and interact with a stopwatch.\nTo create and start a stopwatch use: `!stopwatch`\nTo stop a stopwatch use: `!stopwatch stop`\nTo unpause a stopwatch use: `!stopwatch unpause`\nTo delete a stopwatch use: `!stopwatch delete`"))
 async def stopwatch(client, message):
     content = message.content.split(' ')
     if len(content) < 2:
@@ -206,7 +206,7 @@ async def timer(client, message):
 
 
 
-commandList.append(Command("!timezone", "timezone", "TODO"))
+commandList.append(Command("!timezone", "timezone", "Used to check the local time in a location.\nUsage: `!timezone <LOCATION>`"))
 async def timezone(client, message):
     messageContents = message.content.split(" ")
     if len(messageContents) < 2:
