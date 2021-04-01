@@ -6,6 +6,7 @@ import requests
 from command import Command
 from riotwatcher import LolWatcher, ApiError, RiotWatcher, LorWatcher, TftWatcher
 from bs4 import BeautifulSoup
+from PIL import Image
 
 commandList = []
 
@@ -208,6 +209,59 @@ async def get_skill_order(ctx, message):
             skillOrderString += skillOrderList[i] + "->"
     
     await message.channel.send(skillOrderString)
+
+commandList.append(Command("!items", "get_recommended_items", "Displays the recommended items for a champion given the champion name.\nUsage: !recommendeditems <CHAMPION_NAME>"))
+async def get_recommended_items(ctx, message):
+    #Gets the desired champion name
+    champion_name = message.content.split(" ")[1]
+
+    #Data is obtained from op.gg which uses Riot API 
+    URL = 'https://na.op.gg/champion/' + champion_name + '/statistics'
+    #page is the way to access the webpage
+    page = requests.get(URL)
+
+    #Soup parses the page into html sections
+    soup = BeautifulSoup(page.content, 'html.parser')
+
+    #Searches for the first row item builds (they display the most popular builds)
+    results = soup.find_all('tr', class_= 'champion-overview__row champion-overview__row--first')
+
+
+    itemImages = []
+    
+    #print(results)
+    #print('\n')
+    for result in results:
+        images = result.find_all('img')
+        #print(images)
+        for image in images:
+            if str(image)[5] == 's':
+                itemImages.append(str(image)[54:62])
+    #print(itemImages)
+
+    starterItems = []
+    coreItems = []
+    boots = []
+
+    for i in range(len(itemImages)):
+        temp_img = discord.File("C:\\Users\\liehr\\OneDrive\\Wild-Card-Bot\\leaguedata\\dragontail-11.6.1\\11.6.1\\img\\item\\" + itemImages[i])
+        if i < 3:
+            starterItems.append(temp_img)
+        elif i >= 3 and i < 6:
+            coreItems.append(temp_img)
+        else: 
+            boots.append(temp_img)
+    
+    '''embed = discord.Embed(title="Recommended Build")
+    embed.add_field(name='Starting Items:', value=(file=discord.File(imageFiles[0]) + discord.File(imageFiles[1]) + discord.File(imageFiles[2])))
+    embed.add_field(name='Core Items:', value=(discord.File(imageFiles[3]) + discord.File(imageFiles[4]) + discord.File(imageFiles[5])))
+    embed.add_field(name='Boots:', value=(discord.File(imageFiles[6])))'''
+    await message.channel.send('Starting Items:')
+    await message.channel.send(files=starterItems)
+    await message.channel.send('Core Items:')
+    await message.channel.send(files=coreItems)
+    await message.channel.send('Boots:')
+    await message.channel.send(files=boots)
 
 # Helper function to get queue type by id
 def get_queue_type(id: int) -> str:
