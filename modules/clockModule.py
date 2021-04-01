@@ -1,25 +1,14 @@
-from typing import AsyncIterable
-from discord.message import Message
 from command import Command
 import discord
 import time
 import math
-import threading
-import asyncio
+from bs4 import BeautifulSoup
+import requests
 
 #Function to test sending data to external commands
 
 # Every module has to have a command list
 commandList = []
-
-"""userTimers = {}
-
-class Timer:
-    def __init__(self, guild):
-        self.guild = guild
-        self.message = None
-        self.time = None
-"""
 
 
 def getTimeString(seconds):
@@ -43,7 +32,7 @@ async def getLastStopwatch(message):
                 continue
     return lastStopwatch
 
-commandList.append(Command("!stopwatch", "stopwatch", "TODO"))
+commandList.append(Command("!stopwatch", "stopwatch", "Used to create and interact with a stopwatch.\nTo create and start a stopwatch use: `!stopwatch`\nTo stop a stopwatch use: `!stopwatch stop`\nTo unpause a stopwatch use: `!stopwatch unpause`\nTo reset a stopwatch use: `!stopwatch reset`.\nTo delete a stopwatch use: `!stopwatch delete`"))
 async def stopwatch(client, message):
     content = message.content.split(' ')
     if len(content) < 2:
@@ -105,6 +94,26 @@ async def stopwatch(client, message):
                 embed = discord.Embed(title = "Stopwatch", description=msg, colour = discord.Colour.red())
                 try:
                     await lastStopwatch.edit(embed=embed)
+                except:
+                    return
+                time.sleep(0.9)
+        elif content[1] == "reset":
+            lastStopwatch = await getLastStopwatch(message)
+            if lastStopwatch == None:
+                await message.channel.send("No stopwatch found.")
+                return
+            await lastStopwatch.delete()
+            msg = "Starting your stopwatch"
+            embed = discord.Embed(title = "Stopwatch", description=msg, colour = discord.Colour.red())
+            newMessage = await message.channel.send(embed=embed)
+            start = time.time()
+            while True:
+                secondsElapsed = math.floor(time.time() - start)
+                elapsed = getTimeString(secondsElapsed)
+                msg = "{} elapsed.".format(elapsed)
+                embed = discord.Embed(title = "Stopwatch", description=msg, colour = discord.Colour.red())
+                try:
+                    await newMessage.edit(embed=embed)
                 except:
                     return
                 time.sleep(0.9)
@@ -217,6 +226,48 @@ async def timer(client, message):
 
 
 
-commandList.append(Command("!timezone", "timezone", "TODO"))
+commandList.append(Command("!timezone", "timezone", "Used to check the local time in a location.\nUsage: `!timezone <LOCATION>`"))
 async def timezone(client, message):
-    pass
+    messageContents = message.content.split(" ")
+    if len(messageContents) < 2:
+        searchURL = "https://www.google.com/search?q=local+time"
+        html = requests.get(searchURL)
+        soup = BeautifulSoup(html.content, 'html.parser')
+        description = soup.find_all('div', class_="BNeawe iBp4i AP7Wnd")
+        if len(description) == 0:
+            description = soup.find_all('div', class_="BNeawe s3v9rd AP7Wnd")
+        result = description[0].text
+        response = "Local time is: " + result
+        embed = discord.Embed(title="Clock", description=response, colour=discord.Colour.orange())
+        embed.set_author(name=message.author.display_name, icon_url=message.author.avatar_url)
+        await message.channel.send(embed=embed)
+        return
+    # First webscrape coordinates
+    searchURL = "https://www.google.com/search?q=time+in+"
+    for i in range(1, len(messageContents)):
+        searchURL += messageContents[i] + "+"
+    html = requests.get(searchURL)
+    soup = BeautifulSoup(html.content, 'html.parser')
+
+    description = soup.find_all('div', class_="BNeawe iBp4i AP7Wnd")
+    if len(description) == 0:
+        description = soup.find_all('div', class_="BNeawe s3v9rd AP7Wnd")
+    result = description[0].text
+    response = "Local time in "
+    for i in range(1, len(messageContents)):
+        response += messageContents[i] + " "
+    response += "is: " + result
+    # Now ask google the time difference
+    searchURL = "https://www.google.com/search?q=time+difference+in+"
+    for i in range(1, len(messageContents)):
+        searchURL += messageContents[i] + "+"
+    html = requests.get(searchURL)
+    soup = BeautifulSoup(html.content, 'html.parser')
+    description = soup.find_all('div', class_="BNeawe iBp4i AP7Wnd")
+    if len(description) == 0:
+        description = soup.find_all('div', class_="BNeawe s3v9rd AP7Wnd")
+    result = description[0].text
+    response += "\n" + result
+    embed = discord.Embed(title="Clock", description=response, colour=discord.Colour.orange())
+    embed.set_author(name=message.author.display_name, icon_url=message.author.avatar_url)
+    await message.channel.send(embed=embed)
