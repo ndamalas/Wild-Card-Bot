@@ -29,6 +29,8 @@ riot_watcher = RiotWatcher(riot_api_key)
 lor_watcher = LorWatcher(riot_api_key)
 tft_watcher = TftWatcher(riot_api_key)
 
+dirname = "C:/Users/Michael/Documents/GitHub/Wild-Card-Bot/leaguedata/"
+
 pd.set_option('display.max_columns', 5)
 
 championDf = unnest(pd.read_json('./leaguedata/11.6.1/data/en_US/championFull.json'), ["data"])
@@ -47,8 +49,6 @@ async def get_regions(ctx, message):
     response = "BR1\nEUN1\nEUW1\nJP1\nKR\nLA1\nLA2\nNA1\nOC1\nRU\nTR1"
     embed = discord.Embed(title='Riot regions', description=response, colour=discord.Colour.dark_red())
     await message.channel.send(embed=embed)
-    fp = open("C:/Users/Michael/Documents/GitHub/Wild-Card-Bot/modules/Aatrox.png", 'rb')
-    await message.channel.send(file=discord.File(fp))
 
 commandList.append(Command("!tips", "champion_tips", "Display tips on playing with or against a champion\nUsage: !tips <CHAMPION-NAME>"))
 async def champion_tips(ctx, message):
@@ -68,7 +68,7 @@ async def champion_info(ctx, message):
     output = ""
     output += "**" + name + " " + championDf[index == name]['title'].item() + "**"
     await message.channel.send(output)
-    fn = "C:/Users/Michael/Documents/GitHub/Wild-Card-Bot/leaguedata/11.6.1/img/champion/" + imgNameDf[index == name]["full"].item()
+    fn = dirname + "/11.6.1/img/champion/" + imgNameDf[index == name]["full"].item()
     fp = open(fn, 'rb')
     await message.channel.send(file=discord.File(fp))
     await message.channel.send("**Resource: **" + championDf[index == name]['partype'].item()) # resource
@@ -101,7 +101,7 @@ async def live_game(ctx, message):
     i = 0
     while i < 5:
         player = spectator['participants'][i]
-        output += search_champion_by_id(str(player['championId']), "name") + " " + player['summonerName'] + " " + search_summoner_spell_by_id(str(player['spell1Id'])) + " " + search_summoner_spell_by_id(str(player['spell2Id'])) + " "
+        output += search_champion_by_id(str(player['championId']), "name") + " **" + player['summonerName'] + "** " + search_summoner_spell_by_id(str(player['spell1Id'])) + " " + search_summoner_spell_by_id(str(player['spell2Id'])) + " "
         output += search_runes_by_id(player['perks']['perkStyle']) + " " + search_runes_by_id(player['perks']['perkIds'][0]) + " " + search_runes_by_id(player['perks']['perkIds'][1]) + " " + search_runes_by_id(player['perks']['perkIds'][2]) + " " + search_runes_by_id(player['perks']['perkIds'][3]) + " "
         output += search_runes_by_id(player['perks']['perkSubStyle']) + " " + search_runes_by_id(player['perks']['perkIds'][4]) + " " + search_runes_by_id(player['perks']['perkIds'][5]) + " "
         output += search_runes_by_id(player['perks']['perkIds'][6]) + " " + search_runes_by_id(player['perks']['perkIds'][7]) + " " + search_runes_by_id(player['perks']['perkIds'][8])
@@ -110,7 +110,7 @@ async def live_game(ctx, message):
     output += "Red Side\n"
     while i < 10:
         player = spectator['participants'][i]
-        output += search_champion_by_id(str(player['championId']), "name") + " " + player['summonerName'] + " " + search_summoner_spell_by_id(str(player['spell1Id'])) + " " + search_summoner_spell_by_id(str(player['spell2Id'])) + " "
+        output += search_champion_by_id(str(player['championId']), "name") + " **" + player['summonerName'] + "** " + search_summoner_spell_by_id(str(player['spell1Id'])) + " " + search_summoner_spell_by_id(str(player['spell2Id'])) + " "
         output += search_runes_by_id(player['perks']['perkStyle']) + " " + search_runes_by_id(player['perks']['perkIds'][0]) + " " + search_runes_by_id(player['perks']['perkIds'][1]) + " " + search_runes_by_id(player['perks']['perkIds'][2]) + " " + search_runes_by_id(player['perks']['perkIds'][3]) + " "
         output += search_runes_by_id(player['perks']['perkSubStyle']) + " " + search_runes_by_id(player['perks']['perkIds'][4]) + " " + search_runes_by_id(player['perks']['perkIds'][5]) + " "
         output += search_runes_by_id(player['perks']['perkIds'][6]) + " " + search_runes_by_id(player['perks']['perkIds'][7]) + " " + search_runes_by_id(player['perks']['perkIds'][8])
@@ -126,12 +126,9 @@ async def get_league_profile(ctx, message):
     for i in range(2, len(messageArray)):
       name += message.content.split(" ")[i]
     # print(name)
-    version = lol_watcher.data_dragon.versions_for_region(region)
-    await message.channel.send(version)
     user = lol_watcher.summoner.by_name(region, name)
     ranked_stats = lol_watcher.league.by_summoner(region, user['id'])
     await message.channel.send(user['name'] + " Lvl " + str(user['summonerLevel']))
-    await message.channel.send("http://ddragon.leagueoflegends.com/cdn/" + version['n']['profileicon'] + "/img/profileicon/" + str(user['profileIconId']) + ".png")
     if len(ranked_stats) > 1:
         await message.channel.send("Ranked Flex: " + ranked_stats[0]['tier'] + " " + ranked_stats[0]['rank'] + " " + str(ranked_stats[0]['leaguePoints']) + "LP " + str(ranked_stats[0]['wins']) + "W/" + str(ranked_stats[0]['losses']) + "L")
         await message.channel.send("Ranked Solo: " + ranked_stats[1]['tier'] + " " + ranked_stats[1]['rank'] + " " + str(ranked_stats[1]['leaguePoints']) + "LP " + str(ranked_stats[1]['wins']) + "W/" + str(ranked_stats[1]['losses']) + "L")
@@ -145,11 +142,9 @@ async def get_tft_profile(ctx, message):
     name = ""
     for i in range(2, len(messageArray)):
       name += message.content.split(" ")[i]
-    version = lol_watcher.data_dragon.versions_for_region(region)
     user = tft_watcher.summoner.by_name(region, name)
     ranked_stats = tft_watcher.league.by_summoner(region, user['id'])
     await message.channel.send(user['name'] + " Lvl " + str(user['summonerLevel']))
-    await message.channel.send("http://ddragon.leagueoflegends.com/cdn/" + version['n']['profileicon'] + "/img/profileicon/" + str(user['profileIconId']) + ".png")
     if len(ranked_stats) == 1:
         await message.channel.send("Ranked TFT: " + ranked_stats[0]['tier'] + " " + ranked_stats[0]['rank'] + " " + str(ranked_stats[0]['leaguePoints']) + "LP " + str(ranked_stats[0]['wins']) + "W/" + str(ranked_stats[0]['losses']) + "L")
 
@@ -163,7 +158,7 @@ async def get_champion_mastery(ctx, message):
     for i in range(2, len(messageArray)):
       name += message.content.split(" ")[i]
     #Get the version (what patch league is on)
-    version = lol_watcher.data_dragon.versions_for_region(region)
+    version = "11.6.1"
     #print(version)
     #Gets the user data using the region and username
     user = lol_watcher.summoner.by_name(region, name)
@@ -193,7 +188,6 @@ async def get_champion_mastery(ctx, message):
       await message.channel.send("Champion: " + championArray[i] +
       #await message.channel.send(championdata['data'][championArray[i]]['image']['sprite'])
       "\nTotal Mastery Points: " + str(championmastery[i]['championPoints']) + "\nMastery Level: " + str(championmastery[i]['championLevel']))
-
 
 commandList.append(Command("!matchhistory", "get_match_history", "Displays a player's League of Legends match history\nUsage: !matchhistory <REGION> <IGN>"))
 async def get_match_history(ctx, message):
@@ -247,7 +241,7 @@ async def clear_path_pm(ctx, message):
             await asyncio.sleep(1)
             await message.author.send("CONGRATS YOU DID FIRST CLEAR")
 
-    
+
 
 commandList.append(Command("!skillorder", "get_skill_order", "Displays the skill order of specified League of Legends champion.\nUsage: !skillorder <CHAMPION_NAME>"))
 async def get_skill_order(ctx, message):
@@ -255,10 +249,10 @@ async def get_skill_order(ctx, message):
     champion_name = message.content.split(" ")[1]
 
     #List of skillorder and the counter for that list 1 = First skill to be leveled
-    skillOrderList = [] 
+    skillOrderList = []
     counter = 1
 
-    #Data is obtained from u.gg which uses Riot API 
+    #Data is obtained from u.gg which uses Riot API
     URL = 'https://u.gg/lol/champions/' + champion_name + '/build'
     #page is the way to access the webpage
     page = requests.get(URL)
@@ -266,7 +260,7 @@ async def get_skill_order(ctx, message):
     #Soup parses the page into html sections
     soup = BeautifulSoup(page.content, 'html.parser')
 
-    #Searches for the skill order tab on u.gg 
+    #Searches for the skill order tab on u.gg
     results = soup.find_all('div', class_= 'skill-order-row')
     #Gets the skills from the skilltable
     for i in range(18):
@@ -292,7 +286,7 @@ async def get_skill_order(ctx, message):
             skillOrderString += skillOrderList[i]
         else:
             skillOrderString += skillOrderList[i] + "->"
-    
+
     await message.channel.send(skillOrderString)
 
 commandList.append(Command("!items", "get_recommended_items", "Displays the recommended items for a champion given the champion name.\nUsage: !recommendeditems <CHAMPION_NAME>"))
@@ -300,7 +294,7 @@ async def get_recommended_items(ctx, message):
     #Gets the desired champion name
     champion_name = message.content.split(" ")[1]
 
-    #Data is obtained from op.gg which uses Riot API 
+    #Data is obtained from op.gg which uses Riot API
     URL = 'https://na.op.gg/champion/' + champion_name + '/statistics'
     #page is the way to access the webpage
     page = requests.get(URL)
@@ -316,8 +310,8 @@ async def get_recommended_items(ctx, message):
     coreItemspng = []
     bootspng = []
     counter = 1
-    
-    #Finds the build images from op.gg 
+
+    #Finds the build images from op.gg
     #For all instances looks for the num.png and puts them into the list
     for result in results:
         images = result.find_all('img')
@@ -328,7 +322,7 @@ async def get_recommended_items(ctx, message):
                     starterItemspng.append(str(image)[54:62])
                 elif counter == 2:
                     coreItemspng.append(str(image)[54:62])
-                else: 
+                else:
                     bootspng.append(str(image)[54:62])
         counter += 1
     #print(starterItemspng)
@@ -342,16 +336,16 @@ async def get_recommended_items(ctx, message):
     #Converts the png file names to full path names as discord files and adds them to appropriate lists
     for i in range(len(starterItemspng)):
         #Path name to the image folder
-        temp_img = discord.File("C:\\Users\\liehr\\OneDrive\\Wild-Card-Bot\\leaguedata\\dragontail-11.6.1\\11.6.1\\img\\item\\" + starterItemspng[i])
+        temp_img = discord.File(dirname + "/11.6.1/img/item/" + starterItemspng[i])
         starterItems.append(temp_img)
     for i in range(len(coreItemspng)):
-        temp_img = discord.File("C:\\Users\\liehr\\OneDrive\\Wild-Card-Bot\\leaguedata\\dragontail-11.6.1\\11.6.1\\img\\item\\" + coreItemspng[i])
+        temp_img = discord.File(dirname + "/11.6.1/img/item/" + coreItemspng[i])
         coreItems.append(temp_img)
     for i in range(len(bootspng)):
         #print(i)
-        temp_img = discord.File("C:\\Users\\liehr\\OneDrive\\Wild-Card-Bot\\leaguedata\\dragontail-11.6.1\\11.6.1\\img\\item\\" + bootspng[i])
+        temp_img = discord.File(dirname + "/11.6.1/img/item/" + bootspng[i])
         boots.append(temp_img)
-    
+
     '''embed = discord.Embed(title="Recommended Build")
     embed.add_field(name='Starting Items:', value=(file=discord.File(imageFiles[0]) + discord.File(imageFiles[1]) + discord.File(imageFiles[2])))
     embed.add_field(name='Core Items:', value=(discord.File(imageFiles[3]) + discord.File(imageFiles[4]) + discord.File(imageFiles[5])))
