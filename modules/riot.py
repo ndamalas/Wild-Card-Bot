@@ -29,9 +29,9 @@ lor_watcher = LorWatcher(riot_api_key)
 tft_watcher = TftWatcher(riot_api_key)
 
 pd.set_option('display.max_columns', 5)
-championDf = unnest(pd.read_json('C:\\Users\\arunt\\Documents\\GitHub\\Wild-Card-Bot\\leaguedata\\champion.json'), ["data"])
-summonerDf = pd.read_json('C:\\Users\\arunt\\Documents\\GitHub\\Wild-Card-Bot\\leaguedata\\summoner.json')
-runesDf = pd.read_json('C:\\Users\\arunt\\Documents\\GitHub\\Wild-Card-Bot\\leaguedata\\runesReforged.json')
+championDf = unnest(pd.read_json('C:\\Users\\liehr\\OneDrive\\Wild-Card-Bot\\leaguedata\\champion.json'), ["data"])
+summonerDf = pd.read_json('C:\\Users\\liehr\\OneDrive\\Wild-Card-Bot\\leaguedata\\summoner.json')
+runesDf = pd.read_json('C:\\Users\\liehr\\OneDrive\\Wild-Card-Bot\\leaguedata\\runesReforged.json')
 
 commandList.append(Command("!regions", "get_regions", "Displays all regions"))
 async def get_regions(ctx, message):
@@ -318,7 +318,16 @@ async def get_recommended_items(ctx, message):
     await message.channel.send('Boots:', files=boots)
     #await message.channel.send(file=boots[0])
     #temp_img = discord.File("C:\\Users\\liehr\\OneDrive\\Wild-Card-Bot\\leaguedata\\dragontail-11.6.1\\11.6.1\\img\\item\\" + bootspng[0])
-    
+
+commandList.append(Command("!database", "get_database", "Displays a link to the jungle paths database.\nUsage: !database"))
+async def get_database(ctx, message):
+    embed = discord.Embed(
+        title='Jungle Paths Database',
+        description='[Google Spreadsheet](https://docs.google.com/spreadsheets/d/1keK1QUeOLVvaMug5PoAm4oHb3npUaIIRL6tSb2M5cCI/edit?usp=sharing)',
+        color=0x000000)
+    embed.set_image(url="https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-clash/global/default/assets/images/position-selector/positions/icon-position-jungle.png")
+    await message.channel.send(embed=embed)
+
 
 # Helper function to get queue type by id
 def get_queue_type(id: int) -> str:
