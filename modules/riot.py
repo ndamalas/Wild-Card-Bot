@@ -3,6 +3,7 @@ import discord
 import os
 import pandas as pd
 from command import Command
+from bs4 import BeautifulSoup
 from riotwatcher import LolWatcher, ApiError, RiotWatcher, LorWatcher, TftWatcher
 
 commandList = []
@@ -18,14 +19,20 @@ def unnest(myDf: pd.DataFrame, columns: list) -> pd.DataFrame:
         tempDf = pd.concat([tempDf, x], axis = 1)
   return tempDf
 
-riot_api_key = "RGAPI-699f4344-49e5-4e99-8a76-362b6a39c1ad"
+riot_api_key = "RGAPI-435e3d4b-27ea-4008-8984-bf28cbf2ecd5"
 lol_watcher = LolWatcher(riot_api_key)
 riot_watcher = RiotWatcher(riot_api_key)
 lor_watcher = LorWatcher(riot_api_key)
 tft_watcher = TftWatcher(riot_api_key)
 
 pd.set_option('display.max_columns', 5)
-championDf = unnest(pd.read_json('./leaguedata/11.6.1/data/en_US/champion.json'), ["data"])
+championDf = unnest(pd.read_json('./leaguedata/11.6.1/data/en_US/championFull.json'), ["data"])
+index = championDf.index
+imgNameDf = unnest(championDf, ["image"])
+passiveDf = unnest(championDf, ["passive"])
+spellsDf = unnest(championDf, ["spells"])
+passiveImgDf = unnest(passiveDf, ["image"])
+
 summonerDf = pd.read_json('./leaguedata/11.6.1/data/en_US/summoner.json')
 runesDf = pd.read_json('./leaguedata/11.6.1/data/en_US/runesReforged.json')
 
@@ -34,6 +41,43 @@ async def get_regions(ctx, message):
     response = "BR1\nEUN1\nEUW1\nJP1\nKR\nLA1\nLA2\nNA1\nOC1\nRU\nTR1"
     embed = discord.Embed(title='Riot regions', description=response, colour=discord.Colour.dark_red())
     await message.channel.send(embed=embed)
+    fp = open("C:/Users/Michael/Documents/GitHub/Wild-Card-Bot/modules/Aatrox.png", 'rb')
+    await message.channel.send(file=discord.File(fp))
+
+commandList.append(Command("!tips", "champion_tips", "Display tips on playing with or against a champion\nUsage: !tips <CHAMPION-NAME>"))
+async def champion_tips(ctx, message):
+    name = message.content.split(" ")[1] # name
+    name = name.capitalize()
+    await message.channel.send("Playing with " + name)
+    for tip in championDf["allytips"][index == name][0]:
+        await message.channel.send(tip)
+    await message.channel.send("Playing against " + name)
+    for tip in championDf["enemytips"][index == name][0]:
+        await message.channel.send(tip)
+
+commandList.append(Command("!champ", "champion_info", "Displays information on a champion]\nUsage: !champ <CHAMPION-NAME>"))
+async def champion_info(ctx, message):
+    name = message.content.split(" ")[1] # name
+    name = name.capitalize()
+    output = ""
+    output += "**" + name + " " + championDf[index == name]['title'].item() + "**"
+    await message.channel.send(output)
+    fn = "C:/Users/Michael/Documents/GitHub/Wild-Card-Bot/leaguedata/11.6.1/img/champion/" + imgNameDf[index == name]["full"].item()
+    fp = open(fn, 'rb')
+    await message.channel.send(file=discord.File(fp))
+    await message.channel.send("**Resource: **" + championDf[index == name]['partype'].item()) # resource
+    await message.channel.send("**Class: **" + ', '.join(championDf.loc[index == name, "tags"].item())) # Class
+    await message.channel.send("**Passive: **" + passiveDf[index == name]['name'].item()) # passive name
+    await message.channel.send(passiveDf[index == name]['description'].item()) # passive description
+    await message.channel.send("**Q Ability: **" + BeautifulSoup(championDf["spells"][index == name][0][0]["name"], "lxml").get_text('\n'))
+    await message.channel.send(BeautifulSoup(championDf["spells"][index == name][0][0]["description"], "lxml").get_text('\n'))
+    await message.channel.send("**W Ability: **" + BeautifulSoup(championDf["spells"][index == name][0][1]["name"], "lxml").get_text('\n'))
+    await message.channel.send(BeautifulSoup(championDf["spells"][index == name][0][1]["description"], "lxml").get_text('\n'))
+    await message.channel.send("**E Ability: **" + BeautifulSoup(championDf["spells"][index == name][0][2]["name"], "lxml").get_text('\n'))
+    await message.channel.send(BeautifulSoup(championDf["spells"][index == name][0][2]["description"], "lxml").get_text('\n'))
+    await message.channel.send("**R Ability: **" + BeautifulSoup(championDf["spells"][index == name][0][3]["name"], "lxml").get_text('\n'))
+    await message.channel.send(BeautifulSoup(championDf["spells"][index == name][0][3]["description"], "lxml").get_text('\n'))
+
 
 
 commandList.append(Command("!live", "live_game", "Displays live game stats\nUsage: !live <REGION> <IGN>"))
