@@ -6,7 +6,8 @@ import requests
 from command import Command
 from riotwatcher import LolWatcher, ApiError, RiotWatcher, LorWatcher, TftWatcher
 from bs4 import BeautifulSoup
-from PIL import Image
+import asyncio
+# from PIL import Image
 
 commandList = []
 
@@ -28,9 +29,9 @@ lor_watcher = LorWatcher(riot_api_key)
 tft_watcher = TftWatcher(riot_api_key)
 
 pd.set_option('display.max_columns', 5)
-championDf = unnest(pd.read_json('C:\\Users\\liehr\\OneDrive\\Wild-Card-Bot\\leaguedata\\champion.json'), ["data"])
-summonerDf = pd.read_json('C:\\Users\\liehr\\OneDrive\\Wild-Card-Bot\\leaguedata\\summoner.json')
-runesDf = pd.read_json('C:\\Users\\liehr\\OneDrive\\Wild-Card-Bot\\leaguedata\\runesReforged.json')
+championDf = unnest(pd.read_json('C:\\Users\\arunt\\Documents\\GitHub\\Wild-Card-Bot\\leaguedata\\champion.json'), ["data"])
+summonerDf = pd.read_json('C:\\Users\\arunt\\Documents\\GitHub\\Wild-Card-Bot\\leaguedata\\summoner.json')
+runesDf = pd.read_json('C:\\Users\\arunt\\Documents\\GitHub\\Wild-Card-Bot\\leaguedata\\runesReforged.json')
 
 commandList.append(Command("!regions", "get_regions", "Displays all regions"))
 async def get_regions(ctx, message):
@@ -163,6 +164,44 @@ async def get_match_history(ctx, message):
     for i in range(5):
       await message.channel.send(">>> \n" + str(i + 1) + ".\nQueue: " + get_queue_type(matchlist['matches'][i]['queue']) + "\nChampion: " + search_champion_by_id(str(matchlist['matches'][i]['champion']), "name") + "\n")
 
+
+commandList.append(Command("!clearpm", "clear_path_pm", "PMS user with the appropriate jungle path for that champion\nUsage: !clearpm <champion> <side>"))
+async def clear_path_pm(ctx, message):
+    guild = message.guild
+    if len(message.content.split(" ")) != 3:
+        await message.channel.send(">>> Please use format: \n !clearpm <Champion> <Side>")
+    await message.channel.send("Sending Jungling tips to user now")
+    if message.content.split(" ")[1] == "Kayn":
+        if message.content.split(" ")[2] == "Blue":
+            await message.author.send("Kayn Jungling tips for Blue side:\n")
+            await asyncio.sleep(1)
+            await message.author.send("Go to Red Buff and watch out for invade")
+            await asyncio.sleep(1)
+            await message.author.send("Ping bot lane to help leash Red Buff")
+            await asyncio.sleep(80)
+            await message.author.send("Take Red buff with leash")
+            await asyncio.sleep(15)
+            await message.author.send("Level e and shadow step through wall and clear Krugs")
+            await asyncio.sleep(1)
+            await message.author.send("Use wall to cancel q animation")
+            await asyncio.sleep(20)
+            await message.author.send("Shadow step through red buff walls and go to raptors")
+            await asyncio.sleep(1)
+            await message.author.send("use q animation cancel into wall and kite camp towards wolves")
+            await asyncio.sleep(15)
+            await message.author.send("Level q up again and make way to wolves")
+            await asyncio.sleep(1)
+            await message.author.send("Smite wolves and take using q")
+            await asyncio.sleep(15)
+            await message.author.send("Shadow step to blue buff and take")
+            await asyncio.sleep(1)
+            await message.author.send("Take gromp and blue buff together and level w")
+            await asyncio.sleep(10)
+            await message.author.send("Take scuttle or gank")
+            await asyncio.sleep(1)
+            await message.author.send("CONGRATS YOU DID FIRST CLEAR")
+
+    
 
 commandList.append(Command("!skillorder", "get_skill_order", "Displays the skill order of specified League of Legends champion.\nUsage: !skillorder <CHAMPION_NAME>"))
 async def get_skill_order(ctx, message):
