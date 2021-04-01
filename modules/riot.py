@@ -226,42 +226,60 @@ async def get_recommended_items(ctx, message):
     #Searches for the first row item builds (they display the most popular builds)
     results = soup.find_all('tr', class_= 'champion-overview__row champion-overview__row--first')
 
-
-    itemImages = []
+    #Store the images file in the itemImages list as num.png (i.e. 3045.png)
+    starterItemspng = []
+    coreItemspng = []
+    bootspng = []
+    counter = 1
     
-    #print(results)
-    #print('\n')
+    #Finds the build images from op.gg 
+    #For all instances looks for the num.png and puts them into the list
     for result in results:
         images = result.find_all('img')
-        #print(images)
+        print(images)
         for image in images:
             if str(image)[5] == 's':
-                itemImages.append(str(image)[54:62])
-    #print(itemImages)
-
+                if counter == 1:
+                    starterItemspng.append(str(image)[54:62])
+                elif counter == 2:
+                    coreItemspng.append(str(image)[54:62])
+                else: 
+                    bootspng.append(str(image)[54:62])
+        counter += 1
+    #print(starterItemspng)
+    #print(coreItemspng)
+    #print(bootspng)
+    #Stores the images as discord Files in 3 separate lists so we can print them separately
     starterItems = []
     coreItems = []
     boots = []
 
-    for i in range(len(itemImages)):
-        temp_img = discord.File("C:\\Users\\liehr\\OneDrive\\Wild-Card-Bot\\leaguedata\\dragontail-11.6.1\\11.6.1\\img\\item\\" + itemImages[i])
-        if i < 3:
-            starterItems.append(temp_img)
-        elif i >= 3 and i < 6:
-            coreItems.append(temp_img)
-        else: 
-            boots.append(temp_img)
+    #Converts the png file names to full path names as discord files and adds them to appropriate lists
+    for i in range(len(starterItemspng)):
+        #Path name to the image folder
+        temp_img = discord.File("C:\\Users\\liehr\\OneDrive\\Wild-Card-Bot\\leaguedata\\dragontail-11.6.1\\11.6.1\\img\\item\\" + starterItemspng[i])
+        starterItems.append(temp_img)
+    for i in range(len(coreItemspng)):
+        temp_img = discord.File("C:\\Users\\liehr\\OneDrive\\Wild-Card-Bot\\leaguedata\\dragontail-11.6.1\\11.6.1\\img\\item\\" + coreItemspng[i])
+        coreItems.append(temp_img)
+    for i in range(len(bootspng)):
+        #print(i)
+        temp_img = discord.File("C:\\Users\\liehr\\OneDrive\\Wild-Card-Bot\\leaguedata\\dragontail-11.6.1\\11.6.1\\img\\item\\" + bootspng[i])
+        boots.append(temp_img)
     
     '''embed = discord.Embed(title="Recommended Build")
     embed.add_field(name='Starting Items:', value=(file=discord.File(imageFiles[0]) + discord.File(imageFiles[1]) + discord.File(imageFiles[2])))
     embed.add_field(name='Core Items:', value=(discord.File(imageFiles[3]) + discord.File(imageFiles[4]) + discord.File(imageFiles[5])))
     embed.add_field(name='Boots:', value=(discord.File(imageFiles[6])))'''
-    await message.channel.send('Starting Items:')
-    await message.channel.send(files=starterItems)
-    await message.channel.send('Core Items:')
-    await message.channel.send(files=coreItems)
-    await message.channel.send('Boots:')
-    await message.channel.send(files=boots)
+    #Prints out all of the lists with dividers
+    await message.channel.send('Starting Items:', files=starterItems)
+    #await message.channel.send(files=starterItems)
+    await message.channel.send('Core Items:', files=coreItems)
+    #await message.channel.send(files=coreItems)
+    await message.channel.send('Boots:', files=boots)
+    #await message.channel.send(file=boots[0])
+    #temp_img = discord.File("C:\\Users\\liehr\\OneDrive\\Wild-Card-Bot\\leaguedata\\dragontail-11.6.1\\11.6.1\\img\\item\\" + bootspng[0])
+    
 
 # Helper function to get queue type by id
 def get_queue_type(id: int) -> str:
