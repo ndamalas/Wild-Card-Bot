@@ -29,7 +29,7 @@ riot_watcher = RiotWatcher(riot_api_key)
 lor_watcher = LorWatcher(riot_api_key)
 tft_watcher = TftWatcher(riot_api_key)
 
-dirname = "C:/Users/Michael/Documents/GitHub/Wild-Card-Bot/leaguedata/"
+dirname = "C:/Users/kaamo/cs/cs307/Wild-Card-Bot/leaguedata/"
 
 pd.set_option('display.max_columns', 5)
 
