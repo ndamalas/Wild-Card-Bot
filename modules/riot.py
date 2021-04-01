@@ -9,6 +9,7 @@ from urllib.request import Request, urlopen
 from riotwatcher import LolWatcher, ApiError, RiotWatcher, LorWatcher, TftWatcher
 from bs4 import BeautifulSoup
 import asyncio
+from urllib.request import Request, urlopen
 # from PIL import Image
 
 commandList = []
@@ -30,7 +31,7 @@ riot_watcher = RiotWatcher(riot_api_key)
 lor_watcher = LorWatcher(riot_api_key)
 tft_watcher = TftWatcher(riot_api_key)
 
-dirname = "C:/Users/Michael/Documents/GitHub/Wild-Card-Bot/leaguedata/"
+dirname = "./leaguedata/"
 
 pd.set_option('display.max_columns', 5)
 
@@ -333,18 +334,18 @@ async def get_recommended_items(ctx, message):
     starterItems = []
     coreItems = []
     boots = []
-
     #Converts the png file names to full path names as discord files and adds them to appropriate lists
     for i in range(len(starterItemspng)):
         #Path name to the image folder
-        temp_img = discord.File(dirname + "/11.6.1/img/item/" + starterItemspng[i])
+        await message.channel.send(dirname+ "/11.6.1/img/item/" + starterItemspng[i])
+        temp_img = discord.File(fp=dirname + "/11.6.1/img/item/" + starterItemspng[i])
         starterItems.append(temp_img)
     for i in range(len(coreItemspng)):
-        temp_img = discord.File(dirname + "/11.6.1/img/item/" + coreItemspng[i])
+        temp_img = discord.File(fp=dirname + "/11.6.1/img/item/" + coreItemspng[i])
         coreItems.append(temp_img)
     for i in range(len(bootspng)):
         #print(i)
-        temp_img = discord.File(dirname + "/11.6.1/img/item/" + bootspng[i])
+        temp_img = discord.File(fp=dirname + "/11.6.1/img/item/" + bootspng[i])
         boots.append(temp_img)
 
     '''embed = discord.Embed(title="Recommended Build")
@@ -358,7 +359,7 @@ async def get_recommended_items(ctx, message):
     #await message.channel.send(files=coreItems)
     await message.channel.send('Boots:', files=boots)
     #await message.channel.send(file=boots[0])
-    #temp_img = discord.File("C:\\Users\\liehr\\OneDrive\\Wild-Card-Bot\\leaguedata\\dragontail-11.6.1\\11.6.1\\img\\item\\" + bootspng[0])
+    #temp_img = discord.File("C:/Users/liehr/OneDrive/Wild-Card-Bot/leaguedata/dragontail-11.6.1/11.6.1/img/item/" + bootspng[0])
 
 commandList.append(Command("!database", "get_database", "Displays a link to the jungle paths database.\nUsage: !database"))
 async def get_database(ctx, message):
