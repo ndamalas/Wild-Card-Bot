@@ -5,6 +5,7 @@ import pandas as pd
 import requests
 from command import Command
 from bs4 import BeautifulSoup
+from urllib.request import Request, urlopen
 from riotwatcher import LolWatcher, ApiError, RiotWatcher, LorWatcher, TftWatcher
 from bs4 import BeautifulSoup
 import asyncio
@@ -158,7 +159,7 @@ async def get_champion_mastery(ctx, message):
     for i in range(2, len(messageArray)):
       name += message.content.split(" ")[i]
     #Get the version (what patch league is on)
-    version = "11.6.1"
+    version = "11.6"
     #print(version)
     #Gets the user data using the region and username
     user = lol_watcher.summoner.by_name(region, name)
@@ -293,14 +294,14 @@ commandList.append(Command("!items", "get_recommended_items", "Displays the reco
 async def get_recommended_items(ctx, message):
     #Gets the desired champion name
     champion_name = message.content.split(" ")[1]
-
-    #Data is obtained from op.gg which uses Riot API
     URL = 'https://na.op.gg/champion/' + champion_name + '/statistics'
-    #page is the way to access the webpage
-    page = requests.get(URL)
+    hdr = {'User-Agent': 'Mozilla/5.0'}
+    req = Request(URL,headers=hdr)
+    page=urlopen(req)
+    soup = BeautifulSoup(page)
 
-    #Soup parses the page into html sections
-    soup = BeautifulSoup(page.content, 'html.parser')
+
+
 
     #Searches for the first row item builds (they display the most popular builds)
     results = soup.find_all('tr', class_= 'champion-overview__row champion-overview__row--first')
