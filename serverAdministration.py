@@ -7,6 +7,10 @@ import os
 from googlesearch import search
 from discord.voice_client import VoiceClient
 from discord import FFmpegPCMAudio
+import re
+import threading
+#double linked list for music
+from node import Node
 # Every module has to have a command list
 commandList = []
 
@@ -829,24 +833,208 @@ async def leavevc(ctx, message):
     if guild.voice_client is not None:
         await guild.voice_client.disconnect()
 
+def checkForMusic(f_stop, ctx, message):
+    global head
+    #get the voice client
+    guild = message.guild
+    vc = guild.voice_client
+    if not f_stop.is_set():
+        #check for changes
+        if not vc.is_playing() and not vc.is_paused():
+            #head points towards current node
+            if head.next != None:
+                head = head.next
+                vc.play(discord.FFmpegPCMAudio("youtube/{}.mp3".format(head.vidID)), after=lambda e: os.remove("youtube/"+head.vidID+".mp3"))
+                ctx.voice_clients[0].source = discord.PCMVolumeTransformer(ctx.voice_clients[0].source)
+    #every second check again
+    threading.Timer(1, checkForMusic, [f_stop, ctx, message]).start()
+
+commandList.append(Command("!pause", "pauseMusic", "Pauses the current song"))
+async def pauseMusic(ctx, message):
+    guild = message.guild
+    vc = guild.voice_client
+    if not vc.is_paused():
+        vc.pause()
+    else:
+        embed = discord.Embed(
+            title='Pause Error',
+            description="Nothing to Pause!",
+            color = 0xff00ff
+        )
+        await message.channel.send(embed=embed)
+
+commandList.append(Command("!resume", "resumeMusic", "Resumes the current song"))
+async def resumeMusic(ctx, message):
+    guild = message.guild
+    vc = guild.voice_client
+    if vc.is_paused():
+        vc.resume()
+    else:
+        embed = discord.Embed(
+            title='Resume Error',
+            description="Nothing to Resume!",
+            color = 0xff00ff
+        )
+        await message.channel.send(embed=embed)
+
+commandList.append(Command("!queue", "listQueue", "List out queue of current songs."))
+async def listQueue(ctx, message):
+
+    response = ""
+    try:
+        pointer = head
+    except:
+        response = "No songs currently in queue!"
+        embed = discord.Embed(
+            title='Queued Songs',
+            description=response,
+            color = 0xff00ff
+        )
+        await message.channel.send(embed=embed)
+        return
+    
+    guild = message.guild
+    vc = guild.voice_client
+    if not vc.is_playing() and pointer.next == None:
+        response = "No songs currently in queue!"
+        embed = discord.Embed(
+            title='Queued Songs',
+            description=response,
+            color = 0xff00ff
+        )
+        await message.channel.send(embed=embed)
+        return
+    
+    else:
+        index = 0
+        current = ""
+        while pointer != None:
+            if index == 0:
+                current = pointer.fulltitle + " - **currently playing**\n"
+            elif index != 0:
+                current = "[" + str(index)+ "] - " + pointer.fulltitle + "\n"
+            response = response + current
+            index = index + 1
+            pointer = pointer.next
+
+    embed = discord.Embed(
+        title='Queued Songs',
+        description=response,
+        color = 0xff00ff
+    )
+    await message.channel.send(embed=embed)
+
+commandList.append(Command("!removeSong", "removeSong", "Removes song number X from the queue"))
+async def removeSong(ctx, message):
+    embed = discord.Embed(
+        title='Remove Song Error',
+        description="Error removing song, perhaps an invalid index or empty queue",
+        color = discord.Colour.red()
+    )
+    try:
+        toRemove = int(message.content.split(' ')[1])
+    except:
+        await message.channel.send(embed=embed)
+        return
+    index = 0
+    pointer = head
+    while pointer != None:
+        if index == toRemove:
+            pointer.prev.next = pointer.next
+            os.remove("youtube/"+pointer.vidID+".mp3")
+            embed = discord.Embed(
+                title='Song Removed',
+                description="{} removed successfully".format(pointer.fulltitle),
+                color = discord.Colour.green()
+            )
+            break
+        index = index + 1
+        pointer = pointer.next
+    await message.channel.send(embed=embed)
+
+
+commandList.append(Command("!skip", "skipSong", "Skip current song"))
+async def skipSong(ctx, message):
+    global head
+    guild = message.guild
+    vc = guild.voice_client
+    if vc.is_paused():
+        vc.resume()
+    if vc.is_playing():
+        vc.stop()
+    else:
+        embed = discord.Embed(
+                title='Skip Error',
+                description="No Songs to skip!",
+                color = discord.Colour.red()
+            )
+        await message.channel.send(embed=embed)
+
+commandList.append(Command("!clear", "clearQueue", "Clears the queue (Except the current song)"))
+async def clearQueue(ctf, message):
+    global head
+    global tail
+    pointer = head.next
+    head.next = None
+    tail = head
+    #Remove all the files
+    while pointer != None:
+        os.remove("youtube/{}.mp3".format(pointer.vidID))
+    embed = discord.Embed(
+                title='Queue Cleared',
+                description="The music queue has been cleared!",
+                color = discord.Colour.red()
+            )
+    await message.channel.send(embed=embed)
+
 commandList.append(Command("!play", "playMusic", "Play audio from youtube links through the bot\nUsage: !play <URL>"))
 async def playMusic(ctx, message):
-    guild = message.guild
-    if guild.voice_client == None:
-        for vc in guild.voice_channels:
-            await vc.connect()
-            break
-    song = os.path.isfile("file.mp3")
-    try:
-        if song:
-            os.remove("file.mp3")
-    except PermissionError:
-        await message.channel.send("Wait")
+    firstime = 0
+    if(len(message.content.split(" ")) == 1):
+        embed = discord.Embed(
+                title='Video Link Error',
+                description="No Link or Title Provided!",
+                color = discord.Colour.red()
+            )
+        await message.channel.send(embed=embed)
         return
-    msg = await message.channel.send("Getting everything ready, playing audio soon")
+    #get video url
+    video = message.content.split(" ")[1]
+    if not video.startswith('https://'):
+        video = search("Youtube "+" ".join(message.content.split(" ")[1:]), lang='en')[0]
+    guild = message.guild
+
+    #if not connected to voice, connect
+    if guild.voice_client == None:
+        firstime = 1
+        #create playlist when joining
+        global playlist
+        playlist = Node()
+        playlist.title = "playlist title"
+        global head
+        global tail
+        head = playlist
+        tail = playlist
+        #connect
+        try:
+            voice_channel = message.author.voice.channel
+            vc = await voice_channel.connect()
+        except:
+            embed = discord.Embed(
+                title='Voice Channel Error',
+                description="Calling user is not in a voice channel!",
+                color = discord.Colour.red()
+            )
+            await message.channel.send(embed=embed)
+            return
+        #Start multithreading
+        f_stop = threading.Event()
+        checkForMusic(f_stop, ctx, message)
+
+    #Set options for ytdl
     opts = {
         'format': 'bestaudio/best',
-        'outtmpl': '%(extractor)s-%(id)s-%(title)s.%(ext)s',
+        'outtmpl': 'youtube/%(id)s.%(ext)s',
         'restrictfilenames': True,
         'noplaylist': True,
         'nocheckcertificate': True,
@@ -862,16 +1050,56 @@ async def playMusic(ctx, message):
             'preferredquality': '192',
         }],
     }
+
     with youtube_dl.YoutubeDL(opts) as ydl:
-        ydl.download([message.content.split(" ")[1]])
-    for file in os.listdir("./"):
-        if file.endswith(".mp3"):
-            os.rename(file, 'file.mp3')
-    guild.voice_client.play(discord.FFmpegPCMAudio("file.mp3"))
-    ctx.voice_clients[0].source = discord.PCMVolumeTransformer(ctx.voice_clients[0].source)
-    guild.voice_client.is_playing()
-    await msg.delete()
-    await message.channel.send("Now playing")
+        embed = discord.Embed(
+                title='Music Being Added!',
+                description="Music is being prepared, please wait!",
+                color = discord.Colour.green()
+            )
+        msg = await message.channel.send(embed=embed)
+        #download video
+        #Make sure link is ok
+        embed = discord.Embed(
+                title='Video Link Error',
+                description="Error Loading Provided Video!",
+                color = discord.Colour.red()
+            )
+        try:
+            fulltitle = ydl.extract_info(video, download=False).get('title', None)
+            vidID = ydl.extract_info(video, download=False).get('id', None)
+        except:
+            await message.channel.send(embed=embed)
+            return
+
+        if fulltitle == None:
+            await message.channel.send(embed=embed)
+            return
+
+        try:
+            
+            ydl.download([video])
+        except:
+            await message.channel.send(embed=embed)
+            return
+
+        
+        #Notify user that the video has been added
+        if firstime:
+            firstime = 0
+        await msg.delete()
+        embed = discord.Embed(
+                title='Music Added!',
+                description="{} added to queue!".format(fulltitle),
+                color = discord.Colour.green(),
+                url = video
+            )
+        await message.channel.send(embed=embed)
+        newVid = Node(vidID=vidID, fulltitle=fulltitle)
+        #update end of playlist
+        tail.next = newVid
+        newVid.prev = tail
+        tail = newVid
 
 commandList.append(Command("!vol", "adjustVolume", "Allows users to adjust volume\nUsage: !vol <0-100>"))
 async def adjustVolume(ctx, message):
