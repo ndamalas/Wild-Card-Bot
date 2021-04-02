@@ -33,7 +33,7 @@ async def googleSearch(client, message):
     embed.set_author(name=message.author.display_name, icon_url=message.author.avatar_url)
     if (contents[1].isnumeric()):
         numResults = int(contents[1])
-        for i in search(query.replace("+", " "), tld="co.in", num=numResults, stop=numResults, pause=2):
+        for i in search(query.replace("+", " "), num_results=numResults):
             embed.add_field(name='\u200b', value=i, inline=False)
     elif (contents[1] == "images"):
         searchURL = "https://www.google.com/search?q=" + query + "&rlz=1C1CHBF_enUS858US858&sxsrf=ALeKk02CkZmXlqPXeG1zYfhlNWziJkRu1Q:1616111833740&source=lnms&tbm=isch&sa=X&ved=2ahUKEwjsoZHehbvvAhXELc0KHXcKBN0Q_AUoA3oECCIQBQ&biw=1266&bih=557"
