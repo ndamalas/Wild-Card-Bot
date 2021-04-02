@@ -7,10 +7,58 @@ from command import Command
 from bs4 import BeautifulSoup
 from urllib.request import Request, urlopen
 from riotwatcher import LolWatcher, ApiError, RiotWatcher, LorWatcher, TftWatcher
-from bs4 import BeautifulSoup
 import asyncio
 from urllib.request import Request, urlopen
 # from PIL import Image
+
+def jungle_to_clear(champion):
+    clear = {
+        "Ammumu": "Red-Raptors-Blue-Gromp-Wolves",
+        "Dr. Mundo": "Raptors-Red-Krugs>Back>Wolves>Blue>Gromp",
+        "Ekko": "Red-Krugs-Raptors-Blue-Gromp",
+        "Elise": "Red-Blue-Gromp or Red-Raptors-Gromp",
+        "Evelyn": "Blue-Gromp-Wolves-Raptors-Red-Krugs or Red-Krugs-Raptors-Wolves-Blue-Gromp or Raptors-Krugs-Red-Blue-Gromp-Wolves",
+        "Fiddlesticks": "Wolves-Blue-Gromp-Raptors-Red-Krugs or Raptors-Red-Krugs-Wolves-Blue-Gromp",
+        "Garen": "Red-Krugs-Raptors-Wolves-Blue-Gromp",
+        "Gragas": "Blue-Gromp-Wolves-Raptors-Red",
+        "Graves": "Blue-Gromp-Wolves-Raptors-Red-Krugs",
+        "Gwen": "Red-Krugs-raptors-Wolves-Blue-Gromp",
+        "Hecarim": "Red-Krugs-Raptors-Wolves-Blue-Gromp or Blue-Gromp-Wolves-Raptors-Red-Krugs",
+        "Ivern": "Wolves-Blue-Gromp-Raptors-Red or Wolves-Blue-Gromp-Raptors-Red or Red-Raptors-Blue-Gromp-Wolves",
+        "Jarvan IV": "Red-Blue-Gromp or Red-Krugs-Raptors-Wolves-Blue-Gromp",
+        "Karthus": "Blue-Gromp-Wolves-Raptors-Red-Krugs",
+        "Kayn": "Blue-Gromp-Wolves-Raptors-Red-Krugs or Red-Krugs-Raptors-Wolves-Blue-Gromp",
+        "Kha'zix": "Blue-Gromp-Wolves-Raptors-Red-Krugs",
+        "Kindred": "Red-Blue-Gromp",
+        "Lee Sin": "Red-Blue-Gromp or Red-Raptors-Wolves-Blue-Gromp",
+        "Lillia": "Red-Krugs-Raptors-Wolves-Blue-Gromp or Blue-Gromp-Wolves-Raptors-Red-Krugs",
+        "Master Yi": "Red-Krugs-Raptors-Wolves-Blue-Gromp",
+        "Nidlee": "Blue-Gromp-Wolves-Raptors-Red-Krugs or Red-Krugs-Raptors-Wolves-Blue-Gromp",
+        "Nocturne": "Red-Krugs-Raptors-Wolves-Blue-Gromp",
+        "Nunu": "Red-Raptors-Wolves-Blue-Gromp",
+        "Olaf": "Blue-Gromp-Wolves-Raptors-Red-Krugs",
+        "Pantheon": "Red-Krugs-Raptors-Wolves-Blue-Gromp",
+        "Poppy": "Red-Krugs-Raptors-Wolves-Blue",
+        "Rammus": "Red-Raptors-Wolves-Blue",
+        "Rek'sai": "Red-Krugs-Raptors",
+        "Rengar": "Blue-Gromp-Wolves-Raptors-Red-Krugs or Red-Krugs-Raptors-Wolves-Blue-Gromp",
+        "Sejuani": "Red-Blue-Gromp",
+        "Shaco": "Raptors-Red-Krugs or Raptors-Red-Krugs-Wolves-Blue or Raptors-Red-Krugs-Wolves-Blue-Gromp",
+        "Shyvanna": "Red-Krugs-Raptors-Wolves-Blue-Gromp",
+        "Skarner": "Red-Krugs-Raptors-Wolves-Blue-Gromp",
+        "Sylas": "Red-Krugs-Raptors",
+        "Taliyah": "Red-Blue-Gromp or Blue-Gromp-Wolves-Raptors-Red-Krugs",
+        "Trundle": "Red-Blue-Gromp",
+        "Udyr": "Red-Krugs-Raptors-Wolves-Blue-Gromp",
+        "Vi": "Red-Blue-Gromp-Wolves-Raptors or Red-Krugs-Raptors-Wolves-Blue",
+        "Viego": "Red-Krugs-Raptors-Wolves-Blue-Gromp",
+        "Volibear": "Blue-Gromp-Wolves-Raptors-Red-Krugs or Red-Krugs-Raptors-Wolves-Blue-Gromp",
+        "Warwick": "Red-Blue-Gromp or Red-Raptors-Wolves-Blue-Gromp",
+        "Wukong": "Blue-Gromp-Wolves-Raptors-Red or Red-Raptors-Wolves-Blue-Gromp",
+        "Xin Zhao": "Red-Raptors-Gromp or Red-Blue-Gromp",
+        "Zac": "Red-Krugs-Raptors-Wolves-Blue-Gromp",
+    }
+    return clear.get(champion, "Does not exist")
 
 commandList = []
 
@@ -95,8 +143,18 @@ async def live_game(ctx, message):
     name = ""
     for i in range(2, len(messageArray)):
       name += message.content.split(" ")[i]
-    user = lol_watcher.summoner.by_name(region, name)
-    spectator = lol_watcher.spectator.by_summoner(region, user['id'])
+    try:
+        user = lol_watcher.summoner.by_name(region, name)
+    except ApiError as err:
+        if err.response.status_code == 404:
+            await message.channel.send("No summoner with that name was found.")
+            return
+    try:
+        spectator = lol_watcher.spectator.by_summoner(region, user['id'])
+    except ApiError as err:
+        if err.response.status_code == 404:
+            await message.channel.send("Summoner is currently not in game")
+            return
     output = ""
     output += get_queue_type(spectator['gameQueueConfigId']) + "\n"
     output += "Blue Side\n"
@@ -128,9 +186,17 @@ async def get_league_profile(ctx, message):
     for i in range(2, len(messageArray)):
       name += message.content.split(" ")[i]
     # print(name)
-    user = lol_watcher.summoner.by_name(region, name)
+    try:
+        user = lol_watcher.summoner.by_name(region, name)
+    except ApiError as err:
+        if err.response.status_code == 404:
+            await message.channel.send("No summoner with that name was found.")
+            return
     ranked_stats = lol_watcher.league.by_summoner(region, user['id'])
     await message.channel.send(user['name'] + " Lvl " + str(user['summonerLevel']))
+    fn = dirname + "/11.6.1/img/profileicon/" + str(user['profileIconId']) + ".png"
+    fp = open(fn, 'rb')
+    await message.channel.send(file=discord.File(fp))
     if len(ranked_stats) > 1:
         await message.channel.send("Ranked Flex: " + ranked_stats[0]['tier'] + " " + ranked_stats[0]['rank'] + " " + str(ranked_stats[0]['leaguePoints']) + "LP " + str(ranked_stats[0]['wins']) + "W/" + str(ranked_stats[0]['losses']) + "L")
         await message.channel.send("Ranked Solo: " + ranked_stats[1]['tier'] + " " + ranked_stats[1]['rank'] + " " + str(ranked_stats[1]['leaguePoints']) + "LP " + str(ranked_stats[1]['wins']) + "W/" + str(ranked_stats[1]['losses']) + "L")
@@ -144,7 +210,12 @@ async def get_tft_profile(ctx, message):
     name = ""
     for i in range(2, len(messageArray)):
       name += message.content.split(" ")[i]
-    user = tft_watcher.summoner.by_name(region, name)
+    try:
+        user = tft_watcher.summoner.by_name(region, name)
+    except ApiError as err:
+        if err.response.status_code == 404:
+            await message.channel.send("No summoner with that name was found.")
+            return
     ranked_stats = tft_watcher.league.by_summoner(region, user['id'])
     await message.channel.send(user['name'] + " Lvl " + str(user['summonerLevel']))
     if len(ranked_stats) == 1:
@@ -160,35 +231,29 @@ async def get_champion_mastery(ctx, message):
     for i in range(2, len(messageArray)):
       name += message.content.split(" ")[i]
     #Get the version (what patch league is on)
-    version = "11.6"
     #print(version)
     #Gets the user data using the region and username
-    user = lol_watcher.summoner.by_name(region, name)
+    try:
+        user = lol_watcher.summoner.by_name(region, name)
+    except ApiError as err:
+        if err.response.status_code == 404:
+            await message.channel.send("No summoner with that name was found.")
+            return
     #Gets the champion mastery
     championmastery = lol_watcher.champion_mastery.by_summoner(region, user['id'])
     #Gets the total mastery score like returns as an int (i.e. 577)
     totalmastery = lol_watcher.champion_mastery.scores_by_summoner(region, user['id'])
-    #Gets the list of all champions/abilites/descriptions
-    championdata = lol_watcher.data_dragon.champions(version ['n']['champion'], False, None)
-    championList = []
-    for champion in championdata['data']:
-      championList.append(championdata['data'][champion])
-    print(championList[0]['id'])
     #Array of top 3 champions
     championArray = []
     #For loop goes through all the champions matching the champion by championID to get names
     for j in range(3):
-      for i in range(len(championList)):
-        if (str(championdata['data'][championList[i]['id']]['key']) == str(championmastery[j]['championId'])):
-          #print("hi")
-          #print(championmastery[j]['championId'])
-          championArray.append(championdata['data'][championList[i]['id']]['id'])
+        id = championmastery[j]['championId']
+        championArray.append(search_champion_by_id(str(id), 'id'))
     #Prints out username, total mastery score, top 3 champion names each with total mastery points + level of mastery
     await message.channel.send(user['name'])
     await message.channel.send("Total Mastery Score: " + str(totalmastery))
     for i in range(3):
       await message.channel.send("Champion: " + championArray[i] +
-      #await message.channel.send(championdata['data'][championArray[i]]['image']['sprite'])
       "\nTotal Mastery Points: " + str(championmastery[i]['championPoints']) + "\nMastery Level: " + str(championmastery[i]['championLevel']))
 
 commandList.append(Command("!matchhistory", "get_match_history", "Displays a player's League of Legends match history\nUsage: !matchhistory <REGION> <IGN>"))
@@ -207,11 +272,12 @@ async def get_match_history(ctx, message):
       await message.channel.send(">>> \n" + str(i + 1) + ".\nQueue: " + get_queue_type(matchlist['matches'][i]['queue']) + "\nChampion: " + search_champion_by_id(str(matchlist['matches'][i]['champion']), "name") + "\n")
 
 
-commandList.append(Command("!clearpm", "clear_path_pm", "PMS user with the appropriate jungle path for that champion\nUsage: !clearpm <champion> <side>"))
+commandList.append(Command("!overlay", "clear_path_pm", "PMS user with the appropriate jungle path for that champion\nUsage: !clearpm <champion> <side>"))
 async def clear_path_pm(ctx, message):
     guild = message.guild
     if len(message.content.split(" ")) != 3:
         await message.channel.send(">>> Please use format: \n !clearpm <Champion> <Side>")
+        return
     await message.channel.send("Sending Jungling tips to user now")
     if message.content.split(" ")[1] == "Kayn":
         if message.content.split(" ")[2] == "Blue":
@@ -243,7 +309,76 @@ async def clear_path_pm(ctx, message):
             await asyncio.sleep(1)
             await message.author.send("CONGRATS YOU DID FIRST CLEAR")
 
+commandList.append(Command("!firstclear", "get_jg_clear", "Given a jungler, will return what clear is the best for\nUsage: !firstclear <Champion>"))
+async def get_jg_clear(ctx, message):
+    guild = message.guild
+    if len(message.content.split(" ")) != 2:
+        await message.channel.send(">>> Please use format: !firstclear <Champion>")
+        return
+    await message.channel.send(jungle_to_clear(message.content.split(" ")[1]))
 
+commandList.append(Command("!pmpath", "get_jg_clear", "Given a jungler, will return what clear is the best for\nUsage: !pmpath <Champion>"))
+async def get_jg_clear(ctx, message):
+    guild = message.guild
+    if len(message.content.split(" ")) != 2:
+        await message.channel.send(">>> Please use format: !pmpath <Champion>")
+        return
+    await message.author.send(jungle_to_clear(message.content.split(" ")[1]))
+    
+
+commandList.append(Command("!topjg", "get_topjg", "Displays the top 3 junglers on the NA server for the given champion.\nUsage: !topjg <champion_name>"))
+async def get_topjg(ctx, message):
+    champion_name = message.content.split(" ")[1]
+
+    #URL for league of graphs
+    URL = 'https://leagueofgraphs.com/rankings/summoners/' + champion_name + '/na'
+    hdr = {'User-Agent': 'Mozilla/5.0'}
+    req = Request(URL,headers=hdr)
+    page= urlopen(req)
+    soup = BeautifulSoup(page)
+
+    #Searches for the table of best players in NA on that champion (ranked by winrate/elo/games)
+    rows = soup.find_all('tr')
+
+    #print(rows)
+
+    #List of usernames that are ranked #1-#5 on the leaderboard of the leagueofgraphs
+    usernames = []
+
+    for row in rows:
+        rank = row.find('td', class_='text-right hide-for-super-small-only')
+        #print(str(rank))
+        #print(str(rank)[78:80])
+        if (str(rank)[78:80] == '1.') or (str(rank)[78:80] == '2.') or (str(rank)[78:80] == '3.') or (str(rank)[78:80] == '4.' or (str(rank)[78:80] == '5.')):
+            name = row.find('span', class_='name').getText()
+            usernames.append(str(name))
+    #print(usernames)
+    #Create an embed for formatting call it 'Best ___ Players in NA'
+    embed = discord.Embed(
+        title='Best ' + champion_name + ' Players in NA',
+        color=0x000000
+    ) 
+    #If the username has a space the URL for the op.gg needs a + where the space is so I checked each username for that
+    #and reformatted
+    new_username = ""
+    for i in range(len(usernames)):
+        nameArray = usernames[i].split(" ")
+        print(nameArray)
+        if len(nameArray) > 1:
+            for j in range(len(nameArray)):
+                if j == len(nameArray) - 1:
+                    new_username += nameArray[j]
+                else:
+                    new_username += nameArray[j] + "+"
+        else:
+            new_username += nameArray[0]
+        embed.add_field(
+            name=usernames[i],
+            value='https://na.op.gg/summoner/userName=' + new_username,
+            inline=False
+            )
+        new_username = ""
+    await message.channel.send(embed=embed) 
 
 commandList.append(Command("!skillorder", "get_skill_order", "Displays the skill order of specified League of Legends champion.\nUsage: !skillorder <CHAMPION_NAME>"))
 async def get_skill_order(ctx, message):
@@ -300,10 +435,6 @@ async def get_recommended_items(ctx, message):
     req = Request(URL,headers=hdr)
     page=urlopen(req)
     soup = BeautifulSoup(page, 'html.parser')
-
-
-
-
     #Searches for the first row item builds (they display the most popular builds)
     results = soup.find_all('tr', class_= 'champion-overview__row champion-overview__row--first')
 
