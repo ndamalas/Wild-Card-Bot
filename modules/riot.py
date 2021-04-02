@@ -95,8 +95,18 @@ async def live_game(ctx, message):
     name = ""
     for i in range(2, len(messageArray)):
       name += message.content.split(" ")[i]
-    user = lol_watcher.summoner.by_name(region, name)
-    spectator = lol_watcher.spectator.by_summoner(region, user['id'])
+    try:
+        user = lol_watcher.summoner.by_name(region, name)
+    except ApiError as err:
+        if err.response.status_code == 404:
+            await message.channel.send("No summoner with that name was found.")
+            return
+    try:
+        spectator = lol_watcher.spectator.by_summoner(region, user['id'])
+    except ApiError as err:
+        if err.response.status_code == 404:
+            await message.channel.send("Summoner is currently not in game")
+            return
     output = ""
     output += get_queue_type(spectator['gameQueueConfigId']) + "\n"
     output += "Blue Side\n"
@@ -128,7 +138,12 @@ async def get_league_profile(ctx, message):
     for i in range(2, len(messageArray)):
       name += message.content.split(" ")[i]
     # print(name)
-    user = lol_watcher.summoner.by_name(region, name)
+    try:
+        user = lol_watcher.summoner.by_name(region, name)
+    except ApiError as err:
+        if err.response.status_code == 404:
+            await message.channel.send("No summoner with that name was found.")
+            return
     ranked_stats = lol_watcher.league.by_summoner(region, user['id'])
     await message.channel.send(user['name'] + " Lvl " + str(user['summonerLevel']))
     if len(ranked_stats) > 1:
@@ -144,7 +159,12 @@ async def get_tft_profile(ctx, message):
     name = ""
     for i in range(2, len(messageArray)):
       name += message.content.split(" ")[i]
-    user = tft_watcher.summoner.by_name(region, name)
+    try:
+        user = tft_watcher.summoner.by_name(region, name)
+    except ApiError as err:
+        if err.response.status_code == 404:
+            await message.channel.send("No summoner with that name was found.")
+            return
     ranked_stats = tft_watcher.league.by_summoner(region, user['id'])
     await message.channel.send(user['name'] + " Lvl " + str(user['summonerLevel']))
     if len(ranked_stats) == 1:
@@ -162,7 +182,12 @@ async def get_champion_mastery(ctx, message):
     #Get the version (what patch league is on)
     #print(version)
     #Gets the user data using the region and username
-    user = lol_watcher.summoner.by_name(region, name)
+    try:
+        user = lol_watcher.summoner.by_name(region, name)
+    except ApiError as err:
+        if err.response.status_code == 404:
+            await message.channel.send("No summoner with that name was found.")
+            return
     #Gets the champion mastery
     championmastery = lol_watcher.champion_mastery.by_summoner(region, user['id'])
     #Gets the total mastery score like returns as an int (i.e. 577)
@@ -172,7 +197,7 @@ async def get_champion_mastery(ctx, message):
     #For loop goes through all the champions matching the champion by championID to get names
     for j in range(3):
         id = championmastery[j]['championId']
-        championArray.append(championDf.loc[championDf['key'] == str(id), 'id'].item())
+        championArray.append(search_champion_by_id(str(id), 'id'))
     #Prints out username, total mastery score, top 3 champion names each with total mastery points + level of mastery
     await message.channel.send(user['name'])
     await message.channel.send("Total Mastery Score: " + str(totalmastery))
