@@ -160,7 +160,6 @@ async def get_champion_mastery(ctx, message):
     for i in range(2, len(messageArray)):
       name += message.content.split(" ")[i]
     #Get the version (what patch league is on)
-    version = "11.6"
     #print(version)
     #Gets the user data using the region and username
     user = lol_watcher.summoner.by_name(region, name)
@@ -168,27 +167,17 @@ async def get_champion_mastery(ctx, message):
     championmastery = lol_watcher.champion_mastery.by_summoner(region, user['id'])
     #Gets the total mastery score like returns as an int (i.e. 577)
     totalmastery = lol_watcher.champion_mastery.scores_by_summoner(region, user['id'])
-    #Gets the list of all champions/abilites/descriptions
-    championdata = lol_watcher.data_dragon.champions(version ['n']['champion'], False, None)
-    championList = []
-    for champion in championdata['data']:
-      championList.append(championdata['data'][champion])
-    print(championList[0]['id'])
     #Array of top 3 champions
     championArray = []
     #For loop goes through all the champions matching the champion by championID to get names
     for j in range(3):
-      for i in range(len(championList)):
-        if (str(championdata['data'][championList[i]['id']]['key']) == str(championmastery[j]['championId'])):
-          #print("hi")
-          #print(championmastery[j]['championId'])
-          championArray.append(championdata['data'][championList[i]['id']]['id'])
+        id = championmastery[j]['championId']
+        championArray.append(championDf.loc[championDf['key'] == str(id), 'id'].item())
     #Prints out username, total mastery score, top 3 champion names each with total mastery points + level of mastery
     await message.channel.send(user['name'])
     await message.channel.send("Total Mastery Score: " + str(totalmastery))
     for i in range(3):
       await message.channel.send("Champion: " + championArray[i] +
-      #await message.channel.send(championdata['data'][championArray[i]]['image']['sprite'])
       "\nTotal Mastery Points: " + str(championmastery[i]['championPoints']) + "\nMastery Level: " + str(championmastery[i]['championLevel']))
 
 commandList.append(Command("!matchhistory", "get_match_history", "Displays a player's League of Legends match history\nUsage: !matchhistory <REGION> <IGN>"))
