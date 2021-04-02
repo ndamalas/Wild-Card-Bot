@@ -317,8 +317,8 @@ async def get_jg_clear(ctx, message):
         return
     await message.channel.send(jungle_to_clear(message.content.split(" ")[1]))
 
-commandList.append(Command("!pmpath", "get_jg_clear", "Given a jungler, will return what clear is the best for\nUsage: !pmpath <Champion>"))
-async def get_jg_clear(ctx, message):
+commandList.append(Command("!pmpath", "pm_jg_clear", "Given a jungler, will return what clear is the best for\nUsage: !pmpath <Champion>"))
+async def pm_jg_clear(ctx, message):
     guild = message.guild
     if len(message.content.split(" ")) != 2:
         await message.channel.send(">>> Please use format: !pmpath <Champion>")
