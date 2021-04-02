@@ -299,7 +299,7 @@ async def get_recommended_items(ctx, message):
     hdr = {'User-Agent': 'Mozilla/5.0'}
     req = Request(URL,headers=hdr)
     page=urlopen(req)
-    soup = BeautifulSoup(page)
+    soup = BeautifulSoup(page, 'html.parser')
 
 
 
@@ -337,7 +337,6 @@ async def get_recommended_items(ctx, message):
     #Converts the png file names to full path names as discord files and adds them to appropriate lists
     for i in range(len(starterItemspng)):
         #Path name to the image folder
-        await message.channel.send(dirname+ "/11.6.1/img/item/" + starterItemspng[i])
         temp_img = discord.File(fp=dirname + "/11.6.1/img/item/" + starterItemspng[i])
         starterItems.append(temp_img)
     for i in range(len(coreItemspng)):

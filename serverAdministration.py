@@ -9,6 +9,7 @@ from discord.voice_client import VoiceClient
 from discord import FFmpegPCMAudio
 import re
 import threading
+from youtubesearchpython import VideosSearch
 #double linked list for music
 from node import Node
 # Every module has to have a command list
@@ -1001,9 +1002,11 @@ async def playMusic(ctx, message):
     #get video url
     video = message.content.split(" ")[1]
     if not video.startswith('https://'):
-        video = search("Youtube "+" ".join(message.content.split(" ")[1:]), lang='en')[0]
+        videosSearch = VideosSearch(" ".join(message.content.split(' ')[1:]), limit = 1)
+        results = videosSearch.result()['result']
+        video = results[0]['link']
+    
     guild = message.guild
-
     #if not connected to voice, connect
     if guild.voice_client == None:
         firstime = 1
