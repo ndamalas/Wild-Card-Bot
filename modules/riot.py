@@ -272,7 +272,7 @@ async def get_match_history(ctx, message):
       await message.channel.send(">>> \n" + str(i + 1) + ".\nQueue: " + get_queue_type(matchlist['matches'][i]['queue']) + "\nChampion: " + search_champion_by_id(str(matchlist['matches'][i]['champion']), "name") + "\n")
 
 
-commandList.append(Command("!clearpm", "clear_path_pm", "PMS user with the appropriate jungle path for that champion\nUsage: !clearpm <champion> <side>"))
+commandList.append(Command("!overlay", "clear_path_pm", "PMS user with the appropriate jungle path for that champion\nUsage: !clearpm <champion> <side>"))
 async def clear_path_pm(ctx, message):
     guild = message.guild
     if len(message.content.split(" ")) != 3:
@@ -309,14 +309,76 @@ async def clear_path_pm(ctx, message):
             await asyncio.sleep(1)
             await message.author.send("CONGRATS YOU DID FIRST CLEAR")
 
-commandList.append(Command("!whichjgclear", "get_jg_clear", "Given a jungler, will return what clear is the best for\nUsage: !whichjgclear <Champion>"))
+commandList.append(Command("!firstclear", "get_jg_clear", "Given a jungler, will return what clear is the best for\nUsage: !firstclear <Champion>"))
 async def get_jg_clear(ctx, message):
     guild = message.guild
     if len(message.content.split(" ")) != 2:
-        await message.channel.send(">>> Please use format: !whichjgclear <Champion>")
+        await message.channel.send(">>> Please use format: !firstclear <Champion>")
         return
     await message.channel.send(jungle_to_clear(message.content.split(" ")[1]))
+
+commandList.append(Command("!pmpath", "get_jg_clear", "Given a jungler, will return what clear is the best for\nUsage: !pmpath <Champion>"))
+async def get_jg_clear(ctx, message):
+    guild = message.guild
+    if len(message.content.split(" ")) != 2:
+        await message.channel.send(">>> Please use format: !pmpath <Champion>")
+        return
+    await message.author.send(jungle_to_clear(message.content.split(" ")[1]))
     
+
+commandList.append(Command("!topjg", "get_topjg", "Displays the top 3 junglers on the NA server for the given champion.\nUsage: !topjg <champion_name>"))
+async def get_topjg(ctx, message):
+    champion_name = message.content.split(" ")[1]
+
+    #URL for league of graphs
+    URL = 'https://leagueofgraphs.com/rankings/summoners/' + champion_name + '/na'
+    hdr = {'User-Agent': 'Mozilla/5.0'}
+    req = Request(URL,headers=hdr)
+    page= urlopen(req)
+    soup = BeautifulSoup(page)
+
+    #Searches for the table of best players in NA on that champion (ranked by winrate/elo/games)
+    rows = soup.find_all('tr')
+
+    #print(rows)
+
+    #List of usernames that are ranked #1-#5 on the leaderboard of the leagueofgraphs
+    usernames = []
+
+    for row in rows:
+        rank = row.find('td', class_='text-right hide-for-super-small-only')
+        #print(str(rank))
+        #print(str(rank)[78:80])
+        if (str(rank)[78:80] == '1.') or (str(rank)[78:80] == '2.') or (str(rank)[78:80] == '3.') or (str(rank)[78:80] == '4.' or (str(rank)[78:80] == '5.')):
+            name = row.find('span', class_='name').getText()
+            usernames.append(str(name))
+    #print(usernames)
+    #Create an embed for formatting call it 'Best ___ Players in NA'
+    embed = discord.Embed(
+        title='Best ' + champion_name + ' Players in NA',
+        color=0x000000
+    ) 
+    #If the username has a space the URL for the op.gg needs a + where the space is so I checked each username for that
+    #and reformatted
+    new_username = ""
+    for i in range(len(usernames)):
+        nameArray = usernames[i].split(" ")
+        print(nameArray)
+        if len(nameArray) > 1:
+            for j in range(len(nameArray)):
+                if j == len(nameArray) - 1:
+                    new_username += nameArray[j]
+                else:
+                    new_username += nameArray[j] + "+"
+        else:
+            new_username += nameArray[0]
+        embed.add_field(
+            name=usernames[i],
+            value='https://na.op.gg/summoner/userName=' + new_username,
+            inline=False
+            )
+        new_username = ""
+    await message.channel.send(embed=embed) 
 
 commandList.append(Command("!skillorder", "get_skill_order", "Displays the skill order of specified League of Legends champion.\nUsage: !skillorder <CHAMPION_NAME>"))
 async def get_skill_order(ctx, message):
