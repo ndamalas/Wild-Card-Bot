@@ -12,6 +12,55 @@ import asyncio
 from urllib.request import Request, urlopen
 # from PIL import Image
 
+def jungle_to_clear(champion):
+    clear = {
+        "Ammumu": "Red-Raptors-Blue-Gromp-Wolves",
+        "Dr. Mundo": "Raptors-Red-Krugs>Back>Wolves>Blue>Gromp",
+        "Ekko": "Red-Krugs-Raptors-Blue-Gromp",
+        "Elise": "Red-Blue-Gromp or Red-Raptors-Gromp",
+        "Evelyn": "Blue-Gromp-Wolves-Raptors-Red-Krugs or Red-Krugs-Raptors-Wolves-Blue-Gromp or Raptors-Krugs-Red-Blue-Gromp-Wolves",
+        "Fiddlesticks": "Wolves-Blue-Gromp-Raptors-Red-Krugs or Raptors-Red-Krugs-Wolves-Blue-Gromp",
+        "Garen": "Red-Krugs-Raptors-Wolves-Blue-Gromp",
+        "Gragas": "Blue-Gromp-Wolves-Raptors-Red",
+        "Graves": "Blue-Gromp-Wolves-Raptors-Red-Krugs",
+        "Gwen": "Red-Krugs-raptors-Wolves-Blue-Gromp",
+        "Hecarim": "Red-Krugs-Raptors-Wolves-Blue-Gromp or Blue-Gromp-Wolves-Raptors-Red-Krugs",
+        "Ivern": "Wolves-Blue-Gromp-Raptors-Red or Wolves-Blue-Gromp-Raptors-Red or Red-Raptors-Blue-Gromp-Wolves",
+        "Jarvan IV": "Red-Blue-Gromp or Red-Krugs-Raptors-Wolves-Blue-Gromp",
+        "Karthus": "Blue-Gromp-Wolves-Raptors-Red-Krugs",
+        "Kayn": "Blue-Gromp-Wolves-Raptors-Red-Krugs or Red-Krugs-Raptors-Wolves-Blue-Gromp",
+        "Kha'zix": "Blue-Gromp-Wolves-Raptors-Red-Krugs",
+        "Kindred": "Red-Blue-Gromp",
+        "Lee Sin": "Red-Blue-Gromp or Red-Raptors-Wolves-Blue-Gromp",
+        "Lillia": "Red-Krugs-Raptors-Wolves-Blue-Gromp or Blue-Gromp-Wolves-Raptors-Red-Krugs",
+        "Master Yi": "Red-Krugs-Raptors-Wolves-Blue-Gromp",
+        "Nidlee": "Blue-Gromp-Wolves-Raptors-Red-Krugs or Red-Krugs-Raptors-Wolves-Blue-Gromp",
+        "Nocturne": "Red-Krugs-Raptors-Wolves-Blue-Gromp",
+        "Nunu": "Red-Raptors-Wolves-Blue-Gromp",
+        "Olaf": "Blue-Gromp-Wolves-Raptors-Red-Krugs",
+        "Pantheon": "Red-Krugs-Raptors-Wolves-Blue-Gromp",
+        "Poppy": "Red-Krugs-Raptors-Wolves-Blue",
+        "Rammus": "Red-Raptors-Wolves-Blue",
+        "Rek'sai": "Red-Krugs-Raptors",
+        "Rengar": "Blue-Gromp-Wolves-Raptors-Red-Krugs or Red-Krugs-Raptors-Wolves-Blue-Gromp",
+        "Sejuani": "Red-Blue-Gromp",
+        "Shaco": "Raptors-Red-Krugs or Raptors-Red-Krugs-Wolves-Blue or Raptors-Red-Krugs-Wolves-Blue-Gromp",
+        "Shyvanna": "Red-Krugs-Raptors-Wolves-Blue-Gromp",
+        "Skarner": "Red-Krugs-Raptors-Wolves-Blue-Gromp",
+        "Sylas": "Red-Krugs-Raptors",
+        "Taliyah": "Red-Blue-Gromp or Blue-Gromp-Wolves-Raptors-Red-Krugs",
+        "Trundle": "Red-Blue-Gromp",
+        "Udyr": "Red-Krugs-Raptors-Wolves-Blue-Gromp",
+        "Vi": "Red-Blue-Gromp-Wolves-Raptors or Red-Krugs-Raptors-Wolves-Blue",
+        "Viego": "Red-Krugs-Raptors-Wolves-Blue-Gromp",
+        "Volibear": "Blue-Gromp-Wolves-Raptors-Red-Krugs or Red-Krugs-Raptors-Wolves-Blue-Gromp",
+        "Warwick": "Red-Blue-Gromp or Red-Raptors-Wolves-Blue-Gromp",
+        "Wukong": "Blue-Gromp-Wolves-Raptors-Red or Red-Raptors-Wolves-Blue-Gromp",
+        "Xin Zhao": "Red-Raptors-Gromp or Red-Blue-Gromp",
+        "Zac": "Red-Krugs-Raptors-Wolves-Blue-Gromp",
+    }
+    return clear.get(champion, "Does not exist")
+
 commandList = []
 
 
@@ -201,6 +250,7 @@ async def clear_path_pm(ctx, message):
     guild = message.guild
     if len(message.content.split(" ")) != 3:
         await message.channel.send(">>> Please use format: \n !clearpm <Champion> <Side>")
+        return
     await message.channel.send("Sending Jungling tips to user now")
     if message.content.split(" ")[1] == "Kayn":
         if message.content.split(" ")[2] == "Blue":
@@ -232,7 +282,14 @@ async def clear_path_pm(ctx, message):
             await asyncio.sleep(1)
             await message.author.send("CONGRATS YOU DID FIRST CLEAR")
 
-
+commandList.append(Command("!whichjgclear", "get_jg_clear", "Given a jungler, will return what clear is the best for\nUsage: !whichjgclear <Champion>"))
+async def get_jg_clear(ctx, message):
+    guild = message.guild
+    if len(message.content.split(" ")) != 2:
+        await message.channel.send(">>> Please use format: !whichjgclear <Champion>")
+        return
+    await message.channel.send(jungle_to_clear(message.content.split(" ")[1]))
+    
 
 commandList.append(Command("!skillorder", "get_skill_order", "Displays the skill order of specified League of Legends champion.\nUsage: !skillorder <CHAMPION_NAME>"))
 async def get_skill_order(ctx, message):
