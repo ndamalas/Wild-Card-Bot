@@ -73,7 +73,7 @@ def unnest(myDf: pd.DataFrame, columns: list) -> pd.DataFrame:
         tempDf = pd.concat([tempDf, x], axis = 1)
   return tempDf
 
-riot_api_key = "RGAPI-435e3d4b-27ea-4008-8984-bf28cbf2ecd5"
+riot_api_key = "RGAPI-1db325e7-cd4c-4c39-b561-08395d5ce93f"
 lol_watcher = LolWatcher(riot_api_key)
 riot_watcher = RiotWatcher(riot_api_key)
 lor_watcher = LorWatcher(riot_api_key)
@@ -118,7 +118,7 @@ async def champion_info(ctx, message):
     output = ""
     output += "**" + name + " " + championDf[index == name]['title'].item() + "**"
     await message.channel.send(output)
-    fn = dirname + "/11.6.1/img/champion/" + imgNameDf[index == name]["full"].item()
+    fn = dirname + "11.6.1/img/champion/" + imgNameDf[index == name]["full"].item()
     fp = open(fn, 'rb')
     await message.channel.send(file=discord.File(fp))
     await message.channel.send("**Resource: **" + championDf[index == name]['partype'].item()) # resource
@@ -194,9 +194,10 @@ async def get_league_profile(ctx, message):
             return
     ranked_stats = lol_watcher.league.by_summoner(region, user['id'])
     await message.channel.send(user['name'] + " Lvl " + str(user['summonerLevel']))
-    fn = dirname + "/11.6.1/img/profileicon/" + str(user['profileIconId']) + ".png"
-    fp = open(fn, 'rb')
-    await message.channel.send(file=discord.File(fp))
+    #fn = dirname + "/11.6.1/img/profileicon/" + str(user['profileIconId']) + ".png"
+    #await message.channel.send(fn)
+    #fp = open(fn, 'rb')
+    #await message.channel.send(file=discord.File(fp=fn))
     if len(ranked_stats) > 1:
         await message.channel.send("Ranked Flex: " + ranked_stats[0]['tier'] + " " + ranked_stats[0]['rank'] + " " + str(ranked_stats[0]['leaguePoints']) + "LP " + str(ranked_stats[0]['wins']) + "W/" + str(ranked_stats[0]['losses']) + "L")
         await message.channel.send("Ranked Solo: " + ranked_stats[1]['tier'] + " " + ranked_stats[1]['rank'] + " " + str(ranked_stats[1]['leaguePoints']) + "LP " + str(ranked_stats[1]['wins']) + "W/" + str(ranked_stats[1]['losses']) + "L")
@@ -317,8 +318,8 @@ async def get_jg_clear(ctx, message):
         return
     await message.channel.send(jungle_to_clear(message.content.split(" ")[1]))
 
-commandList.append(Command("!pmpath", "get_jg_clear", "Given a jungler, will return what clear is the best for\nUsage: !pmpath <Champion>"))
-async def get_jg_clear(ctx, message):
+commandList.append(Command("!pmpath", "pm_jg_clear", "Given a jungler, will return what clear is the best for\nUsage: !pmpath <Champion>"))
+async def pm_jg_clear(ctx, message):
     guild = message.guild
     if len(message.content.split(" ")) != 2:
         await message.channel.send(">>> Please use format: !pmpath <Champion>")
