@@ -4,7 +4,7 @@ import requests
 import discord
 # from googlesearch import search
 
-team = "purdue+football"
+team = "purdue"
 searchURL = "https://www.google.com/search?q=espn+" + team
 html = requests.get(searchURL)
 soup = BeautifulSoup(html.content, 'html.parser')
@@ -31,9 +31,25 @@ soup = BeautifulSoup(html.content, 'html.parser')
 
 # "https://www.espn.com/nba/boxscore/_/gameId/401307560"
 scores = soup.find_all('div', class_='score-container')
-teams = soup.find_all('div', class_='team-container')
-time = soup.find_all('div', class_='game-status')
+teamStr = []
+for t in soup.find_all('div', class_='team-container'):
+    teams = t.find_all('span')
+    # print(teams)
+    teamStr.append(teams[0].text + " " + teams[1].text)
+#time = soup.find_all('div', class_='game-status')
+for s in soup.find_all('div', class_='game-status'):
+    span = s.find_all('span')
+    time = span[0].text
 
-print(scores)
-print(teams)
-print(time)
+# print(scores)
+print(teamStr[0])
+print(teamStr[1])
+#print(time)
+
+result = ""
+result += time + "\n"
+result += teamStr[0] + " " + scores[0].text + " | "
+result += teamStr[1] + " " + scores[1].text
+print("\n")
+print(result)
+
