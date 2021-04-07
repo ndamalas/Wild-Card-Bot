@@ -6,9 +6,6 @@ from googlesearch import search
 from youtubesearchpython import VideosSearch
 
 
-
-#Function to test sending data to external commands
-
 # Every module has to have a command list
 commandList = []
 

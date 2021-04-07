@@ -5,8 +5,6 @@ import math
 from bs4 import BeautifulSoup
 import requests
 
-#Function to test sending data to external commands
-
 # Every module has to have a command list
 commandList = []
 
