@@ -3,8 +3,7 @@ from command import Command
 import requests
 import discord
 # from googlesearch import search
-
-team = "purdue"
+team = "reds"
 searchURL = "https://www.google.com/search?q=espn+" + team
 html = requests.get(searchURL)
 soup = BeautifulSoup(html.content, 'html.parser')
@@ -12,8 +11,12 @@ soup = BeautifulSoup(html.content, 'html.parser')
 
 links = soup.find_all('a')
 print(links[16].get('href')[7:])
+
 # Now do a new soup with the espn team page
 searchURL = links[16].get('href')[7:]
+if (searchURL.find("team") == -1):
+    print("Invalid search")
+
 html = requests.get(searchURL)
 soup = BeautifulSoup(html.content, 'html.parser')
 
@@ -40,6 +43,9 @@ for t in soup.find_all('div', class_='team-container'):
 for s in soup.find_all('div', class_='game-status'):
     span = s.find_all('span')
     time = span[0].text
+# Handling baseball
+if (time.find("outs") != -1):
+    time = time[:-6] + " " + time[-6:]
 
 # print(scores)
 print(teamStr[0])
@@ -48,7 +54,7 @@ print(teamStr[1])
 
 result = ""
 result += time + "\n"
-result += teamStr[0] + " " + scores[0].text + " | "
+result += teamStr[0] + " " + scores[0].text + " - "
 result += teamStr[1] + " " + scores[1].text
 print("\n")
 print(result)
