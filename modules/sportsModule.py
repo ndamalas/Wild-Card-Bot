@@ -49,6 +49,7 @@ async def sports(client, message):
     # "https://www.espn.com/nba/boxscore/_/gameId/401307560"
     scores = soup.find_all('div', class_='score-container')
     teamStr = []
+    time = ""
     for t in soup.find_all('div', class_='team-container'):
         teams = t.find_all('span')
         # print(teams)
@@ -56,6 +57,20 @@ async def sports(client, message):
     #time = soup.find_all('div', class_='game-status')
     for s in soup.find_all('div', class_='game-status'):
         span = s.find_all('span')
+        for sp in span:
+            if sp.has_attr('data-date'):
+                time = sp.get('data-date')
+                break
+        if time != "":
+            newSearch = "https://www.google.com/search?q=What+time+is+" + time[11:16] + "+utc"
+            html = requests.get(newSearch)
+            soup = BeautifulSoup(html.content, 'html.parser')
+            temp = soup.find_all('div', class_="BNeawe iBp4i AP7Wnd")
+            # Convert to more readable time
+            newTime = temp[0].text.split(" ")[0] + " " + temp[0].text.split(" ")[1]
+            date = time[5:10]
+            time = newTime + " on " + date
+            break
         time = span[0].text
     # Handling baseball
     if (time.find("outs") != -1):
