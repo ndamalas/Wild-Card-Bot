@@ -74,6 +74,10 @@ async def sports(client, message):
             teamMoneyLines.append(rows[4].text.strip())
             teamMoneyLines.append(rows[9].text.strip())
             over = rows[5].text
+    else:
+        for t in soup.find_all('div', class_='team-container'):
+            r = t.find_all('div', class_='record')
+            teamRecords.append(r[0].text)
     for s in soup.find_all('div', class_='game-status'):
         span = s.find_all('span', class_='game-time')
         if len(span) == 0 or span[0].text == "":
@@ -113,13 +117,12 @@ async def sports(client, message):
     # print(result)
     embed = discord.Embed(title = "Gamecast", description=time, colour = discord.Colour.red(), url = searchURL)
     embed.set_author(name=message.author.display_name, icon_url=message.author.avatar_url)
-    # This means game is live
-    if line == "":
-        embed.add_field(name="**" + teamStr[0] + " " + scores[0].text + "**", value="\u200b", inline=True)
-        embed.add_field(name="**" + teamStr[1] + " " + scores[1].text + "**", value="\u200b", inline=True)
+    if line == "": # This means game is live
+        embed.add_field(name="**" + teamStr[0] + " " + scores[0].text + "**", value=teamRecords[0], inline=True)
+        embed.add_field(name="**" + teamStr[1] + " " + scores[1].text + "**", value=teamRecords[1], inline=True)
     else:
-        embed.add_field(name="**" + teamStr[0] + "**", value="Spread: " + teamLines[0] + "\nMoney Line: " + teamMoneyLines[0], inline=True)
-        embed.add_field(name="**" + teamStr[1] + "**", value=teamLines[1] + "\n" + teamMoneyLines[1], inline=True)
+        embed.add_field(name="**" + teamStr[0] + "**", value=teamRecords[0] + "\nSpread:      " + teamLines[0] + "\nMoney Line: " + teamMoneyLines[0], inline=True)
+        embed.add_field(name="**" + teamStr[1] + "**", value=teamRecords[1] + "\n" + teamLines[1] + "\n" + teamMoneyLines[1], inline=True)
         embed.add_field(name="Over/Under", value=over, inline=False)
     await message.channel.send(embed=embed)
 
