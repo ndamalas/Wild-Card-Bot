@@ -30,8 +30,18 @@ async def get_status(ctx, message):
     userDf = pd.DataFrame.from_dict(out)
     userDf = userDf['response'][userDf.index == "players"][0][0]
 
+    persona = userDf['personaname']
+
     # Output user status
-    await message.channel.send(userDf['personaname'] + " is currently " + status(userDf['personastate']))
+    state = status(userDf['personastate'])
+    await message.channel.send(persona + " is currently: " + state)
+
+    # Output current game playing
+    if 'gameextrainfo' in userDf:
+        current_game = userDf['gameextrainfo']
+    else:
+        current_game = "None"
+    await message.channel.send(persona + " is playing: " + current_game)
 
 
 def status(state):
