@@ -43,6 +43,12 @@ async def get_status(ctx, message):
         current_game = "None"
     await message.channel.send(persona + " is playing: " + current_game)
 
+    # Output location of user
+    if 'loccountrycode' in userDf:
+        location = userDf['loccountrycode']
+    else:
+        location = "N/A"
+    await message.channel.send(persona + " location: " + location)
 
 def status(state):
     s = {
