@@ -1,3 +1,4 @@
+from os import link
 from bs4 import BeautifulSoup
 from command import Command
 import requests
@@ -8,8 +9,8 @@ from googlesearch import search
 # Every module has to have a command list
 commandList = []
 
-commandList.append(Command("!sports", "sports", "TODO"))
-async def sports(client, message):
+commandList.append(Command("!score", "score", "Used to see the score of live games or the betting odds of an upcoming game.\nNote: if trying to use this command on a team that is not in season it will not give their most recent final score.\nUsage: `!score <team>`\nThe bot will then give either an upcoming game or a live game."))
+async def score(client, message):
     contents = message.content.split(" ")
     if len(contents) < 2:
         await message.channel.send("Please give an argument.")
@@ -126,4 +127,39 @@ async def sports(client, message):
         embed.add_field(name="Over/Under", value=over, inline=False)
     await message.channel.send(embed=embed)
 
+commandList.append(Command("!player", "player", "TODO"))
+async def player(client, message):
+    contents = message.content.split(" ")
+    if len(contents) < 2:
+        await message.channel.send("Please give an argument.")
 
+    # Live score handler
+    player = ""
+    for i in range(1, len(contents)):
+        player += contents[i] + "+"
+    # player += contents[len(contents)-1]
+    player += "stats"
+
+    searchURL = "https://www.google.com/search?q=espn+" + player
+    html = requests.get(searchURL)
+    soup = BeautifulSoup(html.content, 'html.parser')
+
+
+    links = soup.find_all('a')
+    # Now do a new soup with the espn player page
+    # TODO might be an error here
+    searchURL = links[16].get('href')
+    if (searchURL[:5] != "https"):
+        searchURL = searchURL[7:]
+    # searchURL = links[16].get('href')[7:]
+    index = searchURL.find("player")
+    if (index == -1):
+        await message.channel.send("Invalid player, could not be found on ESPN.")
+        return
+    searchURL = searchURL[:index+6] + "/stats/" + searchURL[index+7:]
+    html = requests.get(searchURL)
+    soup = BeautifulSoup(html.content, 'html.parser')
+    playerName = " ".join(contents[1:])
+    embed = discord.Embed(title = playerName, description="\u200b", colour = discord.Colour.purple(), url = searchURL)
+    embed.set_author(name=message.author.display_name, icon_url=message.author.avatar_url)
+    await message.channel.send(embed=embed)

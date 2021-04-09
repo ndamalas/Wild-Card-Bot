@@ -5,22 +5,36 @@ import requests
 import discord
 # import time
 # from googlesearch import search
-team = "cavs"
+team = "lebron+stats"
 searchURL = "https://www.google.com/search?q=espn+" + team
 html = requests.get(searchURL)
 soup = BeautifulSoup(html.content, 'html.parser')
+print(searchURL)
 
 
 links = soup.find_all('a')
 
-# Now do a new soup with the espn team page
-searchURL = links[16].get('href')[7:]
-if (searchURL.find("team") == -1):
-    print("Invalid search")
+# Now do a new soup with the espn player page
+# print(links[16].get('href'))
+searchURL = links[16].get('href')
+if (searchURL[:5] != "https"):
+    searchURL = searchURL[7:]
+print(searchURL)
+index = searchURL.find("player")
+if (index == -1):
+    print("Invalid")
+searchURL = searchURL[:index+6] + "/stats/" + searchURL[index+7:]
+print(searchURL)
 
 html = requests.get(searchURL)
 soup = BeautifulSoup(html.content, 'html.parser')
 
+
+
+
+
+
+"""
 # Now get the latest game page
 for p in soup.find_all("section", class_="club-schedule"):
     textList = p.find_all("a")
@@ -97,6 +111,6 @@ result += teamStr[0] + " " + scores[0].text + " - "
 result += teamStr[1] + " " + scores[1].text
 print("\n")
 print(result)
-
+"""
 
 
