@@ -52,13 +52,13 @@ async def get_status(ctx, message):
     await message.channel.send(persona + " location: " + location)
 
     # Output groups
-    groupID = []
     session = aiohttp.ClientSession()
     output = await session.get(f"https://api.steampowered.com/ISteamUser/GetUserGroupList/v1/?key={steam_api_key}&steamid={steamid}")
     out = await output.json()
     await session.close()
     groupDf = pd.DataFrame.from_dict(out)
     groupDf = groupDf['response'][groupDf.index == "groups"][0]
+    await message.channel.send(persona + "\'s Groups: ")
     for group in groupDf:
         gid = group['gid']
         session = aiohttp.ClientSession()
@@ -68,7 +68,16 @@ async def get_status(ctx, message):
         soup = BeautifulSoup(out, 'xml')
         await message.channel.send(soup.groupName.get_text())
         await message.channel.send("https://steamcommunity.com/groups/" + soup.groupURL.get_text())
+    if not groupDf:
+        await message.channel.send("None")
 
+    # Set privacy state
+    privacy = userDf["communityvisibilitystate"]
+    if privacy == 3:
+        await message.channel.send(persona + "\'s profile is public")
+    else:
+        await message.channel.send(persona + "\'s profile is private")
+    
 
 def status(state):
     s = {
