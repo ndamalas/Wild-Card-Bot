@@ -207,6 +207,7 @@ async def runRounds(client, game):
 async def sendBetChanger(client, game, player):
     response = "The round is about to begin!\n"
     response += "Current Bet: **$" + str(player.bet) + "**\n"
+    response += "Current Balance: **$" + str(player.money) + "**\n"
     response += "To change your bet amount, react to this message.\n"
     response += "You have 15 seconds to make a decision.\n"
     embed = discord.Embed(title="Round Starting", description=response, colour=discord.Colour.blurple())
@@ -256,7 +257,10 @@ async def sendHand(client, game, player):
         cardNum += 1
     # Calculate the hand value
     player.calculateValue()
-    embed.add_field(name="Hand Value", value=str(player.value), inline=False)
+    embed.add_field(name="Hand Value", value=str(player.value) + "\n\n**Dealer's Cards:**", inline=False)
+    # Display the dealer's cards
+    embed.add_field(name="Card 1", value=str(game.dealer[0]), inline=True)
+    embed.add_field(name="Card 2", value="**Hidden**", inline=True)
     # Display the actions
     actionStr = ""
     for i in range(len(Game.actions)):
@@ -267,3 +271,33 @@ async def sendHand(client, game, player):
     # React with all the actions
     for actionReaction in Game.actionReactions:
         await handMsg.add_reaction(actionReaction)
+    # Helper function that checks if the user has reacted with a emote of interest
+    def actionCheck(reaction, user):
+        return user == playerObj and str(reaction.emoji) in Game.actionReactions
+    # Check for bet amount from the user
+    try:
+        reaction, user = await client.wait_for('reaction_add', timeout=30.0, check=actionCheck)
+    except asyncio.TimeoutError:
+        # if there is no response immediately fold
+        fold(game, player)
+    # Check if user is valid
+    if user != None:
+        # Check for fold
+        if str(reaction.emoji) == Game.actionReactions[2]:
+            await fold(game, player)
+    # Delete the message
+    await handMsg.delete()
+
+# The player has folded for the round, so adjust object accordingly
+async def fold(game, player):
+    # If a player folds, they lose half of their bet
+    player.updateBalance(-1 * (player.bet // 2))
+    response = "**Round " + str(game.round) + "**\n"
+    response += "You have folded. You recieved half your bet back.\n"
+    response += "You lost **$" + str(player.bet // 2) + "**.\n"
+    response += "Current Balance: **$" + str(player.money) + "**\n"
+    embed = discord.Embed(title="You Folded", description=response, colour=discord.Colour.dark_gray())
+    playerObj = await game.guild.fetch_member(player.userid)
+    await playerObj.send(embed=embed)
+    # Notify that the player is done
+    player.done = True
