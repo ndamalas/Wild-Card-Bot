@@ -24,12 +24,15 @@ class Card:
 
 # Class representing a player
 class Player:
-    def __init__(self, userid, money = 100000):
+    betAmounts = [100, 200, 500, 1000]
+    betReactions = [u"1\ufe0f\u20e3", u"2\ufe0f\u20e3", u"5\ufe0f\u20e3", u"\U0001F51F"]
+    def __init__(self, userid, money = 100000, bet = 500):
         self.userid = userid  # User ID of the player
         self.money = money    # Money the player owns
         self.done = False     # Determines if the player is done with the current round
         self.hand = []        # List of Card objects that represent the player's hand
         self.value = 0        # The value of the player's hand
+        self.bet = bet        # The amount of money the player is currently betting
     # Prepares the player for another round
     def reset(self):
         self.done = False
@@ -79,6 +82,7 @@ class Game:
         await self.newPlayers()
         if len(self.players) == 0:
             self.end()
+            return
         self.round += 1
         self.dealer = []
         self.dealer.append(randomCard())
@@ -164,9 +168,52 @@ async def runBlackjack(client, message):
             # Initialize the first round
             await game.initializeRound()
             game.gm = await game.guild.get_channel(game.tc).send(embed=game.embed)
+            # Start running the rounds
+            await runRounds(client, game)
 
 # Helper function that randomly generates a Card object
 def randomCard():
     suit = Card.suits[random.randrange(len(Card.suits))]
     number = Card.numbers[random.randrange(len(Card.numbers))]
     return Card(suit, number)
+
+# Helper function that runs the rounds
+async def runRounds(client, game):
+    while game != None:
+        # Send each player a chance to change bets
+        for player in game.players:
+            await sendBetChanger(client, game, player)
+        break
+
+# Direct messages the bet changing message to the player
+async def sendBetChanger(client, game, player):
+    response = "The round is about to begin!\n"
+    response += "Current Bet: **$" + str(player.money) + "\n"
+    response += "To change your bet amount, react to this message.\n"
+    response += "You have 15 seconds to make a decision\n"
+    # Only bet amounts allowed: 100, 200, 500, 1000
+    for i in range(len(Player.betAmounts)):
+        response += Player.betReactions[i] + " for $" + str(Player.betAmounts[i]) + "\n"
+    embed = discord.Embed(title="Round Starting", description=response, colour=discord.Colour.dark_gray())
+    playerObj = await game.guild.fetch_member(player.userid)
+    betMsg = await playerObj.send(embed=embed)
+    # React with all the bet amounts
+    for betReaction in Player.betReactions:
+        await betMsg.add_reaction(betReaction)
+    # Helper function that checks if the user has reacted with a emote of interest
+    def betChangerCheck(reaction, user):
+        return user == playerObj and str(reaction.emoji) in Player.betReactions
+    # Check for bet amount from the user
+    try:
+        reaction, user = await client.wait_for('reaction_add', timeout=15.0, check=betChangerCheck)
+    except asyncio.TimeoutError:
+        reaction = None
+        user = None
+    # Change the bet amount
+    if reaction != None and user != None:
+        for i in range(len(Player.betAmounts)):
+            if str(reaction.emoji) == Player.betReactions[i]:
+                player.bet = Player.betAmounts[i]
+                break
+    print(player.bet)
+    await betMsg.delete()
