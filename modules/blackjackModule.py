@@ -279,9 +279,13 @@ async def sendHand(client, game, player):
         reaction, user = await client.wait_for('reaction_add', timeout=30.0, check=actionCheck)
     except asyncio.TimeoutError:
         # if there is no response immediately fold
-        fold(game, player)
+        await fold(game, player)
+        return
     # Check if user is valid
     if user != None:
+        if str(reaction.emoji) == Game.actionReactions[0]:
+            # Check for hit
+            await hit(client, game, player)
         if str(reaction.emoji) == Game.actionReactions[1]:
             # Check for stand
             await stand(game, player)
@@ -321,3 +325,78 @@ async def stand(game, player):
     await playerObj.send(embed=embed)
     # Notify that the player is done
     player.done = True
+
+# Reprompt the player's hand without the ability to fold
+async def hit(client, game, player):
+    # Add new card to players hand and recalculate hand
+    player.drawCard()
+    player.calculateValue()
+    # Check for bust
+    if player.value > 21:
+        await bust(game, player)
+        return
+    response = "**Round " + str(game.round) + "**\n"
+    response += "You have hit. A new card has been given to you.\n"
+    response += "Here are your cards. React to hit, stand, or fold.\n"
+    response += "You have 30 seconds to make a decision.\n"
+    response += "**Your Cards:**"
+    embed = discord.Embed(title="Your Hand", description=response, colour=discord.Colour.dark_gray())
+    # Display the cards
+    cardNum = 1
+    for card in player.hand:
+        embed.add_field(name="Card " + str(cardNum), value=str(card), inline=True)
+        cardNum += 1
+    # Display the hand value
+    embed.add_field(name="Hand Value", value=str(player.value) + "\n\n**Dealer's Cards:**", inline=False)
+    # Display the dealer's cards
+    embed.add_field(name="Card 1", value=str(game.dealer[0]), inline=True)
+    embed.add_field(name="Card 2", value="**Hidden**", inline=True)
+    # Display the actions
+    actionStr = ""
+    for i in range(len(Game.actions) - 1):
+        actionStr += Game.actionReactions[i] + " for " + Game.actions[i] + "\n"
+    embed.add_field(name="Actions", value=actionStr, inline=False)
+    playerObj = await game.guild.fetch_member(player.userid)
+    handMsg = await playerObj.send(embed=embed)
+    # React with all the actions
+    for actionReaction in Game.actionReactions:
+        # Do not react with fold
+        if actionReaction != Game.actionReactions[2]:
+            await handMsg.add_reaction(actionReaction)
+    # Helper function that checks if the user has reacted with a emote of interest
+    def actionCheck(reaction, user):
+        return user == playerObj and str(reaction.emoji) in Game.actionReactions and str(reaction.emoji) != Game.actionReactions[2]
+    # Check for bet amount from the user
+    try:
+        reaction, user = await client.wait_for('reaction_add', timeout=30.0, check=actionCheck)
+    except asyncio.TimeoutError:
+        # if there is no response immediately stand
+        await stand(game, player)
+        return
+    # Check if user is valid
+    if user != None:
+        if str(reaction.emoji) == Game.actionReactions[0]:
+            # Check for hit
+            await hit(client, game, player)
+        if str(reaction.emoji) == Game.actionReactions[1]:
+            # Check for stand
+            await stand(game, player)
+    # Delete the message
+    await handMsg.delete()
+
+# The player has busted so they lose the round regardless of the dealer's cards
+async def bust(game, player):
+    # Player loses bet
+    player.updateBalance(-1 * player.bet)
+    response = "**Round " + str(game.round) + "**\n"
+    response += "You busted! You have lost the round.\n"
+    response += "Final Value: **" + str(player.value) + "**\n"
+    response += "You lost **$" + str(player.bet) + "**.\n"
+    response += "Current Balance: **$" + str(player.money) + "**\n"
+    response += "Waiting on others to finish the round."
+    embed = discord.Embed(title="You Busted", description=response, colour=discord.Colour.red())
+    playerObj = await game.guild.fetch_member(player.userid)
+    await playerObj.send(embed=embed)
+    # Notify that the player is done
+    player.done = True
+    
