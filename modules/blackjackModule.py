@@ -281,6 +281,8 @@ async def sendHand(client, game, player):
         # if there is no response immediately fold
         await fold(game, player)
         return
+    # Delete the message
+    await handMsg.delete()
     # Check if user is valid
     if user != None:
         if str(reaction.emoji) == Game.actionReactions[0]:
@@ -292,8 +294,6 @@ async def sendHand(client, game, player):
         elif str(reaction.emoji) == Game.actionReactions[2]:
             # Check for fold
             await fold(game, player)
-    # Delete the message
-    await handMsg.delete()
 
 # The player has folded for the round, end player's round and adjust balance
 async def fold(game, player):
@@ -337,7 +337,7 @@ async def hit(client, game, player):
         return
     response = "**Round " + str(game.round) + "**\n"
     response += "You have hit. A new card has been given to you.\n"
-    response += "Here are your cards. React to hit, stand, or fold.\n"
+    response += "Here are your cards. React to hit or stand.\n"
     response += "You have 30 seconds to make a decision.\n"
     response += "**Your Cards:**"
     embed = discord.Embed(title="Your Hand", description=response, colour=discord.Colour.dark_gray())
@@ -373,6 +373,8 @@ async def hit(client, game, player):
         # if there is no response immediately stand
         await stand(game, player)
         return
+    # Delete the message
+    await handMsg.delete()
     # Check if user is valid
     if user != None:
         if str(reaction.emoji) == Game.actionReactions[0]:
@@ -381,8 +383,6 @@ async def hit(client, game, player):
         if str(reaction.emoji) == Game.actionReactions[1]:
             # Check for stand
             await stand(game, player)
-    # Delete the message
-    await handMsg.delete()
 
 # The player has busted so they lose the round regardless of the dealer's cards
 async def bust(game, player):
