@@ -279,6 +279,7 @@ async def sendHand(client, game, player):
         reaction, user = await client.wait_for('reaction_add', timeout=30.0, check=actionCheck)
     except asyncio.TimeoutError:
         # if there is no response immediately fold
+        await handMsg.delete()
         await fold(game, player)
         return
     # Delete the message
@@ -371,6 +372,7 @@ async def hit(client, game, player):
         reaction, user = await client.wait_for('reaction_add', timeout=30.0, check=actionCheck)
     except asyncio.TimeoutError:
         # if there is no response immediately stand
+        await handMsg.delete()
         await stand(game, player)
         return
     # Delete the message
