@@ -320,8 +320,14 @@ async def stand(game, player):
     response += "Final Value: **" + str(player.value) + "**\n"
     if player.value == 21:
         response += "You got a blackjack!\n"
-    response += "Waiting on others to finish the round."
+    response += "Waiting on others to finish the round.\n"
+    response += "**Your Cards:**"
     embed = discord.Embed(title="You Stood", description=response, colour=discord.Colour.dark_gray())
+    # Display the cards
+    cardNum = 1
+    for card in player.hand:
+        embed.add_field(name="Card " + str(cardNum), value=str(card), inline=True)
+        cardNum += 1
     playerObj = await game.guild.fetch_member(player.userid)
     await playerObj.send(embed=embed)
     # Notify that the player is done
@@ -395,8 +401,14 @@ async def bust(game, player):
     response += "Final Value: **" + str(player.value) + "**\n"
     response += "You lost **$" + str(player.bet) + "**.\n"
     response += "Current Balance: **$" + str(player.money) + "**\n"
-    response += "Waiting on others to finish the round."
+    response += "Waiting on others to finish the round.\n"
+    response += "**Your Cards:**"
     embed = discord.Embed(title="You Busted", description=response, colour=discord.Colour.red())
+    # Display the cards
+    cardNum = 1
+    for card in player.hand:
+        embed.add_field(name="Card " + str(cardNum), value=str(card), inline=True)
+        cardNum += 1
     playerObj = await game.guild.fetch_member(player.userid)
     await playerObj.send(embed=embed)
     # Notify that the player is done
