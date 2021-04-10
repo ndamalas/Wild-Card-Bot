@@ -4,6 +4,7 @@ import asyncio
 import aiohttp
 import pandas as pd
 from command import Command
+from bs4 import BeautifulSoup
 
 commandList = []
 
@@ -49,6 +50,25 @@ async def get_status(ctx, message):
     else:
         location = "N/A"
     await message.channel.send(persona + " location: " + location)
+
+    # Output groups
+    groupID = []
+    session = aiohttp.ClientSession()
+    output = await session.get(f"https://api.steampowered.com/ISteamUser/GetUserGroupList/v1/?key={steam_api_key}&steamid={steamid}")
+    out = await output.json()
+    await session.close()
+    groupDf = pd.DataFrame.from_dict(out)
+    groupDf = groupDf['response'][groupDf.index == "groups"][0]
+    for group in groupDf:
+        gid = group['gid']
+        session = aiohttp.ClientSession()
+        output = await session.get(f"https://steamcommunity.com/gid/{gid}/memberslistxml/?xml=1")
+        out = await output.read()
+        await session.close()
+        soup = BeautifulSoup(out, 'xml')
+        await message.channel.send(soup.groupName.get_text())
+        await message.channel.send("https://steamcommunity.com/groups/" + soup.groupURL.get_text())
+
 
 def status(state):
     s = {
