@@ -282,13 +282,16 @@ async def sendHand(client, game, player):
         fold(game, player)
     # Check if user is valid
     if user != None:
-        # Check for fold
-        if str(reaction.emoji) == Game.actionReactions[2]:
+        if str(reaction.emoji) == Game.actionReactions[1]:
+            # Check for stand
+            await stand(game, player)
+        elif str(reaction.emoji) == Game.actionReactions[2]:
+            # Check for fold
             await fold(game, player)
     # Delete the message
     await handMsg.delete()
 
-# The player has folded for the round, so adjust object accordingly
+# The player has folded for the round, end player's round and adjust balance
 async def fold(game, player):
     # If a player folds, they lose half of their bet
     player.updateBalance(-1 * (player.bet // 2))
@@ -296,7 +299,24 @@ async def fold(game, player):
     response += "You have folded. You recieved half your bet back.\n"
     response += "You lost **$" + str(player.bet // 2) + "**.\n"
     response += "Current Balance: **$" + str(player.money) + "**\n"
+    response += "Waiting on others to finish the round."
     embed = discord.Embed(title="You Folded", description=response, colour=discord.Colour.dark_gray())
+    playerObj = await game.guild.fetch_member(player.userid)
+    await playerObj.send(embed=embed)
+    # Set value to -1 to indicate fold
+    player.value = -1
+    # Notify that the player is done
+    player.done = True
+
+# The player has stand for the round, so end round and wait for comparison
+async def stand(game, player):
+    response = "**Round " + str(game.round) + "**\n"
+    response += "You stood. Waiting for the dealer's turn.\n"
+    response += "Final Value: **" + str(player.value) + "**\n"
+    if player.value == 21:
+        response += "You got a blackjack!\n"
+    response += "Waiting on others to finish the round."
+    embed = discord.Embed(title="You Stood", description=response, colour=discord.Colour.dark_gray())
     playerObj = await game.guild.fetch_member(player.userid)
     await playerObj.send(embed=embed)
     # Notify that the player is done
