@@ -5,7 +5,7 @@ import requests
 import discord
 # import time
 # from googlesearch import search
-team = "lebron+stats"
+team = "jaden+ivey+stats"
 searchURL = "https://www.google.com/search?q=espn+" + team
 html = requests.get(searchURL)
 soup = BeautifulSoup(html.content, 'html.parser')
@@ -23,12 +23,52 @@ print(searchURL)
 index = searchURL.find("player")
 if (index == -1):
     print("Invalid")
-searchURL = searchURL[:index+6] + "/stats/" + searchURL[index+7:]
+if (searchURL.find("stats") == -1):
+    searchURL = searchURL[:index+6] + "/stats/" + searchURL[index+7:]
 print(searchURL)
 
 html = requests.get(searchURL)
 soup = BeautifulSoup(html.content, 'html.parser')
 
+
+count = 0
+shift = 0 # Used when there is both a career and a season averages row
+for t in soup.find_all('table'):
+    row = t.find_all('tr')
+    if count == 1:
+        statNames = row[0].find_all('th')
+        if shift == 1:
+            careerRow = row[len(row)-2].find_all('td')
+            recentRow = row[len(row)-3].find_all('td')
+        else :
+            careerRow = row[len(row)-1].find_all('td')
+            recentRow = row[len(row)-2].find_all('td')
+    elif count == 0:
+        recentSeason = row[len(row)-2].find_all('td')
+        if recentSeason[0].text == "Career":
+            recentSeason = row[len(row)-3].find_all('td')
+            shift = 1
+    else:
+        break
+    count += 1
+
+recent = ""
+recent += recentSeason[0].text + " " + recentSeason[1].text + " | "
+# print(statNames)
+for i in range(len(statNames)):
+    recent += statNames[i].text + ": " + recentRow[i].text + " "
+print(recent)
+career = ""
+career += "Career | "
+for i in range(len(statNames)):
+    career += statNames[i].text + ": " + careerRow[i].text + " "
+print(career)
+
+playerName = ""
+for s in soup.find_all('h1', class_='PlayerHeader__Name flex flex-column ttu fw-bold pr4 h2'):
+    spans = s.find_all('span')
+    playerName += spans[0].text + " " + spans[1].text
+print(playerName)
 
 
 
