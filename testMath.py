@@ -44,7 +44,7 @@ print(result)
 
 from bs4 import BeautifulSoup
 import requests
-equation = "5+10*5"
+equation = "2+2+2-10*6%5"
 
 i = 0
 while i < len(equation):
@@ -52,8 +52,11 @@ while i < len(equation):
         equation = equation[:i] + "%2B" + equation[i+1:]
         i += 1
     elif equation[i] == '/':
-        # TODO
-        pass
+        equation = equation[:i] + "%2F" + equation[i+1:]
+        i += 1
+    elif equation[i] == '%':
+        equation = equation[:i] + "%25" + equation[i+1:]
+        i += 1
     i += 1
 
 print(equation)
@@ -66,6 +69,7 @@ soup = BeautifulSoup(html.content, 'html.parser')
 
 div = soup.find_all('div', class_='BNeawe iBp4i AP7Wnd')
 answer = div[0].text
+answer = answer.replace("\xa0", ",")
 span = soup.find_all('span', class_='BNeawe tAd8D AP7Wnd')
 newEquation = span[0].text
 print(newEquation, answer)
