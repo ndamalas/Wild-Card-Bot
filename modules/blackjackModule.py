@@ -33,11 +33,13 @@ class Player:
         self.hand = []        # List of Card objects that represent the player's hand
         self.value = 0        # The value of the player's hand
         self.bet = bet        # The amount of money the player is currently betting
+        self.result = None    # Determines if the player won, push, or lost
     # Prepares the player for another round
     def reset(self):
         self.done = False
         self.hand = []
         self.value = 0
+        self.result = None
     # Calculate the hand value of the player
     def calculateValue(self):
         value = 0
@@ -115,8 +117,59 @@ class Game:
             playerObj = await self.guild.fetch_member(player.userid)
             playerStr += playerObj.display_name
             playerStr += "\nMoney: $" + str(player.money) + "\n\n"
-        embed.add_field(name="Players", value=playerStr, inline=False)
+        embed.add_field(name="Players:", value=playerStr, inline=False)
         embed.add_field(name="Round Starting", value="Check your DMs! The round is starting!", inline=False)
+        self.embed = embed
+    # Sets the embed to the round results
+    async def setResultEmbed(self):
+        roundStr = "**Round " + str(self.round) + " Results**\n"
+        roundStr += "**Dealer's Cards:**"
+        embed = discord.Embed(title="Blackjack", description=roundStr, colour=discord.Colour.darker_gray())
+        # Display dealer's cards
+        cardNum = 1
+        for card in self.dealer:
+            embed.add_field(name="Card " + str(cardNum), value=str(card), inline=True)
+            cardNum += 1
+        # Display dealer's value
+        dealerVal = str(self.dealerVal)
+        if self.dealerVal > 21:
+            dealerVal += " (Bust)"
+        embed.add_field(name="Dealer's Value:", value=str(dealerVal), inline=False)
+        winStr = ""
+        loseStr = ""
+        pushStr = ""
+        foldStr = ""
+        for player in self.players:
+            playerObj = await self.guild.fetch_member(player.userid)
+            # If concat to string depending on result
+            if player.result == "W":
+                winStr += playerObj.display_name
+                winStr += "\nMoney: $" + str(player.money) + " (+" + str((player.bet // 2) + player.bet) + ")\n"
+                winStr += "Final Value: **" + str(player.value) + "**\n\n"
+            elif player.result == "L":
+                loseStr += playerObj.display_name
+                loseStr += "\nMoney: $" + str(player.money) + " (-" + str(player.bet) + ")\n"
+                if player.value > 21:
+                    loseStr += "Final Value: **" + str(player.value) + "** (Bust)\n\n"
+                else:
+                    loseStr += "Final Value: **" + str(player.value) + "**\n\n"
+            elif player.result == "P":
+                pushStr += playerObj.display_name
+                pushStr += "\nMoney: $" + str(player.money) + "\n"
+                pushStr += "Final Value: **" + str(player.value) + "**\n\n"
+            else:
+                foldStr += playerObj.display_name
+                foldStr += "\nMoney: $" + str(player.money) + " (-" + str(player.bet // 2) + ")\n"
+        # Only add fields if there are players corresponding to the section
+        if winStr != "":
+            embed.add_field(name="Players That Won:", value=winStr, inline=False)
+        if loseStr != "":
+            embed.add_field(name="Players That Lost:", value=loseStr, inline=False)
+        if pushStr != "":
+            embed.add_field(name="Players That Tied:", value=pushStr, inline=False)
+        if foldStr != "":
+            embed.add_field(name="Players That Folded:", value=foldStr, inline=False)
+        embed.add_field(name="Round Ended", value="The current round has ended. Prepare for the next round!", inline=False)
         self.embed = embed
     # Check for additional players
     async def newPlayers(self):
@@ -218,7 +271,12 @@ def randomCard():
 
 # Helper function that runs the rounds
 async def runRounds(client, game):
+    firstRound = True  # Keeps track if this is the first round played
     while game != None:
+        # If not first round, initialize round
+        if firstRound == False:
+            await game.initializeRound()
+            await game.gm.edit(embed=game.embed)
         # Send each player a chance to change bets
         for player in game.players:
             await sendBetChanger(client, game, player)
@@ -247,10 +305,16 @@ async def runRounds(client, game):
             # Check to see if the player busted or folded
             if player.value <= 21 and player.value >= 0:
                 await compareToDealer(game, player)
+        # Send round results
+        await game.setResultEmbed()
+        await game.gm.edit(embed=game.embed)
         # Reset all players
         for player in game.players:
             player.reset()
-        break
+        # Wait for the players to view the round results
+        await asyncio.sleep(15)
+        # Set first round to false to notify first round finished
+        firstRound = False
 
 # Direct messages the bet changing message to the player
 async def sendBetChanger(client, game, player):
@@ -462,8 +526,9 @@ async def bust(game, player):
     embed.add_field(name="Your Value:", value=str(player.value), inline=False)
     playerObj = await game.guild.fetch_member(player.userid)
     await playerObj.send(embed=embed)
-    # Notify that the player is done
+    # Notify that the player is done and lost
     player.done = True
+    player.result = "L"
 
 # Compares the player's value to the dealer's value
 async def compareToDealer(game, player):
@@ -502,9 +567,15 @@ async def win(game, player):
     for card in game.dealer:
         embed.add_field(name="Card " + str(cardNum), value=str(card), inline=True)
         cardNum += 1
-    embed.add_field(name="Dealer's Value:", value=str(game.dealerVal), inline=False)
+    # Display dealer's value
+    dealerVal = str(game.dealerVal)
+    if game.dealerVal > 21:
+        dealerVal += " (Bust)"
+    embed.add_field(name="Dealer's Value:", value=str(dealerVal), inline=False)
     playerObj = await game.guild.fetch_member(player.userid)
     await playerObj.send(embed=embed)
+    # Notify player has won
+    player.result = "W"
 
 # Send message to player that they tied the round
 async def push(game, player):
@@ -526,9 +597,15 @@ async def push(game, player):
     for card in game.dealer:
         embed.add_field(name="Card " + str(cardNum), value=str(card), inline=True)
         cardNum += 1
-    embed.add_field(name="Dealer's Value:", value=str(game.dealerVal), inline=False)
+    # Display dealer's value
+    dealerVal = str(game.dealerVal)
+    if game.dealerVal > 21:
+        dealerVal += " (Bust)"
+    embed.add_field(name="Dealer's Value:", value=str(dealerVal), inline=False)
     playerObj = await game.guild.fetch_member(player.userid)
     await playerObj.send(embed=embed)
+    # Notify the player has push
+    player.result = "P"
 
 # Send message to player that they lost the round
 async def loss(game, player):
@@ -554,9 +631,11 @@ async def loss(game, player):
         embed.add_field(name="Card " + str(cardNum), value=str(card), inline=True)
         cardNum += 1
     # Display dealer's value
-    dealerVal = game.dealerVal
-    if dealerVal > 21:
+    dealerVal = str(game.dealerVal)
+    if game.dealerVal > 21:
         dealerVal += " (Bust)"
     embed.add_field(name="Dealer's Value:", value=str(dealerVal), inline=False)
     playerObj = await game.guild.fetch_member(player.userid)
     await playerObj.send(embed=embed)
+    # Notify the player has lost
+    player.result = "L"
