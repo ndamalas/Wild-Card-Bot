@@ -44,7 +44,7 @@ print(result)
 
 from bs4 import BeautifulSoup
 import requests
-equation = "2+2+2-10*6%5"
+equation = "12*12*12="
 
 i = 0
 while i < len(equation):
