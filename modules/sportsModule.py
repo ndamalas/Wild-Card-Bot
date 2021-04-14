@@ -9,7 +9,7 @@ from googlesearch import search
 # Every module has to have a command list
 commandList = []
 
-commandList.append(Command("!score", "score", "Used to see the score of live games or the betting odds of an upcoming game.\nNote: if trying to use this command on a team that is not in season it will not give their most recent final score.\nUsage: `!score <team>`\nThe bot will then give either an upcoming game or a live game."))
+commandList.append(Command("!score", "score", "Used to see the score of live games or the betting odds of an upcoming game.\nNote: if trying to use this command on a team that is not in season it will not give their most recent final score.\nUsage: `!score <TEAM>`\nThe bot will then give either an upcoming game or a live game."))
 async def score(client, message):
     contents = message.content.split(" ")
     if len(contents) < 2:
@@ -127,7 +127,7 @@ async def score(client, message):
         embed.add_field(name="Over/Under", value=over, inline=False)
     await message.channel.send(embed=embed)
 
-commandList.append(Command("!player", "player", "TODO"))
+commandList.append(Command("!player", "player", "Used to view a players season stats as well as their career stats.\nUsage: `!player <NAME>`."))
 async def player(client, message):
     contents = message.content.split(" ")
     if len(contents) < 2:
@@ -147,7 +147,6 @@ async def player(client, message):
 
     links = soup.find_all('a')
     # Now do a new soup with the espn player page
-    # TODO might be an error here
     searchURL = links[16].get('href')
     if (searchURL[:5] != "https"):
         searchURL = searchURL[7:]

@@ -5,13 +5,14 @@ import requests
 import discord
 # import time
 # from googlesearch import search
-team = "jaden+ivey+stats"
+# team = "jaden+ivey+stats"
+team = "nets"
 searchURL = "https://www.google.com/search?q=espn+" + team
 html = requests.get(searchURL)
 soup = BeautifulSoup(html.content, 'html.parser')
 print(searchURL)
 
-
+"""
 links = soup.find_all('a')
 
 # Now do a new soup with the espn player page
@@ -69,12 +70,18 @@ for s in soup.find_all('h1', class_='PlayerHeader__Name flex flex-column ttu fw-
     spans = s.find_all('span')
     playerName += spans[0].text + " " + spans[1].text
 print(playerName)
-
-
-
-
-
 """
+
+
+links = soup.find_all('a')
+
+# Now do a new soup with the espn team page
+# print(links)
+searchURL = links[20].get('href')
+print(searchURL)
+
+
+
 # Now get the latest game page
 for p in soup.find_all("section", class_="club-schedule"):
     textList = p.find_all("a")
@@ -151,6 +158,5 @@ result += teamStr[0] + " " + scores[0].text + " - "
 result += teamStr[1] + " " + scores[1].text
 print("\n")
 print(result)
-"""
 
 
