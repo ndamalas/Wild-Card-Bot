@@ -79,6 +79,7 @@ class Game:
         self.players = []   # List of Player objects that represent the players in the game
         self.round = 0      # The current round of the game
         self.dealer = []    # List of Card objects that represent the dealer's hand
+        self.dealerVal = 0  # Value of the dealer's cards
         self.gm = None      # The Message object of the game
         self.embed = None   # The embed used for displaying the game
         self.tc = tc        # The channel ID that the game will continue to send to
@@ -120,6 +121,39 @@ class Game:
     # Check for additional players
     async def newPlayers(self):
         pass
+    # Update the status of the game
+    def updateStatus(self, title, status):
+        self.embed.remove_field(len(self.embed.fields) - 1)
+        self.embed.add_field(name=title, value=status, inline=False)
+    # Calculate the hand value of the dealer
+    def calculateDealerValue(self):
+        value = 0
+        for card in self.dealer:
+            if card.number == 'J' or card.number == 'Q' or card.number == 'K':
+                value += 10
+            elif card.number == 'A':
+                value += 11
+            else:
+                value += card.number
+        # Recalulate if there is ace as it can have a value of 1 and 11
+        # Only do this if it would cause the player to bust
+        if len([c for c in self.dealer if c.number == 'A']) > 0 and value > 21:
+            value = 0
+            for card in self.dealer:
+                if card.number == 'J' or card.number == 'Q' or card.number == 'K':
+                    value += 10
+                elif card.number == 'A':
+                    value += 1
+                else:
+                    value += card.number
+        self.dealerVal = value
+    # Runs the dealer's turn
+    def dealerTurn(self):
+        # Keep hitting until dealer reaches a value of 17
+        self.calculateDealerValue()
+        while self.dealerVal < 17:
+            self.dealer.append(randomCard())
+            self.calculateDealerValue()
 
 
 # Every module has to have a command list
@@ -194,6 +228,9 @@ async def runRounds(client, game):
         # Reset all players
         for player in game.players:
             player.reset()
+        # Notify round in progress
+        game.updateStatus("Round In Progress", "The round is currently in progress. Please react to join the next round.")
+        await game.gm.edit(embed=game.embed)
         # Draw two cards for each player
         for player in game.players:
             player.drawCard()
@@ -201,6 +238,18 @@ async def runRounds(client, game):
         # Send each player the prompt for hit, stand, or fold
         for player in game.players:
             await sendHand(client, game, player)
+        # Wait for all players to finish
+        while len([p for p in game.players if p.done == True]) < len(game.players):
+            pass
+        # Dealer's turn
+        game.dealerTurn()
+        for player in game.players:
+            # Check to see if the player busted or folded
+            if player.value <= 21 and player.value >= 0:
+                await compareToDealer(game, player)
+        # Reset all players
+        for player in game.players:
+            player.reset()
         break
 
 # Direct messages the bet changing message to the player
@@ -328,6 +377,7 @@ async def stand(game, player):
     for card in player.hand:
         embed.add_field(name="Card " + str(cardNum), value=str(card), inline=True)
         cardNum += 1
+    embed.add_field(name="Your Value:", value=str(player.value), inline=False)
     playerObj = await game.guild.fetch_member(player.userid)
     await playerObj.send(embed=embed)
     # Notify that the player is done
@@ -409,8 +459,104 @@ async def bust(game, player):
     for card in player.hand:
         embed.add_field(name="Card " + str(cardNum), value=str(card), inline=True)
         cardNum += 1
+    embed.add_field(name="Your Value:", value=str(player.value), inline=False)
     playerObj = await game.guild.fetch_member(player.userid)
     await playerObj.send(embed=embed)
     # Notify that the player is done
     player.done = True
-    
+
+# Compares the player's value to the dealer's value
+async def compareToDealer(game, player):
+    # If dealer busts and the player has not, then the player wins
+    if game.dealerVal > 21:
+        await win(game, player)
+    else:
+        # Determine win, loss, push based on values
+        if player.value > game.dealerVal:
+            await win(game, player)
+        elif player.value == game.dealerVal:
+            await push(game, player)
+        else:
+            await loss(game, player)
+
+# Send message to player that they won the round
+async def win(game, player):
+    # $3 to $2 for bet upon winning
+    player.updateBalance((player.bet // 2) + player.bet)
+    response = "**Round " + str(game.round) + "**\n"
+    response += "You won the round! You have been given $3 for every $2 you bet.\n"
+    response += "Final Value: **" + str(player.value) + "**\n"
+    response += "You won **$" + str((player.bet // 2) + player.bet) + "**!\n"
+    response += "Current Balance: **$" + str(player.money) + "**\n"
+    response += "Waiting on others to finish the round.\n"
+    response += "**Your Cards:**"
+    embed = discord.Embed(title="You Won", description=response, colour=discord.Colour.green())
+    # Display the cards
+    cardNum = 1
+    for card in player.hand:
+        embed.add_field(name="Card " + str(cardNum), value=str(card), inline=True)
+        cardNum += 1
+    embed.add_field(name="Your Value:", value=str(player.value) + "\n\n**Dealer's Cards:**", inline=False)
+    # Display the dealer's cards
+    cardNum = 1
+    for card in game.dealer:
+        embed.add_field(name="Card " + str(cardNum), value=str(card), inline=True)
+        cardNum += 1
+    embed.add_field(name="Dealer's Value:", value=str(game.dealerVal), inline=False)
+    playerObj = await game.guild.fetch_member(player.userid)
+    await playerObj.send(embed=embed)
+
+# Send message to player that they tied the round
+async def push(game, player):
+    response = "**Round " + str(game.round) + "**\n"
+    response += "The dealer had the same value. Your balance remains unchanged.\n"
+    response += "Final Value: **" + str(player.value) + "**\n"
+    response += "Current Balance: **$" + str(player.money) + "**\n"
+    response += "Waiting on others to finish the round.\n"
+    response += "**Your Cards:**"
+    embed = discord.Embed(title="Push", description=response, colour=discord.Colour.dark_gray())
+    # Display the cards
+    cardNum = 1
+    for card in player.hand:
+        embed.add_field(name="Card " + str(cardNum), value=str(card), inline=True)
+        cardNum += 1
+    embed.add_field(name="Your Value:", value=str(player.value) + "\n\n**Dealer's Cards:**", inline=False)
+    # Display the dealer's cards
+    cardNum = 1
+    for card in game.dealer:
+        embed.add_field(name="Card " + str(cardNum), value=str(card), inline=True)
+        cardNum += 1
+    embed.add_field(name="Dealer's Value:", value=str(game.dealerVal), inline=False)
+    playerObj = await game.guild.fetch_member(player.userid)
+    await playerObj.send(embed=embed)
+
+# Send message to player that they lost the round
+async def loss(game, player):
+    # lose the entire bet
+    player.updateBalance(-1 * player.bet)
+    response = "**Round " + str(game.round) + "**\n"
+    response += "You lost the round. Your bet has been taken away.\n"
+    response += "Final Value: **" + str(player.value) + "**\n"
+    response += "You lost **$" + str(player.bet) + "**.\n"
+    response += "Current Balance: **$" + str(player.money) + "**\n"
+    response += "Waiting on others to finish the round.\n"
+    response += "**Your Cards:**"
+    embed = discord.Embed(title="You Lost", description=response, colour=discord.Colour.red())
+    # Display the cards
+    cardNum = 1
+    for card in player.hand:
+        embed.add_field(name="Card " + str(cardNum), value=str(card), inline=True)
+        cardNum += 1
+    embed.add_field(name="Your Value:", value=str(player.value) + "\n\n**Dealer's Cards:**", inline=False)
+    # Display the dealer's cards
+    cardNum = 1
+    for card in game.dealer:
+        embed.add_field(name="Card " + str(cardNum), value=str(card), inline=True)
+        cardNum += 1
+    # Display dealer's value
+    dealerVal = game.dealerVal
+    if dealerVal > 21:
+        dealerVal += " (Bust)"
+    embed.add_field(name="Dealer's Value:", value=str(dealerVal), inline=False)
+    playerObj = await game.guild.fetch_member(player.userid)
+    await playerObj.send(embed=embed)
