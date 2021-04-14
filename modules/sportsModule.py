@@ -9,7 +9,7 @@ from googlesearch import search
 # Every module has to have a command list
 commandList = []
 
-commandList.append(Command("!score", "score", "Used to see the score of live games or the betting odds of an upcoming game.\nNote: if trying to use this command on a team that is not in season it will not give their most recent final score.\nUsage: `!score <team>`\nThe bot will then give either an upcoming game or a live game."))
+commandList.append(Command("!score", "score", "Used to see the score of live games or the betting odds of an upcoming game.\nNote: if trying to use this command on a team that is not in season it will not give their most recent final score.\nUsage: `!score <TEAM>`\nThe bot will then give either an upcoming game or a live game."))
 async def score(client, message):
     contents = message.content.split(" ")
     if len(contents) < 2:
@@ -127,7 +127,7 @@ async def score(client, message):
         embed.add_field(name="Over/Under", value=over, inline=False)
     await message.channel.send(embed=embed)
 
-commandList.append(Command("!player", "player", "TODO"))
+commandList.append(Command("!player", "player", "Used to view a players season stats as well as their career stats.\nUsage: `!player <NAME>`."))
 async def player(client, message):
     contents = message.content.split(" ")
     if len(contents) < 2:
@@ -147,7 +147,6 @@ async def player(client, message):
 
     links = soup.find_all('a')
     # Now do a new soup with the espn player page
-    # TODO might be an error here
     searchURL = links[16].get('href')
     if (searchURL[:5] != "https"):
         searchURL = searchURL[7:]
@@ -156,10 +155,54 @@ async def player(client, message):
     if (index == -1):
         await message.channel.send("Invalid player, could not be found on ESPN.")
         return
-    searchURL = searchURL[:index+6] + "/stats/" + searchURL[index+7:]
+    if (searchURL.find("stats") == -1):
+        searchURL = searchURL[:index+6] + "/stats/" + searchURL[index+7:]
     html = requests.get(searchURL)
     soup = BeautifulSoup(html.content, 'html.parser')
-    playerName = " ".join(contents[1:])
-    embed = discord.Embed(title = playerName, description="\u200b", colour = discord.Colour.purple(), url = searchURL)
+    # playerName = " ".join(contents[1:])
+
+
+
+    count = 0
+    shift = 0 # Used when there is both a career and a season averages row
+    for t in soup.find_all('table'):
+        row = t.find_all('tr')
+        if count == 1:
+            statNames = row[0].find_all('th')
+            if shift == 1:
+                careerRow = row[len(row)-2].find_all('td')
+                recentRow = row[len(row)-3].find_all('td')
+            else :
+                careerRow = row[len(row)-1].find_all('td')
+                recentRow = row[len(row)-2].find_all('td')
+        elif count == 0:
+            recentSeason = row[len(row)-2].find_all('td')
+            if recentSeason[0].text == "Career":
+                recentSeason = row[len(row)-3].find_all('td')
+                shift = 1
+        else:
+            break
+        count += 1
+
+    recent = ""
+    # recent += "**" + recentSeason[0].text + " " + recentSeason[1].text + ":**\n"
+    # print(statNames)
+    for i in range(len(statNames)):
+        recent += "" + statNames[i].text + ": " + recentRow[i].text + "\n"
+    if (len(careerRow) != 0):
+        career = ""
+        # career += "Career:\n| "
+        for i in range(len(statNames)):
+            career += "" + statNames[i].text + ": " + careerRow[i].text + "\n"
+
+    playerName = ""
+    for s in soup.find_all('h1', class_='PlayerHeader__Name flex flex-column ttu fw-bold pr4 h2'):
+        spans = s.find_all('span')
+        playerName += spans[0].text + " " + spans[1].text
+    
+    embed = discord.Embed(title = playerName, description="Shows most recent or current season stats and career stats for pro athletes.", colour = discord.Colour.purple(), url = searchURL)
     embed.set_author(name=message.author.display_name, icon_url=message.author.avatar_url)
+    embed.add_field(name=recentSeason[0].text + " " + recentSeason[1].text, value = recent, inline = True)
+    if (len(careerRow) != 0):
+        embed.add_field(name="Career", value = career, inline = True)
     await message.channel.send(embed=embed)
