@@ -26,6 +26,7 @@ class Card:
 class Player:
     betAmounts = [100, 200, 500, 1000]
     betReactions = [u"1\ufe0f\u20e3", u"2\ufe0f\u20e3", u"5\ufe0f\u20e3", u"\U0001F51F"]
+    exitReaction = u"\u274c"
     def __init__(self, userid, money = 100000, bet = 500):
         self.userid = userid  # User ID of the player
         self.money = money    # Money the player owns
@@ -34,6 +35,7 @@ class Player:
         self.value = 0        # The value of the player's hand
         self.bet = bet        # The amount of money the player is currently betting
         self.result = None    # Determines if the player won, push, or lost
+        self.ingame = False   # Keeps track of whether the player is currently in a game
     # Prepares the player for another round
     def reset(self):
         self.done = False
@@ -88,9 +90,6 @@ class Game:
     # Initiate round
     async def initializeRound(self):
         await self.newPlayers()
-        if len(self.players) == 0:
-            self.end()
-            return
         self.round += 1
         self.dealer = []
         self.dealer.append(randomCard())
@@ -98,13 +97,19 @@ class Game:
         await self.setEmbed()
     # Ends the game
     async def end(self):
-        response = "There are no more players in the game! The game will be removed."
-        embed = discord.Embed(title="No More Players", description=response, colour=discord.Colour.blue())
-        await self.guild.get_channel(self.tc).send(embed=embed)
-        del self
+        response = "There are no more players in the game! The game has be removed."
+        embed = discord.Embed(title="No More Players", description=response, colour=discord.Colour.red())
+        await self.gm.edit(embed=embed)
+        # Remove the game from the dictionary
+        del games[self.guild.id]
     # Adds a player
     def addPlayer(self, player):
         self.players.append(player)
+        player.ingame = True
+    # Removes a player
+    def removePlayer(self, player):
+        self.players.remove(player)
+        player.ingame = False
     # Sets the embed of the game
     async def setEmbed(self):
         roundStr = "**Round " + str(self.round) + "**\n"
@@ -117,6 +122,9 @@ class Game:
             playerObj = await self.guild.fetch_member(player.userid)
             playerStr += playerObj.display_name
             playerStr += "\nMoney: $" + str(player.money) + "\n\n"
+        # Send none if there are no players in the game
+        if playerStr == "":
+            playerStr = "None"
         embed.add_field(name="Players:", value=playerStr, inline=False)
         embed.add_field(name="Round Starting", value="Check your DMs! The round is starting!", inline=False)
         self.embed = embed
@@ -253,10 +261,11 @@ async def runBlackjack(client, message):
             # Create the game
             game = Game(message.guild, message.channel.id)
             games[message.guild.id] = game
-            # Add the user as a player
+            # Add the user as a player if they are not currently in a game
             if message.author.id not in players:
                 players[message.author.id] = Player(message.author.id)
-            game.addPlayer(players[message.author.id])
+            if players[message.author.id].ingame == False:
+                game.addPlayer(players[message.author.id])
             # Initialize the first round
             await game.initializeRound()
             game.gm = await game.guild.get_channel(game.tc).send(embed=game.embed)
@@ -280,6 +289,10 @@ async def runRounds(client, game):
         # Send each player a chance to change bets
         for player in game.players:
             await sendBetChanger(client, game, player)
+        # Check if there are any players in the game
+        if len(game.players) == 0:
+            await game.end()
+            break
         # Wait for all players to finish
         while len([p for p in game.players if p.done == True]) < len(game.players):
             pass
@@ -328,15 +341,18 @@ async def sendBetChanger(client, game, player):
     betStr = ""
     for i in range(len(Player.betAmounts)):
         betStr += Player.betReactions[i] + " for $" + str(Player.betAmounts[i]) + "\n"
+    betStr += Player.exitReaction + " to leave the game\n"
     embed.add_field(name="Bets", value=betStr, inline=False)
     playerObj = await game.guild.fetch_member(player.userid)
     betMsg = await playerObj.send(embed=embed)
     # React with all the bet amounts
     for betReaction in Player.betReactions:
         await betMsg.add_reaction(betReaction)
+    # React with the exit reaction
+    await betMsg.add_reaction(Player.exitReaction)
     # Helper function that checks if the user has reacted with a emote of interest
     def betChangerCheck(reaction, user):
-        return user == playerObj and str(reaction.emoji) in Player.betReactions
+        return user == playerObj and (str(reaction.emoji) in Player.betReactions or str(reaction.emoji) == Player.exitReaction)
     # Check for bet amount from the user
     try:
         reaction, user = await client.wait_for('reaction_add', timeout=15.0, check=betChangerCheck)
@@ -349,6 +365,14 @@ async def sendBetChanger(client, game, player):
             if str(reaction.emoji) == Player.betReactions[i]:
                 player.bet = Player.betAmounts[i]
                 break
+        # Check if player reacted to exit the game
+        if str(reaction.emoji) == Player.exitReaction:
+            game.removePlayer(player)
+            await betMsg.delete()
+            response = "You have left the game!\n"
+            embed = discord.Embed(title="Left The Game", description=response, colour=discord.Colour.red())
+            await playerObj.send(embed=embed)
+            return
     await betMsg.delete()
     response = "Your bet amount: **$" + str(player.bet) + "**\n"
     embed = discord.Embed(title="Your Bet", description=response, colour=discord.Colour.blurple())
