@@ -78,6 +78,7 @@ class Player:
 class Game:
     actions = ["Hit", "Stand", "Fold"]
     actionReactions = [u"\u2705",  	u"\u274E", u"\U0001F6AB"]
+    addReaction = u"\U0001F0CF"
     def __init__(self, guild, tc):
         self.guild = guild  # The server of the game
         self.players = []   # List of Player objects that represent the players in the game
@@ -100,6 +101,7 @@ class Game:
         response = "There are no more players in the game! The game has be removed."
         embed = discord.Embed(title="No More Players", description=response, colour=discord.Colour.red())
         await self.gm.edit(embed=embed)
+        await self.gm.clear_reactions()
         # Remove the game from the dictionary
         del games[self.guild.id]
     # Adds a player
@@ -126,7 +128,9 @@ class Game:
         if playerStr == "":
             playerStr = "None"
         embed.add_field(name="Players:", value=playerStr, inline=False)
-        embed.add_field(name="Round Starting", value="Check your DMs! The round is starting!", inline=False)
+        response = "Check your DMs! The round is starting!\n"
+        response += "React with " + Game.addReaction + " to join the next round."
+        embed.add_field(name="Round Starting", value=response, inline=False)
         self.embed = embed
     # Sets the embed to the round results
     async def setResultEmbed(self):
@@ -177,13 +181,31 @@ class Game:
             embed.add_field(name="Players That Tied:", value=pushStr, inline=False)
         if foldStr != "":
             embed.add_field(name="Players That Folded:", value=foldStr, inline=False)
-        embed.add_field(name="Round Ended", value="The current round has ended. Prepare for the next round!", inline=False)
+        response = "The current round has ended. Prepare for the next round!\n"
+        response += "React with " + Game.addReaction + " to join the next round."
+        embed.add_field(name="Round Ended", value=response, inline=False)
         self.embed = embed
     # Check for additional players
     async def newPlayers(self):
-        pass
+        # Do not check for new players if the game message doesn't exist
+        if self.gm == None:
+            return
+        self.gm = await self.gm.channel.fetch_message(self.gm.id)
+        # Obtain all users who have reacted with the add reaction
+        reaction = [r for r in self.gm.reactions if str(r.emoji) == Game.addReaction][0]
+        users = await reaction.users().flatten()
+        for user in users:
+            # Don't consider bots
+            if user.bot == True:
+                continue
+            # Check if user is not current in the game
+            if len([p for p in self.players if p.userid == user.id]) == 0:
+                if user.id not in players:
+                    players[user.id] = Player(user.id)
+                self.addPlayer(players[user.id])
     # Update the status of the game
     def updateStatus(self, title, status):
+        status += "\nReact with " + Game.addReaction + " to join the next round."
         self.embed.remove_field(len(self.embed.fields) - 1)
         self.embed.add_field(name=title, value=status, inline=False)
     # Calculate the hand value of the dealer
@@ -257,6 +279,7 @@ async def runBlackjack(client, message):
             game.tc = message.channel.id
             await game.gm.delete()
             game.gm = await game.guild.get_channel(game.tc).send(embed=game.embed)
+            await game.gm.add_reaction(game.addReaction)
         else:
             # Create the game
             game = Game(message.guild, message.channel.id)
@@ -269,6 +292,13 @@ async def runBlackjack(client, message):
             # Initialize the first round
             await game.initializeRound()
             game.gm = await game.guild.get_channel(game.tc).send(embed=game.embed)
+            await game.gm.add_reaction(game.addReaction)
+            # Wait 15 seconds for people to join
+            await asyncio.sleep(15)
+            # Check for new players and update game display
+            await game.newPlayers()
+            await game.setEmbed()
+            await game.gm.edit(embed=game.embed)
             # Start running the rounds
             await runRounds(client, game)
 
@@ -300,7 +330,7 @@ async def runRounds(client, game):
         for player in game.players:
             player.reset()
         # Notify round in progress
-        game.updateStatus("Round In Progress", "The round is currently in progress. Please react to join the next round.")
+        game.updateStatus("Round In Progress", "The round is currently in progress.")
         await game.gm.edit(embed=game.embed)
         # Draw two cards for each player
         for player in game.players:
