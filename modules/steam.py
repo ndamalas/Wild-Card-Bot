@@ -4,13 +4,14 @@ import asyncio
 import aiohttp
 import pandas as pd
 from command import Command
+from urllib.request import Request, urlopen
 from bs4 import BeautifulSoup
 
 commandList = []
 
 steam_api_key = "54964BFA9E709E047EB70CC7A6F2BA1C"
 
-commandList.append(Command("!steam", "steam_profile", "Displays a user's steam profile\nUsage: !steam profile <USERNAME>"))
+commandList.append(Command("!steam", "steam_profile", "Displays a user's steam profile\nUsage: !steam profile <USERNAME>\nCan also display trending games\nUsage: !steam trending\nCan also show recently released games\nUsage: !steam recent\nCan also show the top played games in the last 2 weeks\nUsage: !steam top\n"))
 async def steam_profile(ctx, message):
     msg = await message.channel.send("Gathering Information")
     if message.content.split(" ")[1] == "profile":
@@ -97,9 +98,93 @@ async def steam_profile(ctx, message):
 
         await msg.edit(content="", embed=embed)
     elif message.content.split(" ")[1] == "trending":
-        await msg.edit(content="This function has yet to be implemented.")
-    elif message.content.split(" ")[1] == "recentlyadded":
-        await msg.edit(content="This function has yet to be implemented.")
+        #Gets the website and uses beautifulSoup to parse html website
+        #the request is so that it doesn't deny access thinking we are bots
+        URL = 'https://steamspy.com'
+        hdr = {'User-Agent': 'Mozilla/5.0'}
+        req = Request(URL,headers=hdr)
+        page= urlopen(req)
+        soup = BeautifulSoup(page)
+        #Finds the trending games table tab
+        table = soup.find('table', id="trendinggames")
+        #print(table)
+        #Finds the table itself
+        body = table.find('tbody')
+        #print(body)
+        
+        #Finds the rows in the table
+        rows = body.find_all('tr')
+        #print(rows)
+
+        #Array of game names we wish to output
+        game_name_array = []
+
+        #Go through the rows and add 10 games to the array
+        counter = 0
+        for row in rows:
+            if(counter == 10):
+                break
+            names = row.find_all('td')
+            #print(names)
+            for name in names:
+                #print(name)
+                if(name == names[1]):
+                    print(name)
+                    game_name_array.append(name.get_text())
+            counter += 1
+            
+        #print(game_name_array)
+
+        #Print the array in an embed and output the embed to the user
+        text=""
+        for i in range(len(game_name_array)):
+            text+=str(i+1) + " " + game_name_array[i] + "\n"
+        embed=discord.Embed(title="Top 10 Trending Games", description=text)
+        await msg.edit(content="", embed=embed)
+    elif message.content.split(" ")[1] == "recent":
+        #Gets the website and uses beautifulSoup to parse html website
+        #the request is so that it doesn't deny access thinking we are bots
+        URL = 'https://steamspy.com'
+        hdr = {'User-Agent': 'Mozilla/5.0'}
+        req = Request(URL,headers=hdr)
+        page= urlopen(req)
+        soup = BeautifulSoup(page)
+        #Finds the recently released games table tab
+        table = soup.find('table', id="recentgames")
+        #print(table)
+        #Finds the table itself
+        body = table.find('tbody')
+        #print(body)
+        
+        #Finds the rows in the table
+        rows = body.find_all('tr')
+        #print(rows)
+
+        #Array of game names we wish to output
+        game_name_array = []
+
+        #Go through the rows and add 10 games to the array
+        counter = 0
+        for row in rows:
+            if(counter == 10):
+                break
+            names = row.find_all('td')
+            #print(names)
+            for name in names:
+                #print(name)
+                if(name == names[1]):
+                    print(name)
+                    game_name_array.append(name.get_text())
+            counter += 1
+            
+        #print(game_name_array)
+
+        #Print the array in an embed and output the embed to the user
+        text=""
+        for i in range(len(game_name_array)):
+            text+=str(i+1) + " " + game_name_array[i] + "\n"
+        embed=discord.Embed(title="Top 10 Recently Released Games on Steam", description=text)
+        await msg.edit(content="", embed=embed)
     elif message.content.split(" ")[1] == "top":
 
         session = aiohttp.ClientSession()
