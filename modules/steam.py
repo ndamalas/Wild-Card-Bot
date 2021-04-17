@@ -97,11 +97,25 @@ async def steam_profile(ctx, message):
 
         await msg.edit(content="", embed=embed)
     elif message.content.split(" ")[1] == "trending":
-       await msg.edit(content="This function has yet to be implemented.") 
+        await msg.edit(content="This function has yet to be implemented.")
     elif message.content.split(" ")[1] == "recentlyadded":
         await msg.edit(content="This function has yet to be implemented.")
     elif message.content.split(" ")[1] == "top":
-        await msg.edit(content="This function has yet to be implemented.")
+
+        session = aiohttp.ClientSession()
+        output = await session.get("https://steamspy.com/api.php?request=top100in2weeks")
+        out = await output.json()
+        topDf = pd.DataFrame.from_dict(out)
+        await session.close()
+        print(topDf)
+        #print(topDf.iloc[1][0])
+        #print(topDf.iloc[1][1])
+
+        text=""
+        for i in range(10):
+            text += (str(i+1) + " " + topDf.iloc[1][i] + '\n')
+        embed = discord.Embed(title="Top 10 Most Played Games in the Last 2 Weeks", description=text)
+        await msg.edit(content="", embed=embed)
     else:
         embed=discord.Embed(title="Sorry that tag does not exist.")
         await msg.edit(content="", embed=embed)
