@@ -268,9 +268,109 @@ except:
 # Runs the blackjack game and parses all commands from users
 async def runBlackjack(client, message):
     if len(message.content.split(" ")) >= 2 and message.content.split(" ")[1] == "rules":
-        pass
+        sent = False
+        if len(message.content.split(" ")) == 2:
+            section = "all"
+            title = "Blackjack Rules"
+        else:
+            section = message.content.split(" ")[2].lower()
+            title = "Blackjack Rules: Section " + section
+        if section == "all" or section == "game":
+            sent = True
+            response = "**Section 1: Game**\n"
+            response += "Blackjack is one of the most popular card games. In blackjack, "
+            response += "you will always be competing against the dealer regardless of the number "
+            response += "of players currently in the game. The goal of the game is to obtain "
+            response += "a hand value larger than the dealer's without exceeding 21. Your hand "
+            response += "value is the sum of the card values, given in the next section. Just for fun, "
+            response += "each player will be given a balance for which they can alter by playing blackjack.\n"
+            response += "Important terminology:\n"
+            response += "Round: Each round consists of a bet, player's turn, and result. These are explained "
+            response += "in the following sections.\n"
+            response += "Bust: This is when your hand value exceeds 21.\n"
+            response += "Dealer: Who are playing against. The dealer's turn occurs after all players have had a turn."
+            embed = discord.Embed(title=title, description=response, colour=discord.Colour.dark_gray())
+            await message.author.send(embed=embed)
+        if section == "all" or section == "cards":
+            sent = True
+            response = "**Section 2: Cards**\n"
+            response += "In blackjack, the value of each card is as follows:\n"
+            response += "All face cards have a value of 10.\n"
+            response += "Face Cards: J, Q, K\n"
+            response += "All cards between 2 and 10 have their respective value.\n"
+            response += "Ace, represented by A, can be valued at 1 or 11.\n"
+            response += "Aces are valued at 11 by default. However, if drawing another card "
+            response += "would cause the player to bust, Aces will change value to 1 to prevent "
+            response += "the player from busting."
+            embed = discord.Embed(title=title, description=response, colour=discord.Colour.dark_gray())
+            await message.author.send(embed=embed)
+        if section == "all" or section == "turn":
+            sent = True
+            response = "**Section 3: Turn**\n"
+            response += "At the start of your turn for the current round, you will have a chance to change your bet amount.\n"
+            response += "Bet Amounts: $100, $200, $500, $1000\n"
+            response += "After declaring your bet amount, you will be given two cards. You then have three options.\n"
+            response += "Hit: Draw another card, adding additional value to your hand.\n"
+            response += "Stand: Declare your final value. This will determine if you win or not.\n"
+            response += "Fold: Give up the round. Cannot be done if you have hit already. Half your bet is returned to you.\n"
+            response += "If at any point your hand value exceeds 21, you will bust and lose the round.\n"
+            embed = discord.Embed(title=title, description=response, colour=discord.Colour.dark_gray())
+            await message.author.send(embed=embed)
+        if section == "all" or section == "outcomes":
+            sent = True
+            response = "**Section 4: Outcomes**\n"
+            response += "At the end of a round, there are three possible outcomes.\n"
+            response += "Win: You win the round if your hand value exceeds the dealer's or the dealer busts "
+            response += "and you do not. You cannot have busted during the round.\n"
+            response += "Lose: You lose the round if your hand value is less than "
+            response += "the dealer's or you busted during the round\n"
+            response += "Push: If you and the dealer have the same hand value, a push occurs.\n"
+            response += "Depending on the outcome, your balance will be affect as follows:\n"
+            response += "Win: You gain $3 for every $2 in your bet.\n"
+            response += "Lose: You lose your bet.\n"
+            response += "Push: Your balance is unchanged.\n"
+            embed = discord.Embed(title=title, description=response, colour=discord.Colour.dark_gray())
+            await message.author.send(embed=embed)
+        if section == "all" or section == "play":
+            sent = True
+            response = "**Section 5: Play**\n"
+            response += "There are two ways to join and play the blackjack game.\n"
+            response += "If there is no game going on in your current server, create a game with the **!blackjack** command.\n"
+            response += "If there is a game running, react with the black joker reaction to the game message. "
+            response += "You will join the game in the next round. If you can't see the game message, use the **!blackjack** "
+            response += "command to redisplay the game message.\n"
+            response += "You may leave the game at the very beginning of a round when you are changing your bet. Simply "
+            response += "react with the red cross mark reaction to exit the game.\n"
+            embed = discord.Embed(title=title, description=response, colour=discord.Colour.dark_gray())
+            await message.author.send(embed=embed)
+        if sent == False:
+            response = "The section given was not found.\n"
+            response += "Sections:\n"
+            response += "**Section 1: Game**\n"
+            response += "**Section 2: Cards**\n"
+            response += "**Section 3: Turn**\n"
+            response += "**Section 4: Outcomes**\n"
+            response += "**Section 5: Play**\n"
+            embed = discord.Embed(title='No Section', description=response, colour=discord.Colour.red())
+            await message.author.send(embed=embed)
+        # Send message to the channel indicating rules sent
+        response = "The requested game rules has been direct messaged to you."
+        embed = discord.Embed(title='Game Rules', description=response, colour=discord.Colour.dark_gray())
+        embed.set_author(name=message.author.display_name, icon_url=message.author.avatar_url)
+        await message.channel.send(embed=embed)
     elif len(message.content.split(" ")) >= 2 and message.content.split(" ")[1] == "balance":
-        pass
+        if message.author.id not in players:
+            players[message.author.id] = Player(message.author.id)
+        # Direct message the player the balance
+        player = players[message.author.id]
+        response = "Current Balance: **$" + str(player.money) + "**"
+        embed = discord.Embed(title='Your Balance', description=response, colour=discord.Colour.blurple())
+        await message.author.send(embed=embed)
+        # Send message to the channel indicating balance sent
+        response = "Your balance has been direct messaged to you."
+        embed = discord.Embed(title='Balance', description=response, colour=discord.Colour.blurple())
+        embed.set_author(name=message.author.display_name, icon_url=message.author.avatar_url)
+        await message.channel.send(embed=embed)
     else:
         # Check if the current guild has a game
         if message.guild.id in games:
