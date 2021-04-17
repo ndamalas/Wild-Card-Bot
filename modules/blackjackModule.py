@@ -26,6 +26,7 @@ class Card:
 class Player:
     betAmounts = [100, 200, 500, 1000]
     betReactions = [u"1\ufe0f\u20e3", u"2\ufe0f\u20e3", u"5\ufe0f\u20e3", u"\U0001F51F"]
+    exitReaction = u"\u274c"
     def __init__(self, userid, money = 100000, bet = 500):
         self.userid = userid  # User ID of the player
         self.money = money    # Money the player owns
@@ -33,11 +34,14 @@ class Player:
         self.hand = []        # List of Card objects that represent the player's hand
         self.value = 0        # The value of the player's hand
         self.bet = bet        # The amount of money the player is currently betting
+        self.result = None    # Determines if the player won, push, or lost
+        self.ingame = False   # Keeps track of whether the player is currently in a game
     # Prepares the player for another round
     def reset(self):
         self.done = False
         self.hand = []
         self.value = 0
+        self.result = None
     # Calculate the hand value of the player
     def calculateValue(self):
         value = 0
@@ -74,20 +78,19 @@ class Player:
 class Game:
     actions = ["Hit", "Stand", "Fold"]
     actionReactions = [u"\u2705",  	u"\u274E", u"\U0001F6AB"]
+    addReaction = u"\U0001F0CF"
     def __init__(self, guild, tc):
         self.guild = guild  # The server of the game
         self.players = []   # List of Player objects that represent the players in the game
         self.round = 0      # The current round of the game
         self.dealer = []    # List of Card objects that represent the dealer's hand
+        self.dealerVal = 0  # Value of the dealer's cards
         self.gm = None      # The Message object of the game
         self.embed = None   # The embed used for displaying the game
         self.tc = tc        # The channel ID that the game will continue to send to
     # Initiate round
     async def initializeRound(self):
         await self.newPlayers()
-        if len(self.players) == 0:
-            self.end()
-            return
         self.round += 1
         self.dealer = []
         self.dealer.append(randomCard())
@@ -95,13 +98,20 @@ class Game:
         await self.setEmbed()
     # Ends the game
     async def end(self):
-        response = "There are no more players in the game! The game will be removed."
-        embed = discord.Embed(title="No More Players", description=response, colour=discord.Colour.blue())
-        await self.guild.get_channel(self.tc).send(embed=embed)
-        del self
+        response = "There are no more players in the game! The game has be removed."
+        embed = discord.Embed(title="No More Players", description=response, colour=discord.Colour.red())
+        await self.gm.edit(embed=embed)
+        await self.gm.clear_reactions()
+        # Remove the game from the dictionary
+        del games[self.guild.id]
     # Adds a player
     def addPlayer(self, player):
         self.players.append(player)
+        player.ingame = True
+    # Removes a player
+    def removePlayer(self, player):
+        self.players.remove(player)
+        player.ingame = False
     # Sets the embed of the game
     async def setEmbed(self):
         roundStr = "**Round " + str(self.round) + "**\n"
@@ -114,12 +124,119 @@ class Game:
             playerObj = await self.guild.fetch_member(player.userid)
             playerStr += playerObj.display_name
             playerStr += "\nMoney: $" + str(player.money) + "\n\n"
-        embed.add_field(name="Players", value=playerStr, inline=False)
-        embed.add_field(name="Round Starting", value="Check your DMs! The round is starting!", inline=False)
+        # Send none if there are no players in the game
+        if playerStr == "":
+            playerStr = "None"
+        embed.add_field(name="Players:", value=playerStr, inline=False)
+        response = "Check your DMs! The round is starting!\n"
+        response += "React with " + Game.addReaction + " to join the next round."
+        embed.add_field(name="Round Starting", value=response, inline=False)
+        self.embed = embed
+    # Sets the embed to the round results
+    async def setResultEmbed(self):
+        roundStr = "**Round " + str(self.round) + " Results**\n"
+        roundStr += "**Dealer's Cards:**"
+        embed = discord.Embed(title="Blackjack", description=roundStr, colour=discord.Colour.darker_gray())
+        # Display dealer's cards
+        cardNum = 1
+        for card in self.dealer:
+            embed.add_field(name="Card " + str(cardNum), value=str(card), inline=True)
+            cardNum += 1
+        # Display dealer's value
+        dealerVal = str(self.dealerVal)
+        if self.dealerVal > 21:
+            dealerVal += " (Bust)"
+        embed.add_field(name="Dealer's Value:", value=str(dealerVal), inline=False)
+        winStr = ""
+        loseStr = ""
+        pushStr = ""
+        foldStr = ""
+        for player in self.players:
+            playerObj = await self.guild.fetch_member(player.userid)
+            # If concat to string depending on result
+            if player.result == "W":
+                winStr += playerObj.display_name
+                winStr += "\nMoney: $" + str(player.money) + " (+" + str((player.bet // 2) + player.bet) + ")\n"
+                winStr += "Final Value: **" + str(player.value) + "**\n\n"
+            elif player.result == "L":
+                loseStr += playerObj.display_name
+                loseStr += "\nMoney: $" + str(player.money) + " (-" + str(player.bet) + ")\n"
+                if player.value > 21:
+                    loseStr += "Final Value: **" + str(player.value) + "** (Bust)\n\n"
+                else:
+                    loseStr += "Final Value: **" + str(player.value) + "**\n\n"
+            elif player.result == "P":
+                pushStr += playerObj.display_name
+                pushStr += "\nMoney: $" + str(player.money) + "\n"
+                pushStr += "Final Value: **" + str(player.value) + "**\n\n"
+            else:
+                foldStr += playerObj.display_name
+                foldStr += "\nMoney: $" + str(player.money) + " (-" + str(player.bet // 2) + ")\n"
+        # Only add fields if there are players corresponding to the section
+        if winStr != "":
+            embed.add_field(name="Players That Won:", value=winStr, inline=False)
+        if loseStr != "":
+            embed.add_field(name="Players That Lost:", value=loseStr, inline=False)
+        if pushStr != "":
+            embed.add_field(name="Players That Tied:", value=pushStr, inline=False)
+        if foldStr != "":
+            embed.add_field(name="Players That Folded:", value=foldStr, inline=False)
+        response = "The current round has ended. Prepare for the next round!\n"
+        response += "React with " + Game.addReaction + " to join the next round."
+        embed.add_field(name="Round Ended", value=response, inline=False)
         self.embed = embed
     # Check for additional players
     async def newPlayers(self):
-        pass
+        # Do not check for new players if the game message doesn't exist
+        if self.gm == None:
+            return
+        self.gm = await self.gm.channel.fetch_message(self.gm.id)
+        # Obtain all users who have reacted with the add reaction
+        reaction = [r for r in self.gm.reactions if str(r.emoji) == Game.addReaction][0]
+        users = await reaction.users().flatten()
+        for user in users:
+            # Don't consider bots
+            if user.bot == True:
+                continue
+            # Check if user is not current in the game
+            if len([p for p in self.players if p.userid == user.id]) == 0:
+                if user.id not in players:
+                    players[user.id] = Player(user.id)
+                self.addPlayer(players[user.id])
+    # Update the status of the game
+    def updateStatus(self, title, status):
+        status += "\nReact with " + Game.addReaction + " to join the next round."
+        self.embed.remove_field(len(self.embed.fields) - 1)
+        self.embed.add_field(name=title, value=status, inline=False)
+    # Calculate the hand value of the dealer
+    def calculateDealerValue(self):
+        value = 0
+        for card in self.dealer:
+            if card.number == 'J' or card.number == 'Q' or card.number == 'K':
+                value += 10
+            elif card.number == 'A':
+                value += 11
+            else:
+                value += card.number
+        # Recalulate if there is ace as it can have a value of 1 and 11
+        # Only do this if it would cause the player to bust
+        if len([c for c in self.dealer if c.number == 'A']) > 0 and value > 21:
+            value = 0
+            for card in self.dealer:
+                if card.number == 'J' or card.number == 'Q' or card.number == 'K':
+                    value += 10
+                elif card.number == 'A':
+                    value += 1
+                else:
+                    value += card.number
+        self.dealerVal = value
+    # Runs the dealer's turn
+    def dealerTurn(self):
+        # Keep hitting until dealer reaches a value of 17
+        self.calculateDealerValue()
+        while self.dealerVal < 17:
+            self.dealer.append(randomCard())
+            self.calculateDealerValue()
 
 
 # Every module has to have a command list
@@ -151,9 +268,109 @@ except:
 # Runs the blackjack game and parses all commands from users
 async def runBlackjack(client, message):
     if len(message.content.split(" ")) >= 2 and message.content.split(" ")[1] == "rules":
-        pass
+        sent = False
+        if len(message.content.split(" ")) == 2:
+            section = "all"
+            title = "Blackjack Rules"
+        else:
+            section = message.content.split(" ")[2].lower()
+            title = "Blackjack Rules: Section " + section
+        if section == "all" or section == "game":
+            sent = True
+            response = "**Section 1: Game**\n"
+            response += "Blackjack is one of the most popular card games. In blackjack, "
+            response += "you will always be competing against the dealer regardless of the number "
+            response += "of players currently in the game. The goal of the game is to obtain "
+            response += "a hand value larger than the dealer's without exceeding 21. Your hand "
+            response += "value is the sum of the card values, given in the next section. Just for fun, "
+            response += "each player will be given a balance for which they can alter by playing blackjack.\n"
+            response += "Important terminology:\n"
+            response += "Round: Each round consists of a bet, player's turn, and result. These are explained "
+            response += "in the following sections.\n"
+            response += "Bust: This is when your hand value exceeds 21.\n"
+            response += "Dealer: Who are playing against. The dealer's turn occurs after all players have had a turn."
+            embed = discord.Embed(title=title, description=response, colour=discord.Colour.dark_gray())
+            await message.author.send(embed=embed)
+        if section == "all" or section == "cards":
+            sent = True
+            response = "**Section 2: Cards**\n"
+            response += "In blackjack, the value of each card is as follows:\n"
+            response += "All face cards have a value of 10.\n"
+            response += "Face Cards: J, Q, K\n"
+            response += "All cards between 2 and 10 have their respective value.\n"
+            response += "Ace, represented by A, can be valued at 1 or 11.\n"
+            response += "Aces are valued at 11 by default. However, if drawing another card "
+            response += "would cause the player to bust, Aces will change value to 1 to prevent "
+            response += "the player from busting."
+            embed = discord.Embed(title=title, description=response, colour=discord.Colour.dark_gray())
+            await message.author.send(embed=embed)
+        if section == "all" or section == "turn":
+            sent = True
+            response = "**Section 3: Turn**\n"
+            response += "At the start of your turn for the current round, you will have a chance to change your bet amount.\n"
+            response += "Bet Amounts: $100, $200, $500, $1000\n"
+            response += "After declaring your bet amount, you will be given two cards. You then have three options.\n"
+            response += "Hit: Draw another card, adding additional value to your hand.\n"
+            response += "Stand: Declare your final value. This will determine if you win or not.\n"
+            response += "Fold: Give up the round. Cannot be done if you have hit already. Half your bet is returned to you.\n"
+            response += "If at any point your hand value exceeds 21, you will bust and lose the round.\n"
+            embed = discord.Embed(title=title, description=response, colour=discord.Colour.dark_gray())
+            await message.author.send(embed=embed)
+        if section == "all" or section == "outcomes":
+            sent = True
+            response = "**Section 4: Outcomes**\n"
+            response += "At the end of a round, there are three possible outcomes.\n"
+            response += "Win: You win the round if your hand value exceeds the dealer's or the dealer busts "
+            response += "and you do not. You cannot have busted during the round.\n"
+            response += "Lose: You lose the round if your hand value is less than "
+            response += "the dealer's or you busted during the round\n"
+            response += "Push: If you and the dealer have the same hand value, a push occurs.\n"
+            response += "Depending on the outcome, your balance will be affect as follows:\n"
+            response += "Win: You gain $3 for every $2 in your bet.\n"
+            response += "Lose: You lose your bet.\n"
+            response += "Push: Your balance is unchanged.\n"
+            embed = discord.Embed(title=title, description=response, colour=discord.Colour.dark_gray())
+            await message.author.send(embed=embed)
+        if section == "all" or section == "play":
+            sent = True
+            response = "**Section 5: Play**\n"
+            response += "There are two ways to join and play the blackjack game.\n"
+            response += "If there is no game going on in your current server, create a game with the **!blackjack** command.\n"
+            response += "If there is a game running, react with the black joker reaction to the game message. "
+            response += "You will join the game in the next round. If you can't see the game message, use the **!blackjack** "
+            response += "command to redisplay the game message.\n"
+            response += "You may leave the game at the very beginning of a round when you are changing your bet. Simply "
+            response += "react with the red cross mark reaction to exit the game.\n"
+            embed = discord.Embed(title=title, description=response, colour=discord.Colour.dark_gray())
+            await message.author.send(embed=embed)
+        if sent == False:
+            response = "The section given was not found.\n"
+            response += "Sections:\n"
+            response += "**Section 1: Game**\n"
+            response += "**Section 2: Cards**\n"
+            response += "**Section 3: Turn**\n"
+            response += "**Section 4: Outcomes**\n"
+            response += "**Section 5: Play**\n"
+            embed = discord.Embed(title='No Section', description=response, colour=discord.Colour.red())
+            await message.author.send(embed=embed)
+        # Send message to the channel indicating rules sent
+        response = "The requested game rules has been direct messaged to you."
+        embed = discord.Embed(title='Game Rules', description=response, colour=discord.Colour.dark_gray())
+        embed.set_author(name=message.author.display_name, icon_url=message.author.avatar_url)
+        await message.channel.send(embed=embed)
     elif len(message.content.split(" ")) >= 2 and message.content.split(" ")[1] == "balance":
-        pass
+        if message.author.id not in players:
+            players[message.author.id] = Player(message.author.id)
+        # Direct message the player the balance
+        player = players[message.author.id]
+        response = "Current Balance: **$" + str(player.money) + "**"
+        embed = discord.Embed(title='Your Balance', description=response, colour=discord.Colour.blurple())
+        await message.author.send(embed=embed)
+        # Send message to the channel indicating balance sent
+        response = "Your balance has been direct messaged to you."
+        embed = discord.Embed(title='Balance', description=response, colour=discord.Colour.blurple())
+        embed.set_author(name=message.author.display_name, icon_url=message.author.avatar_url)
+        await message.channel.send(embed=embed)
     else:
         # Check if the current guild has a game
         if message.guild.id in games:
@@ -162,17 +379,26 @@ async def runBlackjack(client, message):
             game.tc = message.channel.id
             await game.gm.delete()
             game.gm = await game.guild.get_channel(game.tc).send(embed=game.embed)
+            await game.gm.add_reaction(game.addReaction)
         else:
             # Create the game
             game = Game(message.guild, message.channel.id)
             games[message.guild.id] = game
-            # Add the user as a player
+            # Add the user as a player if they are not currently in a game
             if message.author.id not in players:
                 players[message.author.id] = Player(message.author.id)
-            game.addPlayer(players[message.author.id])
+            if players[message.author.id].ingame == False:
+                game.addPlayer(players[message.author.id])
             # Initialize the first round
             await game.initializeRound()
             game.gm = await game.guild.get_channel(game.tc).send(embed=game.embed)
+            await game.gm.add_reaction(game.addReaction)
+            # Wait 15 seconds for people to join
+            await asyncio.sleep(15)
+            # Check for new players and update game display
+            await game.newPlayers()
+            await game.setEmbed()
+            await game.gm.edit(embed=game.embed)
             # Start running the rounds
             await runRounds(client, game)
 
@@ -184,16 +410,28 @@ def randomCard():
 
 # Helper function that runs the rounds
 async def runRounds(client, game):
+    firstRound = True  # Keeps track if this is the first round played
     while game != None:
+        # If not first round, initialize round
+        if firstRound == False:
+            await game.initializeRound()
+            await game.gm.edit(embed=game.embed)
         # Send each player a chance to change bets
         for player in game.players:
             await sendBetChanger(client, game, player)
+        # Check if there are any players in the game
+        if len(game.players) == 0:
+            await game.end()
+            break
         # Wait for all players to finish
         while len([p for p in game.players if p.done == True]) < len(game.players):
             pass
         # Reset all players
         for player in game.players:
             player.reset()
+        # Notify round in progress
+        game.updateStatus("Round In Progress", "The round is currently in progress.")
+        await game.gm.edit(embed=game.embed)
         # Draw two cards for each player
         for player in game.players:
             player.drawCard()
@@ -201,7 +439,25 @@ async def runRounds(client, game):
         # Send each player the prompt for hit, stand, or fold
         for player in game.players:
             await sendHand(client, game, player)
-        break
+        # Wait for all players to finish
+        while len([p for p in game.players if p.done == True]) < len(game.players):
+            pass
+        # Dealer's turn
+        game.dealerTurn()
+        for player in game.players:
+            # Check to see if the player busted or folded
+            if player.value <= 21 and player.value >= 0:
+                await compareToDealer(game, player)
+        # Send round results
+        await game.setResultEmbed()
+        await game.gm.edit(embed=game.embed)
+        # Reset all players
+        for player in game.players:
+            player.reset()
+        # Wait for the players to view the round results
+        await asyncio.sleep(15)
+        # Set first round to false to notify first round finished
+        firstRound = False
 
 # Direct messages the bet changing message to the player
 async def sendBetChanger(client, game, player):
@@ -215,15 +471,18 @@ async def sendBetChanger(client, game, player):
     betStr = ""
     for i in range(len(Player.betAmounts)):
         betStr += Player.betReactions[i] + " for $" + str(Player.betAmounts[i]) + "\n"
+    betStr += Player.exitReaction + " to leave the game\n"
     embed.add_field(name="Bets", value=betStr, inline=False)
     playerObj = await game.guild.fetch_member(player.userid)
     betMsg = await playerObj.send(embed=embed)
     # React with all the bet amounts
     for betReaction in Player.betReactions:
         await betMsg.add_reaction(betReaction)
+    # React with the exit reaction
+    await betMsg.add_reaction(Player.exitReaction)
     # Helper function that checks if the user has reacted with a emote of interest
     def betChangerCheck(reaction, user):
-        return user == playerObj and str(reaction.emoji) in Player.betReactions
+        return user == playerObj and (str(reaction.emoji) in Player.betReactions or str(reaction.emoji) == Player.exitReaction)
     # Check for bet amount from the user
     try:
         reaction, user = await client.wait_for('reaction_add', timeout=15.0, check=betChangerCheck)
@@ -236,6 +495,14 @@ async def sendBetChanger(client, game, player):
             if str(reaction.emoji) == Player.betReactions[i]:
                 player.bet = Player.betAmounts[i]
                 break
+        # Check if player reacted to exit the game
+        if str(reaction.emoji) == Player.exitReaction:
+            game.removePlayer(player)
+            await betMsg.delete()
+            response = "You have left the game!\n"
+            embed = discord.Embed(title="Left The Game", description=response, colour=discord.Colour.red())
+            await playerObj.send(embed=embed)
+            return
     await betMsg.delete()
     response = "Your bet amount: **$" + str(player.bet) + "**\n"
     embed = discord.Embed(title="Your Bet", description=response, colour=discord.Colour.blurple())
@@ -279,8 +546,11 @@ async def sendHand(client, game, player):
         reaction, user = await client.wait_for('reaction_add', timeout=30.0, check=actionCheck)
     except asyncio.TimeoutError:
         # if there is no response immediately fold
+        await handMsg.delete()
         await fold(game, player)
         return
+    # Delete the message
+    await handMsg.delete()
     # Check if user is valid
     if user != None:
         if str(reaction.emoji) == Game.actionReactions[0]:
@@ -292,8 +562,6 @@ async def sendHand(client, game, player):
         elif str(reaction.emoji) == Game.actionReactions[2]:
             # Check for fold
             await fold(game, player)
-    # Delete the message
-    await handMsg.delete()
 
 # The player has folded for the round, end player's round and adjust balance
 async def fold(game, player):
@@ -319,8 +587,15 @@ async def stand(game, player):
     response += "Final Value: **" + str(player.value) + "**\n"
     if player.value == 21:
         response += "You got a blackjack!\n"
-    response += "Waiting on others to finish the round."
+    response += "Waiting on others to finish the round.\n"
+    response += "**Your Cards:**"
     embed = discord.Embed(title="You Stood", description=response, colour=discord.Colour.dark_gray())
+    # Display the cards
+    cardNum = 1
+    for card in player.hand:
+        embed.add_field(name="Card " + str(cardNum), value=str(card), inline=True)
+        cardNum += 1
+    embed.add_field(name="Your Value:", value=str(player.value), inline=False)
     playerObj = await game.guild.fetch_member(player.userid)
     await playerObj.send(embed=embed)
     # Notify that the player is done
@@ -337,7 +612,7 @@ async def hit(client, game, player):
         return
     response = "**Round " + str(game.round) + "**\n"
     response += "You have hit. A new card has been given to you.\n"
-    response += "Here are your cards. React to hit, stand, or fold.\n"
+    response += "Here are your cards. React to hit or stand.\n"
     response += "You have 30 seconds to make a decision.\n"
     response += "**Your Cards:**"
     embed = discord.Embed(title="Your Hand", description=response, colour=discord.Colour.dark_gray())
@@ -371,8 +646,11 @@ async def hit(client, game, player):
         reaction, user = await client.wait_for('reaction_add', timeout=30.0, check=actionCheck)
     except asyncio.TimeoutError:
         # if there is no response immediately stand
+        await handMsg.delete()
         await stand(game, player)
         return
+    # Delete the message
+    await handMsg.delete()
     # Check if user is valid
     if user != None:
         if str(reaction.emoji) == Game.actionReactions[0]:
@@ -381,8 +659,6 @@ async def hit(client, game, player):
         if str(reaction.emoji) == Game.actionReactions[1]:
             # Check for stand
             await stand(game, player)
-    # Delete the message
-    await handMsg.delete()
 
 # The player has busted so they lose the round regardless of the dealer's cards
 async def bust(game, player):
@@ -393,10 +669,127 @@ async def bust(game, player):
     response += "Final Value: **" + str(player.value) + "**\n"
     response += "You lost **$" + str(player.bet) + "**.\n"
     response += "Current Balance: **$" + str(player.money) + "**\n"
-    response += "Waiting on others to finish the round."
+    response += "Waiting on others to finish the round.\n"
+    response += "**Your Cards:**"
     embed = discord.Embed(title="You Busted", description=response, colour=discord.Colour.red())
+    # Display the cards
+    cardNum = 1
+    for card in player.hand:
+        embed.add_field(name="Card " + str(cardNum), value=str(card), inline=True)
+        cardNum += 1
+    embed.add_field(name="Your Value:", value=str(player.value), inline=False)
     playerObj = await game.guild.fetch_member(player.userid)
     await playerObj.send(embed=embed)
-    # Notify that the player is done
+    # Notify that the player is done and lost
     player.done = True
-    
+    player.result = "L"
+
+# Compares the player's value to the dealer's value
+async def compareToDealer(game, player):
+    # If dealer busts and the player has not, then the player wins
+    if game.dealerVal > 21:
+        await win(game, player)
+    else:
+        # Determine win, loss, push based on values
+        if player.value > game.dealerVal:
+            await win(game, player)
+        elif player.value == game.dealerVal:
+            await push(game, player)
+        else:
+            await loss(game, player)
+
+# Send message to player that they won the round
+async def win(game, player):
+    # $3 to $2 for bet upon winning
+    player.updateBalance((player.bet // 2) + player.bet)
+    response = "**Round " + str(game.round) + "**\n"
+    response += "You won the round! You have been given $3 for every $2 you bet.\n"
+    response += "Final Value: **" + str(player.value) + "**\n"
+    response += "You won **$" + str((player.bet // 2) + player.bet) + "**!\n"
+    response += "Current Balance: **$" + str(player.money) + "**\n"
+    response += "Waiting on others to finish the round.\n"
+    response += "**Your Cards:**"
+    embed = discord.Embed(title="You Won", description=response, colour=discord.Colour.green())
+    # Display the cards
+    cardNum = 1
+    for card in player.hand:
+        embed.add_field(name="Card " + str(cardNum), value=str(card), inline=True)
+        cardNum += 1
+    embed.add_field(name="Your Value:", value=str(player.value) + "\n\n**Dealer's Cards:**", inline=False)
+    # Display the dealer's cards
+    cardNum = 1
+    for card in game.dealer:
+        embed.add_field(name="Card " + str(cardNum), value=str(card), inline=True)
+        cardNum += 1
+    # Display dealer's value
+    dealerVal = str(game.dealerVal)
+    if game.dealerVal > 21:
+        dealerVal += " (Bust)"
+    embed.add_field(name="Dealer's Value:", value=str(dealerVal), inline=False)
+    playerObj = await game.guild.fetch_member(player.userid)
+    await playerObj.send(embed=embed)
+    # Notify player has won
+    player.result = "W"
+
+# Send message to player that they tied the round
+async def push(game, player):
+    response = "**Round " + str(game.round) + "**\n"
+    response += "The dealer had the same value. Your balance remains unchanged.\n"
+    response += "Final Value: **" + str(player.value) + "**\n"
+    response += "Current Balance: **$" + str(player.money) + "**\n"
+    response += "Waiting on others to finish the round.\n"
+    response += "**Your Cards:**"
+    embed = discord.Embed(title="Push", description=response, colour=discord.Colour.dark_gray())
+    # Display the cards
+    cardNum = 1
+    for card in player.hand:
+        embed.add_field(name="Card " + str(cardNum), value=str(card), inline=True)
+        cardNum += 1
+    embed.add_field(name="Your Value:", value=str(player.value) + "\n\n**Dealer's Cards:**", inline=False)
+    # Display the dealer's cards
+    cardNum = 1
+    for card in game.dealer:
+        embed.add_field(name="Card " + str(cardNum), value=str(card), inline=True)
+        cardNum += 1
+    # Display dealer's value
+    dealerVal = str(game.dealerVal)
+    if game.dealerVal > 21:
+        dealerVal += " (Bust)"
+    embed.add_field(name="Dealer's Value:", value=str(dealerVal), inline=False)
+    playerObj = await game.guild.fetch_member(player.userid)
+    await playerObj.send(embed=embed)
+    # Notify the player has push
+    player.result = "P"
+
+# Send message to player that they lost the round
+async def loss(game, player):
+    # lose the entire bet
+    player.updateBalance(-1 * player.bet)
+    response = "**Round " + str(game.round) + "**\n"
+    response += "You lost the round. Your bet has been taken away.\n"
+    response += "Final Value: **" + str(player.value) + "**\n"
+    response += "You lost **$" + str(player.bet) + "**.\n"
+    response += "Current Balance: **$" + str(player.money) + "**\n"
+    response += "Waiting on others to finish the round.\n"
+    response += "**Your Cards:**"
+    embed = discord.Embed(title="You Lost", description=response, colour=discord.Colour.red())
+    # Display the cards
+    cardNum = 1
+    for card in player.hand:
+        embed.add_field(name="Card " + str(cardNum), value=str(card), inline=True)
+        cardNum += 1
+    embed.add_field(name="Your Value:", value=str(player.value) + "\n\n**Dealer's Cards:**", inline=False)
+    # Display the dealer's cards
+    cardNum = 1
+    for card in game.dealer:
+        embed.add_field(name="Card " + str(cardNum), value=str(card), inline=True)
+        cardNum += 1
+    # Display dealer's value
+    dealerVal = str(game.dealerVal)
+    if game.dealerVal > 21:
+        dealerVal += " (Bust)"
+    embed.add_field(name="Dealer's Value:", value=str(dealerVal), inline=False)
+    playerObj = await game.guild.fetch_member(player.userid)
+    await playerObj.send(embed=embed)
+    # Notify the player has lost
+    player.result = "L"
