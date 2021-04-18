@@ -75,10 +75,11 @@ async def rpg(ctx, message):
         userID = message.author.id
         new_character = character(userID, charname, character_class)
         playerlist.append(new_character)
-    """
+
     if message.content.split(" ")[1] == "myinfo":
-        await message.channel.send("User ID: " + str(mycharacter.id))
-        await message.channel.send(str(mycharacter.character_class))
-        await message.channel.send(str(mycharacter.name))
-    """
+        embed=discord.Embed(title=message.author.display_name)
+        mystr = "**Name: **\t" + str(mycharacter.id) + "\n**Class: **\t" + str(mycharacter.character_class) + "\n**User ID: **\t" + str(mycharacter.name)
+        embed.add_field(name="**Info**", value=mystr, inline=False)
+        await message.channel.send(embed=embed)
+
     # if message.content.split(" ")[1] == "exit":
