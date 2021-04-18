@@ -7,16 +7,19 @@ commandList = []
 playerlist = []
 classes = ["Enchanter", "Fighter", "Mage", "Marksman", "Assassin", "Tank"]
 
-"""
 class character:
-  _suits = ["clubs", "hearts", "diamonds", "spades"]
-  _numbers = [str(num) for num in range(2, 11)] + list("jqka")
-  def __init__(self, userID):
-    self.id = userID
-"""
+    def __init__(self, userID, char_name, classtype):
+        self.id = userID
+        self.name = char_name
+        self.character_class = classtype
+
 
 commandList.append(Command("!rpg", "rpg", "rpg game"))
 async def rpg(ctx, message):
+    global playerlist
+    character_class = ""
+    userID = ""
+
     if message.content.split(" ")[1] == "start":
         await message.channel.send("Starting RPG game")
         embed=discord.Embed(title="Choose your class", color=0xFF99CC)
@@ -40,16 +43,30 @@ async def rpg(ctx, message):
                 tempstr2 = " class!"
                 if reaction.emoji == u"\U0001F52A":
                     await message.channel.send(tempstr1 + "Assassin" + tempstr2)
+                    character_class = "Assassin"
                 if reaction.emoji == u"\U0001FA84":
                     await message.channel.send(tempstr1 + "Enchanter" + tempstr2)
+                    character_class = "Enchanter"
                 if reaction.emoji == u"\u2694":
                     await message.channel.send(tempstr1 + "Fighter" + tempstr2)
+                    character_class = "Fighter"
                 if reaction.emoji == u"\U0001F9D9":
                     await message.channel.send(tempstr1 + "Mage" + tempstr2)
+                    character_class = "Mage"
                 if reaction.emoji == u"\U0001F3F9":
                     await message.channel.send(tempstr1 + "Marksman" + tempstr2)
+                    character_class = "Marksman"
                 if reaction.emoji == u"\U0001F6E1":
                     await message.channel.send(tempstr1 + "Tank" + tempstr2)
+                    character_class = "Tank"
+        await message.channel.send("**Enter a name for your character:**")
+        await asyncio.sleep(5)
+        charname = ctx.cached_messages[len(ctx.cached_messages) - 1].content
+        await message.channel.send("**Character name: **" + charname)
+        userID = message.author.id
+        new_character = character(userID, charname, character_class)
+        playerlist.append(new_character)
+    
         #if (len(reactions) > 0):
         #    await message.channel.send(reactions[0].emoji)
 
