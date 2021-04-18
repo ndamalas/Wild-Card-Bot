@@ -19,15 +19,15 @@ async def rpg(ctx, message):
     global playerlist
     character_class = ""
     userID = ""
-    mycharacter
 
-    if len(playerlist > 0):
+    if (len(playerlist) > 0):
         mycharacter = playerlist[0]
 
     if message.content.split(" ")[1] == "help":
         embed=discord.Embed(title="RPG Command List and Help\nUsage: !rpg <COMMAND>")
         embed.add_field(name="start", value="Starts a new game. Prompts user for class type and name of character", inline=False)
         embed.add_field(name="myinfo", value="Displays basic user info including character class, user ID, name", inline=False)
+        await message.channel.send(embed=embed)
 
     if message.content.split(" ")[1] == "start":
         await message.channel.send("Starting RPG game")
@@ -75,8 +75,10 @@ async def rpg(ctx, message):
         userID = message.author.id
         new_character = character(userID, charname, character_class)
         playerlist.append(new_character)
-
-    # if message.content.split(" ")[1] == "myinfo":
-
-
+    """
+    if message.content.split(" ")[1] == "myinfo":
+        await message.channel.send("User ID: " + str(mycharacter.id))
+        await message.channel.send(str(mycharacter.character_class))
+        await message.channel.send(str(mycharacter.name))
+    """
     # if message.content.split(" ")[1] == "exit":
