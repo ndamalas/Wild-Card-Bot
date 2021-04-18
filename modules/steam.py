@@ -201,6 +201,53 @@ async def steam_profile(ctx, message):
             text += (str(i+1) + " " + topDf.iloc[1][i] + '\n')
         embed = discord.Embed(title="Top 10 Most Played Games in the Last 2 Weeks", description=text)
         await msg.edit(content="", embed=embed)
+    elif message.content.split(" ")[1] == "game":
+        if len(message.content.split(" ")) <= 2:
+            await message.channel.send(">>> Not enough parameters")
+            return
+        #if message.content.split(" ")[1] != "game":
+        #return
+        msg = await message.channel.send("Gathering Game Information")
+        game_name = message.content[12:]
+        #game_name = "Valheim"
+        #await message.channel.send("Game: "+game_name)
+
+        session = aiohttp.ClientSession()
+        output = await session.get(f"http://api.steampowered.com/ISteamApps/GetAppList/v0002/")
+        out = await output.json()
+        await session.close()
+        pd.set_option("display.max_columns", None)
+        gameDf = pd.DataFrame.from_dict(out)
+        #print(gameDf)
+        gameDf = gameDf['applist'][gameDf.index == "apps"][0]
+        #print(gameDf)
+        for game in gameDf:
+            current_game_name = game['name']
+            if current_game_name == game_name:
+                game_appid = game['appid']
+                #await message.channel.send(game_appid)
+                session = aiohttp.ClientSession()
+                output = await session.get(f"https://store.steampowered.com/api/appdetails?appids={game_appid}")
+                out = await output.json()
+                await session.close()
+                pd.set_option("display.max_columns", None)
+                gameidDf = pd.DataFrame.from_dict(out)
+                #print(gameidDf)
+                gameidDf = gameidDf[gameidDf.index == 'data'][gameidDf.columns[0]][0]
+                #print(gameidDf)
+                #game_type = gameidDf['type']
+                #print(game_type)
+                title = "Game Description"
+                game_info = "Name: " + gameidDf['name'] + "\n" + "Game ID: " + str(gameidDf['steam_appid']) + "\n" +  "Type: " + gameidDf['type'] + "\n" +  "Free: "  + str(gameidDf['is_free']) + "\n" 
+                embed=discord.Embed(title=title, description=game_info, color=0x2a475e)
+                await message.channel.send(embed=embed)
+                #for attribute in gameidDf:
+                    #print(attribute)
+                    #print(gameidDf[attribute])
+                    #print()
+                    #await message.channel.send(attribute+":")
+                    #await message.channel.send(gameidDf[attribute]) 
+                    #await message.channel.send()
     else:
         embed=discord.Embed(title="Sorry that tag does not exist.")
         await msg.edit(content="", embed=embed)
