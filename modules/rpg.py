@@ -14,11 +14,15 @@ class character:
         self.character_class = classtype
 
 
-commandList.append(Command("!rpg", "rpg", "rpg game"))
+commandList.append(Command("!rpg", "rpg", "rpg game\nUsage: !rpg help"))
 async def rpg(ctx, message):
     global playerlist
     character_class = ""
     userID = ""
+    mycharacter
+    
+    if len(playerlist > 0):
+        mycharacter = playerlist[0]
 
     if message.content.split(" ")[1] == "start":
         await message.channel.send("Starting RPG game")
@@ -66,9 +70,8 @@ async def rpg(ctx, message):
         userID = message.author.id
         new_character = character(userID, charname, character_class)
         playerlist.append(new_character)
-    
-        #if (len(reactions) > 0):
-        #    await message.channel.send(reactions[0].emoji)
+
+    # if message.content.split(" ")[1] == "myinfo":
 
 
     # if message.content.split(" ")[1] == "exit":
