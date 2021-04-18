@@ -20,9 +20,14 @@ async def rpg(ctx, message):
     character_class = ""
     userID = ""
     mycharacter
-    
+
     if len(playerlist > 0):
         mycharacter = playerlist[0]
+
+    if message.content.split(" ")[1] == "help":
+        embed=discord.Embed(title="RPG Command List and Help\nUsage: !rpg <COMMAND>")
+        embed.add_field(name="start", value="Starts a new game. Prompts user for class type and name of character", inline=False)
+        embed.add_field(name="myinfo", value="Displays basic user info including character class, user ID, name", inline=False)
 
     if message.content.split(" ")[1] == "start":
         await message.channel.send("Starting RPG game")
