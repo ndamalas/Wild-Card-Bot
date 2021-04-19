@@ -194,10 +194,9 @@ async def get_league_profile(ctx, message):
             return
     ranked_stats = lol_watcher.league.by_summoner(region, user['id'])
     await message.channel.send(user['name'] + " Lvl " + str(user['summonerLevel']))
-    #fn = dirname + "/11.6.1/img/profileicon/" + str(user['profileIconId']) + ".png"
-    #await message.channel.send(fn)
-    #fp = open(fn, 'rb')
-    #await message.channel.send(file=discord.File(fp=fn))
+    fn = dirname + "11.6.1/img/profileicon/" + str(user['profileIconId']) + ".png"
+    fp = open(fn, 'rb')
+    await message.channel.send(file=discord.File(fp=fn))
     if len(ranked_stats) > 1:
         await message.channel.send("Ranked Flex: " + ranked_stats[0]['tier'] + " " + ranked_stats[0]['rank'] + " " + str(ranked_stats[0]['leaguePoints']) + "LP " + str(ranked_stats[0]['wins']) + "W/" + str(ranked_stats[0]['losses']) + "L")
         await message.channel.send("Ranked Solo: " + ranked_stats[1]['tier'] + " " + ranked_stats[1]['rank'] + " " + str(ranked_stats[1]['leaguePoints']) + "LP " + str(ranked_stats[1]['wins']) + "W/" + str(ranked_stats[1]['losses']) + "L")
