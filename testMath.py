@@ -44,9 +44,30 @@ print(result)
 
 from bs4 import BeautifulSoup
 import requests
-equation = "sin(pi/6)="
-
+equation = "2^2 -x = 6"
+from sympy.solvers import solve
+from sympy import Symbol
 i = 0
+var = ""
+start = 0
+while i < len(equation):
+    if equation[i].isalpha():
+        var = equation[i]
+    if equation[i] == '=':
+        start = i
+    if equation[i] == "^":
+        equation = equation[:i] + "**" + equation[i+1:]
+        i += 1
+    i += 1
+
+afterEquals = equation[start+1:]
+equation = equation[:start]
+equation += "-(" + afterEquals + ")"
+print(equation)
+x = Symbol(var)
+print(solve(equation, x))
+
+"""i = 0
 while i < len(equation):
     if equation[i] == '+':
         equation = equation[:i] + "%2B" + equation[i+1:]
@@ -63,6 +84,7 @@ print(equation)
 
 
 searchURL = "https://www.google.com/search?q=" + equation
+# searchURL = "https://www.symbolab.com/solver/step-by-step/" + equation
 print(searchURL)
 html = requests.get(searchURL)
 soup = BeautifulSoup(html.content, 'html.parser')
@@ -72,4 +94,4 @@ answer = div[0].text
 answer = answer.replace("\xa0", ",")
 span = soup.find_all('span', class_='BNeawe tAd8D AP7Wnd')
 newEquation = span[0].text
-print(newEquation, answer)
+print(newEquation, answer)"""
