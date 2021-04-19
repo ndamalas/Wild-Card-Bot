@@ -44,7 +44,7 @@ print(result)
 
 from bs4 import BeautifulSoup
 import requests
-equation = "12*12*12="
+equation = "sin(pi/6)="
 
 i = 0
 while i < len(equation):
