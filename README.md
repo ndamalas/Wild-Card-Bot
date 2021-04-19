@@ -10,12 +10,9 @@ pip3 install -U google
 pip3 install -U youtube_dl
 pip3 install -U youtube-search-python
 pip3 install -U riotwatcher
-<<<<<<< HEAD
 pip3 install -U pandas
 pip3 install -U aiohttp
-=======
 pip3 install -U pokepy
->>>>>>> Pokemon
 ```
 
 You will also need to install ffmpeg from https://ffmpeg.org/download.html
