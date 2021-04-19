@@ -33,7 +33,7 @@ async def solveNormal(equation, message):
 
     div = soup.find_all('div', class_='BNeawe iBp4i AP7Wnd')
     if len(div) == 0:
-        await message.channel.send("Invalid math equation")
+        await message.channel.send("Invalid Equation")
         return
     answer = div[0].text
     answer = answer.replace("\xa0", ",")
@@ -55,15 +55,15 @@ async def solveAlgebraic(equation, message):
                 await message.channel.send("Invalid Equation")
                 return
             var = equation[i]
-            if i != 0 and equation[i-1].isnumeric():
+            if i != 0 and equation[i-1].isnumeric() and equation[i-1] != '(':
                 equation = equation[:i] + "*" + equation[i:]
                 i += 1
         if equation[i] == '=':
             start = i
-            if (not equation[i-1].isnumeric()) or (not equation[i+1].isnumeric()):
+            if (not equation[i-1].isnumeric() and equation[i-1] != ')') or (not equation[i+1].isnumeric() and equation[i+1] != '('):
                 await message.channel.send("Invalid Equation")
                 return
-        if equation[i] == "^":
+        if equation[i] == '^':
             equation = equation[:i] + "**" + equation[i+1:]
             i += 1
         i += 1
@@ -75,12 +75,15 @@ async def solveAlgebraic(equation, message):
     equation = equation[:start]
     equation += "-(" + afterEquals + ")"
     x = Symbol(var)
-    solution = solve(equation, x)
-
+    try:
+        solution = solve(equation, x)
+    except:
+        await message.channel.send("Invalid Equation")
+        return
     result = ""
     for num in solution:
-        result += str(num) + ","
-    result = result[:-1]
+        result += str(num) + ", "
+    result = result[:-2]
     embed = discord.Embed(title = "Result: " + var + " = " + result, description= original + "\n" + var + " = " + result, colour = discord.Colour.blue())
     embed.set_author(name=message.author.display_name, icon_url=message.author.avatar_url)
     await message.channel.send(embed=embed)

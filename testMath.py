@@ -42,9 +42,10 @@ for i in range(len(operators)):
 print(result)
 """
 
+from os import error
 from bs4 import BeautifulSoup
 import requests
-equation = "2^2+10x-=20"
+equation = "(2^(3x))-=50"
 from sympy.solvers import solve
 from sympy import Symbol
 i = 0
@@ -61,14 +62,14 @@ while i < len(equation):
             i += 1
     if equation[i] == '=':
         start = i
-        if (not equation[i-1].isnumeric()) or (not equation[i+1].isnumeric()):
-            print("Invlaid equation")
+        if (not equation[i-1].isnumeric() and equation[i-1] != ')') or (not equation[i+1].isnumeric() and equation[i+1] != '('):
+            print("Invalid equation")
             break
     if equation[i] == "^":
         equation = equation[:i] + "**" + equation[i+1:]
         i += 1
     i += 1
-if not equation[len(equation-1)].isnumeric():
+if not equation[len(equation)-1].isnumeric():
     print("Invlaid equation")
 
 afterEquals = equation[start+1:]
@@ -76,6 +77,11 @@ equation = equation[:start]
 equation += "-(" + afterEquals + ")"
 print(equation)
 x = Symbol(var)
+try:
+    solution = solve(equation, x)
+except:
+    solution = "Error"
+
 print(solution)
 
 """
