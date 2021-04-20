@@ -3,8 +3,7 @@ from bs4 import BeautifulSoup
 from command import Command
 import requests
 import discord
-from sympy.solvers import solve
-from sympy import Symbol
+from sympy import *
 
 
 # Every module has to have a command list
@@ -117,3 +116,34 @@ async def math(client, message):
 
     
     # await message.channel.send("**" + answer + "**")
+
+commandList.append(Command("!derive", "derivative", "TODO"))
+async def derivative(client, message):
+    contents = message.content.split(" ")
+    equation = "".join(contents[1:])
+
+    i = 0
+    while i < len(equation):
+        if equation[i].isalpha():
+            if i != 0 and equation[i-1].isnumeric():
+                equation = equation[:i] + "*" + equation[i:]
+                i += 1
+        if equation[i] == "^":
+            equation = equation[:i] + "**" + equation[i+1:]
+            i += 1
+        i += 1
+    x = symbols('x')
+    try:
+        solution = Derivative(equation, x).doit()
+    except:
+        await message.channel.send("Invalid Equation")
+    
+    i = 1
+    solStr = str(solution)
+    while i < len(solStr):
+        if solStr[i] == '*' and solStr[i-1] == '*':
+            solStr = solStr[:i] + "^" + solStr[i+1:]
+        i += 1
+    solStr = solStr.replace("*", "")
+
+    await message.channel.send(solStr)

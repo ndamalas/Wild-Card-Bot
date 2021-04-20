@@ -45,9 +45,43 @@ print(result)
 from os import error
 from bs4 import BeautifulSoup
 import requests
-equation = "(2^(3x))-=50"
-from sympy.solvers import solve
-from sympy import Symbol
+equation = "sin(x^2)"
+# from sympy.solvers import solve
+# from sympy import Symbol
+from sympy import *
+i = 0
+# start = 0
+while i < len(equation):
+    if equation[i].isalpha():
+        if i != 0 and equation[i-1].isnumeric():
+            equation = equation[:i] + "*" + equation[i:]
+            i += 1
+    # if equation[i] == '=':
+    #     start = i
+    #     if (not equation[i-1].isnumeric() and equation[i-1] != ')') or (not equation[i+1].isnumeric() and equation[i+1] != '('):
+    #         print("Invalid equation")
+    #         break
+    if equation[i] == "^":
+        equation = equation[:i] + "**" + equation[i+1:]
+        i += 1
+    i += 1
+# if not equation[len(equation)-1].isnumeric():
+#     print("Invlaid equation")
+
+"""if start != 0:
+    afterEquals = equation[start+1:]
+    equation = equation[:start]
+    equation += "-(" + afterEquals + ")"
+"""
+print(equation)
+x = symbols('x')
+try:
+    solution = Derivative(equation, x).doit()
+except:
+    solution = "Error"
+
+print(solution)
+"""
 i = 0
 var = ""
 start = 0
@@ -83,7 +117,7 @@ except:
     solution = "Error"
 
 print(solution)
-
+"""
 """
 i = 0
 while i < len(equation):
