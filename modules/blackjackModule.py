@@ -513,6 +513,7 @@ async def runRounds(client, game):
         for player in game.players:
             player.reset()
         # Notify round in progress
+        await game.setEmbed()
         game.updateStatus("Round In Progress", "The round is currently in progress.")
         await game.gm.edit(embed=game.embed)
         # Draw two cards for each player
