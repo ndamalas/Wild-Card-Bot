@@ -90,7 +90,7 @@ async def solveAlgebraic(equation, message):
 
 
 
-commandList.append(Command("!calc", "math", "TODO"))
+commandList.append(Command("!calc", "math", "Will solve any given math problem. It has support for all basic operations including algebra and trigonometry.\nUsage: `!calc <EQUATION>`"))
 async def math(client, message):
     contents = message.content.split(" ")
     equation = "".join(contents[1:])
@@ -117,10 +117,11 @@ async def math(client, message):
     
     # await message.channel.send("**" + answer + "**")
 
-commandList.append(Command("!derive", "derivative", "TODO"))
+commandList.append(Command("!derive", "derivative", "Will find the derivative of the equation given with respect to x.\nUsage: `!derive <EQUATION>`"))
 async def derivative(client, message):
     contents = message.content.split(" ")
     equation = "".join(contents[1:])
+    original = equation
 
     i = 0
     while i < len(equation):
@@ -137,13 +138,18 @@ async def derivative(client, message):
         solution = Derivative(equation, x).doit()
     except:
         await message.channel.send("Invalid Equation")
+        return
     
     i = 1
     solStr = str(solution)
+    if "Derivative" in solStr:
+        await message.channel.send("Equation not supported, try again.")
     while i < len(solStr):
         if solStr[i] == '*' and solStr[i-1] == '*':
             solStr = solStr[:i] + "^" + solStr[i+1:]
         i += 1
     solStr = solStr.replace("*", "")
 
-    await message.channel.send(solStr)
+    embed = discord.Embed(title =  solStr,  description = original + "\nDerivative with respect to x: " + solStr, colour = discord.Colour.blue())
+    embed.set_author(name=message.author.display_name, icon_url=message.author.avatar_url)
+    await message.channel.send(embed=embed)
