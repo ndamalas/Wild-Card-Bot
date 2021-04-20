@@ -36,6 +36,9 @@ class Player:
         self.bet = bet        # The amount of money the player is currently betting
         self.result = None    # Determines if the player won, push, or lost
         self.ingame = False   # Keeps track of whether the player is currently in a game
+        self.blackjacks = 0   # Number of blackjacks player has obtained
+        self.wonrounds = 0    # Number of rounds player has won
+        self.moneywon = 0     # Total money won by player
     # Prepares the player for another round
     def reset(self):
         self.done = False
@@ -238,6 +241,79 @@ class Game:
             self.dealer.append(randomCard())
             self.calculateDealerValue()
 
+# Class representing a slot machine
+class Slot:
+    betAmounts = [100, 200, 500, 1000]
+    betReactions = [u"1\ufe0f\u20e3", u"2\ufe0f\u20e3", u"5\ufe0f\u20e3", u"\U0001F51F"]
+    exitReaction = u"\u274c"
+    def __init__(self, player):
+        self.player = player         # Player object currently playing the slot machine
+        self.sm = None               # Message corresponding to the slot machine
+        self.numbers = [7, 7, 7]     # The three numbers displayed on the slot machine
+        self.embed = None            # The embed for the slot machine message
+    # Obtain three random numbers
+    def rollNumbers(self):
+        self.numbers = []
+        for _ in range(3):
+            self.numbers.append(random.randint(0, 9))
+    # Initialize the display
+    def setEmbed(self):
+        response = "Welcome to the Slot Machine!\n"
+        embed = discord.Embed(title="Slots", description=response, colour=discord.Colour.greyple())
+        embed.add_field(name="Current Balance", value="$" + str(self.player.money), inline=False)
+        count = 1
+        for num in self.numbers:
+            embed.add_field(name="Slot " + str(count), value=str(num), inline=True)
+            count += 1
+        betStr = ""
+        for i in range(len(Slot.betReactions)):
+            betStr += Slot.betReactions[i] + " to bet $" + str(Slot.betAmounts[i]) + "\n"
+        embed.add_field(name="React To Play", value=betStr, inline=False)
+        winStr = ""
+        winStr += "Two of a kind:   2x bet\n"
+        winStr += "Three of a kind: 8x bet\n"
+        winStr += "Two 7s:          5x bet\n"
+        winStr += "Three 7s:        50x bet\n"
+        embed.add_field(name="Winnings", value=winStr, inline=False)
+        self.embed = embed
+    # Update the number fields of the embed
+    def updateNumbers(self):
+        for _ in range(3):
+            self.embed.remove_field(1)
+        self.rollNumbers()
+        count = 1
+        for num in self.numbers:
+            self.embed.insert_field_at(count, name="Slot " + str(count), value=str(num), inline=True)
+            count += 1
+    # Update the winnings display
+    def updateWinnings(self, bet):
+        for _ in range(2):
+            self.embed.remove_field(len(self.embed.fields) - 1)
+        winStr = ""
+        winStr += "Two of a kind:  $" + str(2 * bet) + "\n"
+        winStr += "Three of a kind: $" + str(8 * bet) + "\n"
+        winStr += "Two 7s:         $" + str(5 * bet) + " \n"
+        winStr += "Three 7s:       $" + str(50 * bet) + "\n"
+        self.embed.add_field(name="Winnings", value=winStr, inline=False)
+    # Update balance
+    def updateBalance(self):
+        self.embed.remove_field(0)
+        self.embed.insert_field_at(0, name="Current Balance", value="$" + str(self.player.money), inline=False)
+    # Calculate winnings
+    def calculateWinnings(self, bet):
+        if self.numbers[0] == self.numbers[1] or self.numbers[1] == self.numbers[2] or self.numbers[0] == self.numbers[2]:
+            return 2 * bet
+        if self.numbers[0] == self.numbers[1] and self.numbers[1] == self.numbers[2]:
+            return 8 * bet
+        if len([n for n in self.numbers if n == 7]) == 2:
+            return 5 * bet
+        if len([n for n in self.numbers if n == 7]) == 3:
+            return 50 * bet
+        return 0
+    # End the slot machine
+    async def end(self):
+        await self.sm.delete()
+        del slots[self.player.userid]
 
 # Every module has to have a command list
 commandList = []
@@ -251,6 +327,11 @@ players = {}
 # Key: server ID
 # Value: Game object for the server
 games = {}
+
+# Dictionary that keeps track of all the Slot Objects
+# Key: user ID
+# Value: Slot object for the user
+slots = {}
 
 # Description for !blackjack
 usage = "Command used to initialize or redisplay the blackjack game. There will be one game per server."
@@ -267,7 +348,9 @@ except:
 
 # Runs the blackjack game and parses all commands from users
 async def runBlackjack(client, message):
-    if len(message.content.split(" ")) >= 2 and message.content.split(" ")[1] == "rules":
+    if len(message.content.split(" ")) >= 2 and message.content.split(" ")[1] == "leaderboard":
+        await displayLeaderboard(client, message.guild, message.channel)
+    elif len(message.content.split(" ")) >= 2 and message.content.split(" ")[1] == "rules":
         sent = False
         if len(message.content.split(" ")) == 2:
             section = "all"
@@ -430,6 +513,7 @@ async def runRounds(client, game):
         for player in game.players:
             player.reset()
         # Notify round in progress
+        await game.setEmbed()
         game.updateStatus("Round In Progress", "The round is currently in progress.")
         await game.gm.edit(embed=game.embed)
         # Draw two cards for each player
@@ -587,6 +671,7 @@ async def stand(game, player):
     response += "Final Value: **" + str(player.value) + "**\n"
     if player.value == 21:
         response += "You got a blackjack!\n"
+        player.blackjacks += 1
     response += "Waiting on others to finish the round.\n"
     response += "**Your Cards:**"
     embed = discord.Embed(title="You Stood", description=response, colour=discord.Colour.dark_gray())
@@ -702,6 +787,8 @@ async def compareToDealer(game, player):
 async def win(game, player):
     # $3 to $2 for bet upon winning
     player.updateBalance((player.bet // 2) + player.bet)
+    player.wonrounds += 1
+    player.moneywon += (player.bet // 2) + player.bet
     response = "**Round " + str(game.round) + "**\n"
     response += "You won the round! You have been given $3 for every $2 you bet.\n"
     response += "Final Value: **" + str(player.value) + "**\n"
@@ -793,3 +880,277 @@ async def loss(game, player):
     await playerObj.send(embed=embed)
     # Notify the player has lost
     player.result = "L"
+
+# Displays the leaderboard
+async def displayLeaderboard(client, guild, channel):
+    changeReactions = [u"\U0001F1FC", u"\U0001F1E7", u"\U0001F1F2"]
+    first = True
+    while guild != None:
+        if first == True:
+            embed = await setEmbedRoundsWon(guild, changeReactions)
+            msg = await channel.send(embed=embed)
+            await msg.add_reaction(changeReactions[1])
+            await msg.add_reaction(changeReactions[2])
+        # Wait for reaction
+        def actionCheck(reaction, user):
+            return user.bot == False and str(reaction.emoji) in changeReactions
+        # Check for display change
+        try:
+            reaction, user = await client.wait_for('reaction_add', timeout=60.0, check=actionCheck)
+        except asyncio.TimeoutError:
+            # if there is no response remove the msg
+            await msg.delete()
+            return
+        # Take the reaction and adjust display
+        if user != None:
+            if str(reaction.emoji) == changeReactions[0]:
+                embed = await setEmbedRoundsWon(guild, changeReactions)
+                await msg.edit(embed=embed)
+                await msg.clear_reactions()
+                await msg.add_reaction(changeReactions[1])
+                await msg.add_reaction(changeReactions[2])
+            elif str(reaction.emoji) == changeReactions[1]:
+                embed = await setEmbedBlackjacks(guild, changeReactions)
+                await msg.edit(embed=embed) 
+                await msg.clear_reactions()
+                await msg.add_reaction(changeReactions[0])
+                await msg.add_reaction(changeReactions[2])
+            elif str(reaction.emoji) == changeReactions[2]:
+                embed = await setEmbedMoneyWon(guild, changeReactions)
+                await msg.edit(embed=embed) 
+                await msg.clear_reactions()
+                await msg.add_reaction(changeReactions[0])
+                await msg.add_reaction(changeReactions[1])
+        # Set first to false
+        first = False
+
+# Set embed for most rounds won
+async def setEmbedRoundsWon(guild, changeReactions):
+    # Set embed to rounds won
+    response = "Players Who Have Won The Most Rounds"
+    embed = discord.Embed(title='Blackjack Leaderboard', description=response, colour=discord.Colour.dark_gray())
+    # Obtain all players on the server
+    playersInServer = []
+    for member in guild.members:
+        if member.id in players:
+            playersInServer.append(players[member.id])
+    # Sort the players according to most rounds won
+    playersInServer = sorted(playersInServer, key=(lambda x: x.wonrounds), reverse=True)
+    count = 1
+    # Display the players
+    for player in playersInServer:
+        position = ""
+        if count == 1:
+            position += "1st"
+        elif count == 2:
+            position += "2nd"
+        elif count == 3:
+            position += "3rd"
+        else:
+            position += str(count) + "th"
+        title = position + " Place"
+        playerObj = await guild.fetch_member(player.userid)
+        response = playerObj.display_name + "\n"
+        response += "Rounds Won: " + str(player.wonrounds) + "\n"
+        response += "Balance: $" + str(player.money)
+        embed.add_field(name=title, value=response, inline=False)
+        count += 1
+    # Check if count has ever been incremented
+    if count == 1:
+        response = "There are currently no registered players. Play a blackjack game or slot machine to register. "
+        response += "You may also register by calling **!blackjack balance**."
+        embed.add_field(name="No Players", value=response, inline=False)
+    # Display change info
+    response = changeReactions[1] + " for most blackjacks\n"
+    response += changeReactions[2] + " for most money won"
+    embed.add_field(name="Change Display", value=response, inline=False)
+    return embed
+
+# Set embed for most rounds won
+async def setEmbedBlackjacks(guild, changeReactions):
+    # Set embed to blackjacks
+    response = "Players Who Have Gotten The Most Blackjacks"
+    embed = discord.Embed(title='Blackjack Leaderboard', description=response, colour=discord.Colour.dark_gray())
+    # Obtain all players on the server
+    playersInServer = []
+    for member in guild.members:
+        if member.id in players:
+            playersInServer.append(players[member.id])
+    # Sort the players according to most rounds won
+    playersInServer = sorted(playersInServer, key=(lambda x: x.blackjacks), reverse=True)
+    count = 1
+    # Display the players
+    for player in playersInServer:
+        position = ""
+        if count == 1:
+            position += "1st"
+        elif count == 2:
+            position += "2nd"
+        elif count == 3:
+            position += "3rd"
+        else:
+            position += str(count) + "th"
+        title = position + " Place"
+        playerObj = await guild.fetch_member(player.userid)
+        response = playerObj.display_name + "\n"
+        response += "Blackjacks: " + str(player.blackjacks) + "\n"
+        response += "Balance: $" + str(player.money)
+        embed.add_field(name=title, value=response, inline=False)
+        count += 1
+    # Check if count has ever been incremented
+    if count == 1:
+        response = "There are currently no registered players. Play a blackjack game or slot machine to register. "
+        response += "You may also register by calling **!blackjack balance**."
+        embed.add_field(name="No Players", value=response, inline=False)
+    # Display change info
+    response = changeReactions[0] + " for most rounds won\n"
+    response += changeReactions[2] + " for most money won"
+    embed.add_field(name="Change Display", value=response, inline=False)
+    return embed
+
+# Set embed for most money won
+async def setEmbedMoneyWon(guild, changeReactions):
+    # Set embed to money
+    response = "Players Who Have Gained the Most Money from Wins"
+    embed = discord.Embed(title='Blackjack Leaderboard', description=response, colour=discord.Colour.dark_gray())
+    # Obtain all players on the server
+    playersInServer = []
+    for member in guild.members:
+        if member.id in players:
+            playersInServer.append(players[member.id])
+    # Sort the players according to most rounds won
+    playersInServer = sorted(playersInServer, key=(lambda x: x.moneywon), reverse=True)
+    count = 1
+    # Display the players
+    for player in playersInServer:
+        position = ""
+        if count == 1:
+            position += "1st"
+        elif count == 2:
+            position += "2nd"
+        elif count == 3:
+            position += "3rd"
+        else:
+            position += str(count) + "th"
+        title = position + " Place"
+        playerObj = await guild.fetch_member(player.userid)
+        response = playerObj.display_name + "\n"
+        response += "Money Won: $" + str(player.moneywon) + "\n"
+        response += "Balance: $" + str(player.money)
+        embed.add_field(name=title, value=response, inline=False)
+        count += 1
+    # Check if count has ever been incremented
+    if count == 1:
+        response = "There are currently no registered players. Play a blackjack game or slot machine to register. "
+        response += "You may also register by calling **!blackjack balance**."
+        embed.add_field(name="No Players", value=response, inline=False)
+    # Display change info
+    response = changeReactions[0] + " for most rounds won\n"
+    response += changeReactions[1] + " for most blackjacks"
+    embed.add_field(name="Change Display", value=response, inline=False)
+    return embed
+
+# Command for playing slots
+usage = "Command used to display the slot machine. It is direct messaged to you."
+# Format: !slots
+try:
+    commandList.append(Command("!slots", "runSlots", usage))
+except:
+    pass
+
+# Runs the slot machine
+async def runSlots(client, message):
+    # Check if user is already playing slots
+    if message.author.id in slots:
+        # Notify user that slot machine is already running
+        response = "The slot machine is already running!"
+        embed = discord.Embed(title='Slots Running', description=response, colour=discord.Colour.red())
+        embed.set_author(name=message.author.display_name, icon_url=message.author.avatar_url)
+        await message.channel.send(embed=embed)
+    else:
+        # Check to see if Player object exists for user
+        if message.author.id not in players:
+            players[message.author.id] = Player(message.author.id)
+        # Create new slot machine for the user
+        if players[message.author.id].ingame == False:
+            slots[message.author.id] = Slot(players[message.author.id])
+            slot = slots[message.author.id]
+            # Send notification to check dms
+            response = "The slot machine has been created. Please check your dms!"
+            embed = discord.Embed(title='Slots', description=response, colour=discord.Colour.greyple())
+            embed.set_author(name=message.author.display_name, icon_url=message.author.avatar_url)
+            await message.channel.send(embed=embed)
+            # Notify that the player is currently in game
+            slot.player.ingame = True
+            await slotMachine(client, slot, message.author)
+            # Once slots is over, notify user is no longer in a game
+            slot.player.ingame = False
+        else:
+            # Notify that the user is currently in a game
+            response = "You are currently in a game! Slot machine not created."
+            embed = discord.Embed(title='In Game', description=response, colour=discord.Colour.red())
+            embed.set_author(name=message.author.display_name, icon_url=message.author.avatar_url)
+            await message.channel.send(embed=embed)
+
+# Runs the slot machine
+async def slotMachine(client, slot, playerObj):
+    while slot != None:
+        slot.setEmbed()
+        slot.sm = await playerObj.send(embed=slot.embed)
+        for reaction in Slot.betReactions:
+            await slot.sm.add_reaction(reaction)
+        await slot.sm.add_reaction(Slot.exitReaction)
+        # Wait for response
+        def reactionCheck(reaction, user):
+            return user == playerObj and (str(reaction.emoji) in Slot.betReactions or str(reaction.emoji) == Slot.exitReaction)
+        # Check for bet amount from the user
+        try:
+            reaction, user = await client.wait_for('reaction_add', timeout=60.0, check=reactionCheck)
+        except asyncio.TimeoutError:
+            # if there is no response, end the slot machine
+            await slot.end()
+            response = "Due to inactivity, the slot machine has been removed."
+            embed = discord.Embed(title='Slots Ended', description=response, colour=discord.Colour.red())
+            await playerObj.send(embed=embed)
+            return
+        # Parse the reaction and bet
+        if user != None and reaction != None:
+            for i in range(len(Slot.betAmounts)):
+                if str(reaction.emoji) == Slot.betReactions[i]:
+                    bet = Slot.betAmounts[i]
+                    slot.player.updateBalance(-1 * bet)
+                    slot.updateBalance()
+                    await slot.sm.edit(embed=slot.embed) 
+                    break
+            # Check if player reacted to end the slot machine
+            if str(reaction.emoji) == Player.exitReaction:
+                await slot.end()
+                response = "Thanks for playing! The slot machine has been removed."
+                embed = discord.Embed(title='Slots Ended', description=response, colour=discord.Colour.blurple())
+                await playerObj.send(embed=embed)
+                return
+            # Update the bet
+            slot.updateWinnings(bet)
+            await slot.sm.edit(embed=slot.embed) 
+            # Run the slots
+            for _ in range(20):
+                slot.updateNumbers()
+                await slot.sm.edit(embed=slot.embed)
+                await asyncio.sleep(0.2)
+            # Check winnings
+            winnings = slot.calculateWinnings(bet)
+            slot.player.updateBalance(winnings)
+            slot.updateBalance()
+            await slot.sm.edit(embed=slot.embed) 
+            # Update winnings and balance
+            slot.embed.remove_field(len(slot.embed.fields) - 1)
+            if winnings == 0:
+                response = "You didn't win anything. Better luck next time!"
+                slot.embed.add_field(name="Winnings", value=response, inline=False)
+            else:
+                response = "You won $" + str(winnings) + "!"
+                slot.embed.add_field(name="Winnings", value=response, inline=False)
+            await slot.sm.edit(embed=slot.embed)
+            # Wait for the next round
+            await asyncio.sleep(5)
+            await slot.sm.delete()

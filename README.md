@@ -13,6 +13,7 @@ pip3 install -U riotwatcher
 pip3 install -U pandas
 pip3 install -U aiohttp
 pip3 install -U sympy
+pip3 install -U pokepy
 ```
 
 You will also need to install ffmpeg from https://ffmpeg.org/download.html
