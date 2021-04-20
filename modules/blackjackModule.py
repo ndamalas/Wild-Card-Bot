@@ -36,6 +36,9 @@ class Player:
         self.bet = bet        # The amount of money the player is currently betting
         self.result = None    # Determines if the player won, push, or lost
         self.ingame = False   # Keeps track of whether the player is currently in a game
+        self.blackjacks = 0   # Number of blackjacks player has obtained
+        self.wonrounds = 0    # Number of rounds player has won
+        self.moneywon = 0     # Total money won by player
     # Prepares the player for another round
     def reset(self):
         self.done = False
@@ -345,7 +348,9 @@ except:
 
 # Runs the blackjack game and parses all commands from users
 async def runBlackjack(client, message):
-    if len(message.content.split(" ")) >= 2 and message.content.split(" ")[1] == "rules":
+    if len(message.content.split(" ")) >= 2 and message.content.split(" ")[1] == "leaderboard":
+        await displayLeaderboard(client, message.guild, message.channel)
+    elif len(message.content.split(" ")) >= 2 and message.content.split(" ")[1] == "rules":
         sent = False
         if len(message.content.split(" ")) == 2:
             section = "all"
@@ -665,6 +670,7 @@ async def stand(game, player):
     response += "Final Value: **" + str(player.value) + "**\n"
     if player.value == 21:
         response += "You got a blackjack!\n"
+        player.blackjacks += 1
     response += "Waiting on others to finish the round.\n"
     response += "**Your Cards:**"
     embed = discord.Embed(title="You Stood", description=response, colour=discord.Colour.dark_gray())
@@ -780,6 +786,8 @@ async def compareToDealer(game, player):
 async def win(game, player):
     # $3 to $2 for bet upon winning
     player.updateBalance((player.bet // 2) + player.bet)
+    player.wonrounds += 1
+    player.moneywon += (player.bet // 2) + player.bet
     response = "**Round " + str(game.round) + "**\n"
     response += "You won the round! You have been given $3 for every $2 you bet.\n"
     response += "Final Value: **" + str(player.value) + "**\n"
@@ -872,7 +880,176 @@ async def loss(game, player):
     # Notify the player has lost
     player.result = "L"
 
+# Displays the leaderboard
+async def displayLeaderboard(client, guild, channel):
+    changeReactions = [u"\U0001F1FC", u"\U0001F1E7", u"\U0001F1F2"]
+    first = True
+    while guild != None:
+        if first == True:
+            embed = await setEmbedRoundsWon(guild, changeReactions)
+            msg = await channel.send(embed=embed)
+            await msg.add_reaction(changeReactions[1])
+            await msg.add_reaction(changeReactions[2])
+        # Wait for reaction
+        def actionCheck(reaction, user):
+            return user.bot == False and str(reaction.emoji) in changeReactions
+        # Check for display change
+        try:
+            reaction, user = await client.wait_for('reaction_add', timeout=60.0, check=actionCheck)
+        except asyncio.TimeoutError:
+            # if there is no response remove the msg
+            await msg.delete()
+            return
+        # Take the reaction and adjust display
+        if user != None:
+            if str(reaction.emoji) == changeReactions[0]:
+                embed = await setEmbedRoundsWon(guild, changeReactions)
+                await msg.edit(embed=embed)
+                await msg.clear_reactions()
+                await msg.add_reaction(changeReactions[1])
+                await msg.add_reaction(changeReactions[2])
+            elif str(reaction.emoji) == changeReactions[1]:
+                embed = await setEmbedBlackjacks(guild, changeReactions)
+                await msg.edit(embed=embed) 
+                await msg.clear_reactions()
+                await msg.add_reaction(changeReactions[0])
+                await msg.add_reaction(changeReactions[2])
+            elif str(reaction.emoji) == changeReactions[2]:
+                embed = await setEmbedMoneyWon(guild, changeReactions)
+                await msg.edit(embed=embed) 
+                await msg.clear_reactions()
+                await msg.add_reaction(changeReactions[0])
+                await msg.add_reaction(changeReactions[1])
+        # Set first to false
+        first = False
 
+# Set embed for most rounds won
+async def setEmbedRoundsWon(guild, changeReactions):
+    # Set embed to rounds won
+    response = "Players Who Have Won The Most Rounds"
+    embed = discord.Embed(title='Blackjack Leaderboard', description=response, colour=discord.Colour.dark_gray())
+    # Obtain all players on the server
+    playersInServer = []
+    for member in guild.members:
+        if member.id in players:
+            playersInServer.append(players[member.id])
+    # Sort the players according to most rounds won
+    playersInServer = sorted(playersInServer, key=(lambda x: x.wonrounds), reverse=True)
+    count = 1
+    # Display the players
+    for player in playersInServer:
+        position = ""
+        if count == 1:
+            position += "1st"
+        elif count == 2:
+            position += "2nd"
+        elif count == 3:
+            position += "3rd"
+        else:
+            position += str(count) + "th"
+        title = position + " Place"
+        playerObj = await guild.fetch_member(player.userid)
+        response = playerObj.display_name + "\n"
+        response += "Rounds Won: " + str(player.wonrounds) + "\n"
+        response += "Balance: $" + str(player.money)
+        embed.add_field(name=title, value=response, inline=False)
+        count += 1
+    # Check if count has ever been incremented
+    if count == 1:
+        response = "There are currently no registered players. Play a blackjack game or slot machine to register. "
+        response += "You may also register by calling **!blackjack balance**."
+        embed.add_field(name="No Players", value=response, inline=False)
+    # Display change info
+    response = changeReactions[1] + " for most blackjacks\n"
+    response += changeReactions[2] + " for most money won"
+    embed.add_field(name="Change Display", value=response, inline=False)
+    return embed
+
+# Set embed for most rounds won
+async def setEmbedBlackjacks(guild, changeReactions):
+    # Set embed to blackjacks
+    response = "Players Who Have Gotten The Most Blackjacks"
+    embed = discord.Embed(title='Blackjack Leaderboard', description=response, colour=discord.Colour.dark_gray())
+    # Obtain all players on the server
+    playersInServer = []
+    for member in guild.members:
+        if member.id in players:
+            playersInServer.append(players[member.id])
+    # Sort the players according to most rounds won
+    playersInServer = sorted(playersInServer, key=(lambda x: x.blackjacks), reverse=True)
+    count = 1
+    # Display the players
+    for player in playersInServer:
+        position = ""
+        if count == 1:
+            position += "1st"
+        elif count == 2:
+            position += "2nd"
+        elif count == 3:
+            position += "3rd"
+        else:
+            position += str(count) + "th"
+        title = position + " Place"
+        playerObj = await guild.fetch_member(player.userid)
+        response = playerObj.display_name + "\n"
+        response += "Blackjacks: " + str(player.blackjacks) + "\n"
+        response += "Balance: $" + str(player.money)
+        embed.add_field(name=title, value=response, inline=False)
+        count += 1
+    # Check if count has ever been incremented
+    if count == 1:
+        response = "There are currently no registered players. Play a blackjack game or slot machine to register. "
+        response += "You may also register by calling **!blackjack balance**."
+        embed.add_field(name="No Players", value=response, inline=False)
+    # Display change info
+    response = changeReactions[0] + " for most rounds won\n"
+    response += changeReactions[2] + " for most money won"
+    embed.add_field(name="Change Display", value=response, inline=False)
+    return embed
+
+# Set embed for most money won
+async def setEmbedMoneyWon(guild, changeReactions):
+    # Set embed to money
+    response = "Players Who Have Gained the Most Money from Wins"
+    embed = discord.Embed(title='Blackjack Leaderboard', description=response, colour=discord.Colour.dark_gray())
+    # Obtain all players on the server
+    playersInServer = []
+    for member in guild.members:
+        if member.id in players:
+            playersInServer.append(players[member.id])
+    # Sort the players according to most rounds won
+    playersInServer = sorted(playersInServer, key=(lambda x: x.moneywon), reverse=True)
+    count = 1
+    # Display the players
+    for player in playersInServer:
+        position = ""
+        if count == 1:
+            position += "1st"
+        elif count == 2:
+            position += "2nd"
+        elif count == 3:
+            position += "3rd"
+        else:
+            position += str(count) + "th"
+        title = position + " Place"
+        playerObj = await guild.fetch_member(player.userid)
+        response = playerObj.display_name + "\n"
+        response += "Money Won: $" + str(player.moneywon) + "\n"
+        response += "Balance: $" + str(player.money)
+        embed.add_field(name=title, value=response, inline=False)
+        count += 1
+    # Check if count has ever been incremented
+    if count == 1:
+        response = "There are currently no registered players. Play a blackjack game or slot machine to register. "
+        response += "You may also register by calling **!blackjack balance**."
+        embed.add_field(name="No Players", value=response, inline=False)
+    # Display change info
+    response = changeReactions[0] + " for most rounds won\n"
+    response += changeReactions[1] + " for most blackjacks"
+    embed.add_field(name="Change Display", value=response, inline=False)
+    return embed
+
+# Command for playing slots
 usage = "Command used to display the slot machine. It is direct messaged to you."
 # Format: !slots
 try:
