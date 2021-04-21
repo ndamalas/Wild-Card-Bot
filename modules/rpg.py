@@ -9,13 +9,11 @@ commandList = []
 playerlist = []
 classes = ["Enchanter", "Fighter", "Mage", "Marksman", "Assassin", "Tank"]
 monsterlist = []
-enemiesdf = pd.read_excel(r'C:\\Users\\liehr\\OneDrive\\Documents\\Wild-Card-Bot\\CS307_RPG_Mobs.xlsx')
-print(enemiesdf)
-for col_name in enemiesdf:
-    print(col_name)
+enemiesdf = pd.read_excel('./CS307_RPG_Mobs.xlsx')
+itemDf = pd.read_csv('./modules/Items.csv')
+
 index = enemiesdf.index
 a_list = list(index)
-print(a_list)
 
 class character:
     def __init__(self, userID, char_name, classtype):
@@ -33,9 +31,6 @@ class enemy:
         self.ad = temp['Attack Damage'].item()
         self.armor = temp['Armor'].item()
 
-enemy1 = enemy("Zombie")
-print(enemy1.name)
-print(enemy1.hp)
 
 
 commandList.append(Command("!rpg", "rpg", "rpg game\nUsage: !rpg help"))
@@ -53,6 +48,9 @@ async def rpg(ctx, message):
 
     if message.content.split(" ")[1] == "myinfo":
         await myinfo_rpg(ctx, message, mycharacter)
+
+    if message.content.split(" ")[1] == "shop":
+            await shop_rpg(ctx, message)
 
     # if message.content.split(" ")[1] == "exit":
 
@@ -113,3 +111,18 @@ async def start_rpg(ctx, message):
     await message.channel.send("**Character name: **" + charname)
     userID = message.author.id
     new_character = character(userID, charname, character_class)
+
+async def shop_rpg(ctx, message):
+    output = ""
+    embed=discord.Embed(title="Shop")
+    if (len(message.content.split(" ")) == 2):
+        for idx, item in itemDf.iterrows():
+            # output += "{:<40}{:^30}{:>20}".format(item['Item'], item['Recommended'], item['Cost']) + "\n"
+            # output += f"{item['Item']:<40}{item['Recommended']:^30}{item['Cost']:>20}"
+            output += item['Item'] + " " + item['Recommended'] + " " + str(item['Cost']) + "\n"
+    else:
+        for idx, item in itemDf.iterrows():
+            if item['Recommended'] == tempStr:
+                output += item['Item'] + "\n"
+    embed.add_field(name="{:<40}{:^30}{:>20}".format("Name", "Recommended", "Cost"), value=output, inline=True)
+    await message.channel.send(embed=embed)
