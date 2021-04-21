@@ -45,7 +45,7 @@ print(result)
 from os import error
 from bs4 import BeautifulSoup
 import requests
-equation = "sin(x^2)"
+equation = "x*sin(x)"
 # from sympy.solvers import solve
 # from sympy import Symbol
 from sympy import *
@@ -74,9 +74,11 @@ while i < len(equation):
     equation += "-(" + afterEquals + ")"
 """
 print(equation)
-x = symbols('x')
+x = Symbol('x')
+a = 0
+b = 10
 try:
-    solution = Derivative(equation, x).doit()
+    solution = integrate(equation, (x, a, b))
 except:
     solution = "Error"
 

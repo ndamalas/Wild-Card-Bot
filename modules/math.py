@@ -93,6 +93,9 @@ async def solveAlgebraic(equation, message):
 commandList.append(Command("!calc", "math", "Will solve any given math problem. It has support for all basic operations including algebra and trigonometry.\nUsage: `!calc <EQUATION>`"))
 async def math(client, message):
     contents = message.content.split(" ")
+    if (len(contents) < 2):
+        await message.send.channel("Please provide an equation.")
+        return
     equation = "".join(contents[1:])
     # Replace symbols to be used in the google calculator
     """i = 0
@@ -120,6 +123,9 @@ async def math(client, message):
 commandList.append(Command("!derive", "derivative", "Will find the derivative of the equation given with respect to x.\nUsage: `!derive <EQUATION>`"))
 async def derivative(client, message):
     contents = message.content.split(" ")
+    if (len(contents) < 2):
+        await message.send.channel("Please provide an equation.")
+        return
     equation = "".join(contents[1:])
     original = equation
 
@@ -133,7 +139,7 @@ async def derivative(client, message):
             equation = equation[:i] + "**" + equation[i+1:]
             i += 1
         i += 1
-    x = symbols('x')
+    x = Symbol('x')
     try:
         solution = Derivative(equation, x).doit()
     except:
@@ -153,3 +159,89 @@ async def derivative(client, message):
     embed = discord.Embed(title =  solStr,  description = original + "\nDerivative with respect to x: " + solStr, colour = discord.Colour.blue())
     embed.set_author(name=message.author.display_name, icon_url=message.author.avatar_url)
     await message.channel.send(embed=embed)
+
+
+async def solveDefinite(message):
+    contents = message.content.split(" ")
+    if (len(contents) < 5):
+        await message.send.channel("Please provide upper and lower bounds for the definite integral.")
+    a = float(contents[2])
+    b = float(contents[3])
+    equation = "".join(contents[4:])
+    original = equation
+    i = 0
+    while i < len(equation):
+        if equation[i].isalpha():
+            if i != 0 and equation[i-1].isnumeric():
+                equation = equation[:i] + "*" + equation[i:]
+                i += 1
+        if equation[i] == "^":
+            equation = equation[:i] + "**" + equation[i+1:]
+            i += 1
+        i += 1
+    x = Symbol('x')
+    try:
+        solution = integrate(equation, (x, a, b))
+    except:
+        await message.channel.send("Invalid Equation")
+        return
+    
+    i = 1
+    solStr = str(solution)
+    if "integral" in solStr:
+        await message.channel.send("Equation not supported, try again.")
+    while i < len(solStr):
+        if solStr[i] == '*' and solStr[i-1] == '*':
+            solStr = solStr[:i] + "^" + solStr[i+1:]
+        i += 1
+    solStr = solStr.replace("*", "")
+    solStr = solStr[:5]
+
+    embed = discord.Embed(title = solStr,  description = original + "\nDefinite integral from {} to {} with respect to x: ".format(a, b) + solStr, colour = discord.Colour.blue())
+    embed.set_author(name=message.author.display_name, icon_url=message.author.avatar_url)
+    await message.channel.send(embed=embed)
+
+async def solveIndefinite(message):
+    contents = message.content.split(" ")
+    equation = "".join(contents[1:])
+    original = equation
+    i = 0
+    while i < len(equation):
+        if equation[i].isalpha():
+            if i != 0 and equation[i-1].isnumeric():
+                equation = equation[:i] + "*" + equation[i:]
+                i += 1
+        if equation[i] == "^":
+            equation = equation[:i] + "**" + equation[i+1:]
+            i += 1
+        i += 1
+    x = Symbol('x')
+    try:
+        solution = integrate(equation, x)
+    except:
+        await message.channel.send("Invalid Equation")
+        return
+    
+    i = 1
+    solStr = str(solution)
+    if "integral" in solStr:
+        await message.channel.send("Equation not supported, try again.")
+    while i < len(solStr):
+        if solStr[i] == '*' and solStr[i-1] == '*':
+            solStr = solStr[:i] + "^" + solStr[i+1:]
+        i += 1
+    solStr = solStr.replace("*", "")
+
+    embed = discord.Embed(title = solStr + "  + C",  description = original + "\nIndefinite integral with respect to x: " + solStr + "  + C", colour = discord.Colour.blue())
+    embed.set_author(name=message.author.display_name, icon_url=message.author.avatar_url)
+    await message.channel.send(embed=embed)
+
+
+commandList.append(Command("!integrate", "integral", "Will find the integral of the equation given with respect to x.\nYou can choose between definite and indefinite integrals.\nUsage for indefinite integrals: `!integrate <EQUATION>`\nUsage for definite integrals: `!intgrate definite <A> <B> <EQUATION>"))
+async def integral(client, message):
+    contents = message.content.split(" ")
+    if contents[1] == "definite":
+        await solveDefinite(message)
+        return
+    await solveIndefinite(message)
+    return
