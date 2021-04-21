@@ -1133,10 +1133,10 @@ async def slotMachine(client, slot, playerObj):
             slot.updateWinnings(bet)
             await slot.sm.edit(embed=slot.embed) 
             # Run the slots
-            for _ in range(20):
+            for _ in range(6):
                 slot.updateNumbers()
                 await slot.sm.edit(embed=slot.embed)
-                await asyncio.sleep(0.2)
+                await asyncio.sleep(0.8)
             # Check winnings
             winnings = slot.calculateWinnings(bet)
             slot.player.updateBalance(winnings)
