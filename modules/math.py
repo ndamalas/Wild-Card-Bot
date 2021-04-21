@@ -94,7 +94,7 @@ commandList.append(Command("!calc", "math", "Will solve any given math problem. 
 async def math(client, message):
     contents = message.content.split(" ")
     if (len(contents) < 2):
-        await message.send.channel("Please provide an equation.")
+        await message.channel.send("Please provide an equation.")
         return
     equation = "".join(contents[1:])
     # Replace symbols to be used in the google calculator
@@ -118,13 +118,11 @@ async def math(client, message):
     return
 
     
-    # await message.channel.send("**" + answer + "**")
-
 commandList.append(Command("!derive", "derivative", "Will find the derivative of the equation given with respect to x.\nUsage: `!derive <EQUATION>`"))
 async def derivative(client, message):
     contents = message.content.split(" ")
     if (len(contents) < 2):
-        await message.send.channel("Please provide an equation.")
+        await message.channel.send("Please provide an equation.")
         return
     equation = "".join(contents[1:])
     original = equation
@@ -150,6 +148,7 @@ async def derivative(client, message):
     solStr = str(solution)
     if "Derivative" in solStr:
         await message.channel.send("Equation not supported, try again.")
+        return
     while i < len(solStr):
         if solStr[i] == '*' and solStr[i-1] == '*':
             solStr = solStr[:i] + "^" + solStr[i+1:]
@@ -164,7 +163,8 @@ async def derivative(client, message):
 async def solveDefinite(message):
     contents = message.content.split(" ")
     if (len(contents) < 5):
-        await message.send.channel("Please provide upper and lower bounds for the definite integral.")
+        await message.channel.send("Please provide upper and lower bounds for the definite integral.")
+        return
     a = float(contents[2])
     b = float(contents[3])
     equation = "".join(contents[4:])
@@ -190,6 +190,7 @@ async def solveDefinite(message):
     solStr = str(solution)
     if "integral" in solStr:
         await message.channel.send("Equation not supported, try again.")
+        return
     while i < len(solStr):
         if solStr[i] == '*' and solStr[i-1] == '*':
             solStr = solStr[:i] + "^" + solStr[i+1:]
@@ -226,6 +227,7 @@ async def solveIndefinite(message):
     solStr = str(solution)
     if "integral" in solStr:
         await message.channel.send("Equation not supported, try again.")
+        return
     while i < len(solStr):
         if solStr[i] == '*' and solStr[i-1] == '*':
             solStr = solStr[:i] + "^" + solStr[i+1:]
