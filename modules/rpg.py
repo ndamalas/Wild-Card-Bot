@@ -51,7 +51,10 @@ async def rpg(ctx, message):
         await myinfo_rpg(ctx, message, mycharacter)
 
     if message.content.split(" ")[1] == "shop":
-            await shop_rpg(ctx, message)
+        await shop_rpg(ctx, message)
+
+    if message.content.split(" ")[1] == "item":
+        await item_rpg(ctx, message)
 
     # if message.content.split(" ")[1] == "exit":
 
@@ -135,3 +138,35 @@ async def shop_rpg(ctx, message):
     embed.add_field(name="Class", value=output_class, inline=True)
     embed.add_field(name="Cost", value=output_cost, inline=True)
     await message.channel.send(embed=embed)
+
+async def item_rpg(ctx, message):
+    name = ""
+    if len(message.content.split(" ")) < 3:
+        await message.channel.send("Enter a valid item name\nUsage: !rpg item <NAME>")
+    else:
+        for i in range(2, len(message.content.split(" "))):
+            name += message.content.split(" ")[i]
+        name = name.title()
+        description = ""
+        temp_col = ""
+        temp_val = ""
+        i = 0
+        for col in itemDf.columns:
+            if i != 0 and i != 10:
+                temp_col += col + '\n'
+            i += 1
+        for idx, item in itemDf.iterrows():
+            if item['Item'] == name:
+                j = 0
+                for col in item:
+                    if j == 0:
+                        pass
+                    elif j == 10:
+                        description = col
+                    else:
+                        temp_val += str(col) + '\n'
+                    j += 1
+        embed=discord.Embed(title=name, description=description)
+        embed.add_field(name="Stat", value=temp_col, inline=True)
+        embed.add_field(name="Value", value=temp_val, inline=True)
+        await message.channel.send(embed=embed)
