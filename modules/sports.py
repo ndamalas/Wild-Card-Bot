@@ -3,7 +3,6 @@ from bs4 import BeautifulSoup
 from command import Command
 import requests
 import discord
-from googlesearch import search
 
 
 # Every module has to have a command list
