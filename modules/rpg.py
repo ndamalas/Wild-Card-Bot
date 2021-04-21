@@ -1,17 +1,41 @@
 import string
 import discord
 import asyncio
+import os
+import pandas as pd
 from command import Command
 
 commandList = []
 playerlist = []
 classes = ["Enchanter", "Fighter", "Mage", "Marksman", "Assassin", "Tank"]
+monsterlist = []
+enemiesdf = pd.read_excel(r'C:\\Users\\liehr\\OneDrive\\Documents\\Wild-Card-Bot\\CS307_RPG_Mobs.xlsx')
+print(enemiesdf)
+for col_name in enemiesdf:
+    print(col_name)
+index = enemiesdf.index
+a_list = list(index)
+print(a_list)
 
 class character:
     def __init__(self, userID, char_name, classtype):
         self.id = userID
         self.name = char_name
         self.character_class = classtype
+
+#Install this: pip install xlrd
+#Install this: pip install openpyxl
+class enemy:
+    def __init__(self, type):
+        temp = enemiesdf.loc[enemiesdf['Monster Name'] == type]
+        self.name = temp['Monster Name'].item()
+        self.hp = temp['Health Points'].item()
+        self.ad = temp['Attack Damage'].item()
+        self.armor = temp['Armor'].item()
+
+enemy1 = enemy("Zombie")
+print(enemy1.name)
+print(enemy1.hp)
 
 
 commandList.append(Command("!rpg", "rpg", "rpg game\nUsage: !rpg help"))
@@ -89,4 +113,3 @@ async def start_rpg(ctx, message):
     await message.channel.send("**Character name: **" + charname)
     userID = message.author.id
     new_character = character(userID, charname, character_class)
-    playerlist.append(new_character)
