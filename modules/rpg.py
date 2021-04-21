@@ -20,6 +20,7 @@ class character:
         self.id = userID
         self.name = char_name
         self.character_class = classtype
+        self.balance = 0
 
 #Install this: pip install xlrd
 #Install this: pip install openpyxl
@@ -113,16 +114,24 @@ async def start_rpg(ctx, message):
     new_character = character(userID, charname, character_class)
 
 async def shop_rpg(ctx, message):
-    output = ""
+    output_name = ""
+    output_class = ""
+    output_cost = ""
     embed=discord.Embed(title="Shop")
     if (len(message.content.split(" ")) == 2):
         for idx, item in itemDf.iterrows():
             # output += "{:<40}{:^30}{:>20}".format(item['Item'], item['Recommended'], item['Cost']) + "\n"
             # output += f"{item['Item']:<40}{item['Recommended']:^30}{item['Cost']:>20}"
-            output += item['Item'] + " " + item['Recommended'] + " " + str(item['Cost']) + "\n"
+            output_name += item['Item'] + '\n'
+            output_class += item['Recommended'] + '\n'
+            output_cost += str(item['Cost']) + '\n'
     else:
         for idx, item in itemDf.iterrows():
-            if item['Recommended'] == tempStr:
-                output += item['Item'] + "\n"
-    embed.add_field(name="{:<40}{:^30}{:>20}".format("Name", "Recommended", "Cost"), value=output, inline=True)
+            if item['Recommended'] == message.content.split(" ")[2]:
+                output_name += item['Item'] + '\n'
+                output_class += item['Recommended'] + '\n'
+                output_cost += str(item['Cost']) + '\n'
+    embed.add_field(name="Name", value=output_name, inline=True)
+    embed.add_field(name="Class", value=output_class, inline=True)
+    embed.add_field(name="Cost", value=output_cost, inline=True)
     await message.channel.send(embed=embed)
