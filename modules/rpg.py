@@ -21,7 +21,7 @@ class character:
         self.name = char_name
         self.character_class = classtype
         self.balance = 0
-        self.inventory = []
+        self.inventory = ["abc", "def"]
 
 #Install this: pip install xlrd
 #Install this: pip install openpyxl
@@ -41,6 +41,8 @@ async def rpg(ctx, message):
 
     if (len(playerlist) > 0):
         mycharacter = playerlist[0]
+    else:
+        mycharacter = "True"
 
     if message.content.split(" ")[1] == "help":
         await help_rpg(ctx, message)
@@ -56,6 +58,9 @@ async def rpg(ctx, message):
 
     if message.content.split(" ")[1] == "item":
         await item_rpg(ctx, message)
+
+    if message.content.split(" ")[1] == "inventory":
+        await inventory_rpg(ctx, message, mycharacter)
 
     # if message.content.split(" ")[1] == "exit":
 
@@ -116,6 +121,7 @@ async def start_rpg(ctx, message):
     await message.channel.send("**Character name: **" + charname)
     userID = message.author.id
     new_character = character(userID, charname, character_class)
+    playerlist.append(new_character)
 
 async def shop_rpg(ctx, message):
     output_name = ""
@@ -171,3 +177,12 @@ async def item_rpg(ctx, message):
         embed.add_field(name="Stat", value=temp_col, inline=True)
         embed.add_field(name="Value", value=temp_val, inline=True)
         await message.channel.send(embed=embed)
+
+async def inventory_rpg(ctx, message, mycharacter):
+    title = str(mycharacter.name) + "\'s Inventory"
+    embed=discord.Embed(title=title)
+    output = ""
+    for item in mycharacter.inventory:
+        output += item + "\n"
+    embed.add_field(name="Items", value=output)
+    await message.channel.send(embed=embed)
