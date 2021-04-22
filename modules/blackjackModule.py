@@ -500,8 +500,14 @@ async def runRounds(client, game):
             await game.initializeRound()
             await game.gm.edit(embed=game.embed)
         # Send each player a chance to change bets
+        leavers = []
         for player in game.players:
-            await sendBetChanger(client, game, player)
+            leaver = await sendBetChanger(client, game, player)
+            if leaver != None:
+                leavers.append(leaver)
+        # Remove all players that want to leave
+        for leaver in leavers:
+            game.removePlayer(leaver)
         # Check if there are any players in the game
         if len(game.players) == 0:
             await game.end()
@@ -581,18 +587,18 @@ async def sendBetChanger(client, game, player):
                 break
         # Check if player reacted to exit the game
         if str(reaction.emoji) == Player.exitReaction:
-            game.removePlayer(player)
             await betMsg.delete()
             response = "You have left the game!\n"
             embed = discord.Embed(title="Left The Game", description=response, colour=discord.Colour.red())
             await playerObj.send(embed=embed)
-            return
+            return player
     await betMsg.delete()
     response = "Your bet amount: **$" + str(player.bet) + "**\n"
     embed = discord.Embed(title="Your Bet", description=response, colour=discord.Colour.blurple())
     await playerObj.send(embed=embed)
     # Notify player is done
     player.done = True
+    return None
 
 # Direct messages the player's hand
 async def sendHand(client, game, player):
