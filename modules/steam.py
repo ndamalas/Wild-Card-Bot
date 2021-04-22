@@ -97,6 +97,116 @@ async def steam_profile(ctx, message):
         embed.add_field(name="Groups", value=text, inline=True)
 
         await msg.edit(content="", embed=embed)
+    elif message.content.split(" ")[1] == "groups":
+        name = message.content.split(" ")[2]
+
+        # Get steamID from name
+        session = aiohttp.ClientSession()
+        output = await session.get(f"https://api.steampowered.com/ISteamUser/ResolveVanityURL/v1/?key={steam_api_key}&vanityurl={name}")
+        out = await output.json()
+        await session.close()
+        myDf = pd.DataFrame.from_dict(out)
+        if myDf['response'][myDf.index == "success"].item() != 1:
+            await msg.edit(content="Not a valid username")
+            return
+        steamid = myDf['response'][myDf.index == "steamid"].item()
+
+        #Get user infos
+        session = aiohttp.ClientSession()
+        output = await session.get(f"https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key={steam_api_key}&steamids={steamid}")
+        out = await output.json()
+        await session.close()
+        pd.set_option("display.max_columns", None)
+        userDf = pd.DataFrame.from_dict(out)
+        userDf = userDf['response'][userDf.index == "players"][0][0]
+
+        persona = userDf['personaname']
+
+        # Output user status
+        state = status(userDf['personastate'])
+        # await message.channel.send(persona + " is currently: " + state)
+
+        # Output current game playing
+        if 'gameextrainfo' in userDf:
+            current_game = userDf['gameextrainfo']
+        else:
+            current_game = "None"
+        # await message.channel.send(persona + " is playing: " + current_game)
+
+        # Output location of user
+        if 'loccountrycode' in userDf:
+            location = userDf['loccountrycode']
+        else:
+            location = "N/A"
+        # await message.channel.send(persona + " location: " + location)
+
+        # Output groups
+        session = aiohttp.ClientSession()
+        output = await session.get(f"https://api.steampowered.com/ISteamUser/GetUserGroupList/v1/?key={steam_api_key}&steamid={steamid}")
+        out = await output.json()
+        await session.close()
+        groupDf = pd.DataFrame.from_dict(out)
+        groupDf = groupDf['response'][groupDf.index == "groups"][0]
+        # await message.channel.send(persona + "\'s Groups: ")
+        text = ""
+        for group in groupDf:
+            gid = group['gid']
+            session = aiohttp.ClientSession()
+            output = await session.get(f"https://steamcommunity.com/gid/{gid}/memberslistxml/?xml=1")
+            out = await output.read()
+            await session.close()
+            soup = BeautifulSoup(out, 'xml')
+            # await message.channel.send(soup.groupName.get_text())
+            # await message.channel.send("https://steamcommunity.com/groups/" + soup.groupURL.get_text())
+            txt = soup.groupName.get_text()
+            link = "https://steamcommunity.com/groups/" + soup.groupURL.get_text()
+            text += f"[{txt}]({link})\n"
+        if not groupDf:
+            text += "None"
+            # await message.channel.send("None")
+
+        # Set privacy state
+        privacy = userDf["communityvisibilitystate"]
+        if privacy == 3:
+            privacy_state = "Public"
+            # await message.channel.send(persona + "\'s profile is public")
+        else:
+            privacy_state = "Private"
+            # await message.channel.send(persona + "\'s profile is private")
+
+        embed=discord.Embed(title=persona, url=userDf['profileurl'], color=0x2a475e)
+        embed.set_thumbnail(url=userDf['avatarfull'])
+        embed.add_field(name="Groups", value=text, inline=True)
+
+        await msg.edit(content="", embed=embed)
+    elif message.content.split(" ")[1] == "status":
+        name = message.content.split(" ")[2]
+
+        # Get steamID from name
+        session = aiohttp.ClientSession()
+        output = await session.get(f"https://api.steampowered.com/ISteamUser/ResolveVanityURL/v1/?key={steam_api_key}&vanityurl={name}")
+        out = await output.json()
+        await session.close()
+        myDf = pd.DataFrame.from_dict(out)
+        if myDf['response'][myDf.index == "success"].item() != 1:
+            await msg.edit(content="Not a valid username")
+            return
+        steamid = myDf['response'][myDf.index == "steamid"].item()
+
+        #Get user infos
+        session = aiohttp.ClientSession()
+        output = await session.get(f"https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key={steam_api_key}&steamids={steamid}")
+        out = await output.json()
+        await session.close()
+        pd.set_option("display.max_columns", None)
+        userDf = pd.DataFrame.from_dict(out)
+        userDf = userDf['response'][userDf.index == "players"][0][0]
+
+        persona = userDf['personaname']
+
+        # Output user status
+        state = status(userDf['personastate'])
+        await msg.edit(content=state)
     elif message.content.split(" ")[1] == "trending":
         #Gets the website and uses beautifulSoup to parse html website
         #the request is so that it doesn't deny access thinking we are bots
@@ -111,7 +221,7 @@ async def steam_profile(ctx, message):
         #Finds the table itself
         body = table.find('tbody')
         #print(body)
-        
+
         #Finds the rows in the table
         rows = body.find_all('tr')
         #print(rows)
@@ -132,7 +242,7 @@ async def steam_profile(ctx, message):
                     print(name)
                     game_name_array.append(name.get_text())
             counter += 1
-            
+
         #print(game_name_array)
 
         #Print the array in an embed and output the embed to the user
@@ -155,7 +265,7 @@ async def steam_profile(ctx, message):
         #Finds the table itself
         body = table.find('tbody')
         #print(body)
-        
+
         #Finds the rows in the table
         rows = body.find_all('tr')
         #print(rows)
@@ -176,7 +286,7 @@ async def steam_profile(ctx, message):
                     print(name)
                     game_name_array.append(name.get_text())
             counter += 1
-            
+
         #print(game_name_array)
 
         #Print the array in an embed and output the embed to the user
@@ -238,7 +348,7 @@ async def steam_profile(ctx, message):
                 #game_type = gameidDf['type']
                 #print(game_type)
                 title = "Game Description"
-                game_info = "Name: " + gameidDf['name'] + "\n" + "Game ID: " + str(gameidDf['steam_appid']) + "\n" +  "Type: " + gameidDf['type'] + "\n" +  "Free: "  + str(gameidDf['is_free']) + "\n" 
+                game_info = "Name: " + gameidDf['name'] + "\n" + "Game ID: " + str(gameidDf['steam_appid']) + "\n" +  "Type: " + gameidDf['type'] + "\n" +  "Free: "  + str(gameidDf['is_free']) + "\n"
                 embed=discord.Embed(title=title, description=game_info, color=0x2a475e, image="link")
                 await message.channel.send(embed=embed)
                 #for attribute in gameidDf:
@@ -246,7 +356,7 @@ async def steam_profile(ctx, message):
                     #print(gameidDf[attribute])
                     #print()
                     #await message.channel.send(attribute+":")
-                    #await message.channel.send(gameidDf[attribute]) 
+                    #await message.channel.send(gameidDf[attribute])
                     #await message.channel.send()
     else:
         embed=discord.Embed(title="Sorry that tag does not exist.")
