@@ -205,7 +205,11 @@ class Game:
             if len([p for p in self.players if p.userid == user.id]) == 0:
                 if user.id not in players:
                     players[user.id] = Player(user.id)
-                self.addPlayer(players[user.id])
+                if players[user.id].ingame == False:
+                    self.addPlayer(players[user.id])
+        # Clear reaction of all players
+        await self.gm.clear_reactions()
+        await self.gm.add_reaction(Game.addReaction)
     # Update the status of the game
     def updateStatus(self, title, status):
         status += "\nReact with " + Game.addReaction + " to join the next round."
@@ -462,7 +466,7 @@ async def runBlackjack(client, message):
             game.tc = message.channel.id
             await game.gm.delete()
             game.gm = await game.guild.get_channel(game.tc).send(embed=game.embed)
-            await game.gm.add_reaction(game.addReaction)
+            await game.gm.add_reaction(Game.addReaction)
         else:
             # Create the game
             game = Game(message.guild, message.channel.id)
@@ -475,7 +479,7 @@ async def runBlackjack(client, message):
             # Initialize the first round
             await game.initializeRound()
             game.gm = await game.guild.get_channel(game.tc).send(embed=game.embed)
-            await game.gm.add_reaction(game.addReaction)
+            await game.gm.add_reaction(Game.addReaction)
             # Wait 15 seconds for people to join
             await asyncio.sleep(15)
             # Check for new players and update game display
