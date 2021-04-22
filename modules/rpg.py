@@ -21,6 +21,7 @@ class character:
         self.name = char_name
         self.character_class = classtype
         self.balance = 0
+        self.inventory = []
 
 #Install this: pip install xlrd
 #Install this: pip install openpyxl

@@ -1,0 +1,17 @@
+Item,Recommended,Type,AD,AP,HP,Armor,HP regen,Cost,Description
+Duskblade,Assassin,Primary,55,0,100,0,0,320,"After killing an enemy unit, evade all attacks from enemies for the next round"
+Eclipse,Assassin,Primary,55,0,100,0,0,320,"After using an attack, the user gains 10 shield"
+Locket,Enchanter,Primary,0,0,300,30,10,270,Active: Gain 20 shield (4 round CD)
+Moonstone,Enchanter,Primary,0,40,300,5,30,270,Gives large heal and sustain per round
+Goredrinker,Fighter,Primary,45,0,500,0,50,330,Every attack heals the user and provides sustain
+Black Cleaver,Fighter,Primary,40,0,100,25,100,330,All attacks ignore enemy armor
+Night Harvester,Mage,Primary,0,80,350,0,0,320,"Every 3rd round, attacks deal twice the damage"
+Everfrost,Mage,Primary,0,80,300,0,0,340,Active: Freeze all enemies for the next round (4 round CD)
+Kraken Slayer,Marksman,Primary,60,0,50,0,60,340,All attacks gain a large bonus damage
+Runaan's Hurricane,Marksman,Primary,25,0,50,0,25,330,Attacks using this item damage all enemies in the field
+Sunfire Aegis,Tank,Primary,10,0,550,30,20,320,"At the end of each round, deal 15 damage to all enemies"
+Frostfire Gauntlet,Tank,Primary,10,0,450,50,20,320,"Every 2 rounds, freeze enemies"
+Long Sword,Any,Secondary,10,0,0,0,5,50,-
+Ruby Crystal,Any,Secondary,0,0,100,0,10,50,-
+Cloth Armor,Any,Secondary,0,0,0,15,10,50,-
+Blasting Wand,Any,Secondary,0,30,0,0,5,50,-
