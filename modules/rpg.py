@@ -3,6 +3,7 @@ import discord
 import asyncio
 import os
 import pandas as pd
+import random
 from command import Command
 
 commandList = []
@@ -21,6 +22,32 @@ class character:
         self.id = userID
         self.name = char_name
         self.character_class = classtype
+        attack = 0
+        defense = 0
+        hp = 0
+        if(classtype == "Enchanter"):
+            attack = 35
+            defense = 10
+            hp = 300
+        elif(classtype == "Fighter"):
+            attack = 55
+            defense = 30
+            hp = 480
+        elif(classtype == "Mage"):
+            attack = 50
+            defense = 35
+            hp = 450
+        elif(classtype == "Marksman"):
+            attack = 45
+            defense = 25
+            hp = 350
+        elif(classtype == "Tank"):
+            attack = 30
+            defense = 40
+            hp = 550
+        self.ad = attack
+        self.armor = defense
+        self.hp = hp
         balance = 50
         self._balance = balance
         self.inventory = []
@@ -53,6 +80,7 @@ async def rpg(ctx, message):
 
     if message.content.split(" ")[1] == "start":
         await start_rpg(ctx, message)
+        await help_rpg(ctx, message)
 
     if message.content.split(" ")[1] == "myinfo":
         await myinfo_rpg(ctx, message, mycharacter)
@@ -71,12 +99,22 @@ async def rpg(ctx, message):
 
     if message.content.split(" ")[1] == "buy":
         await buy_rpg(ctx, message, mycharacter)
+    
+    if message.content.split(" ")[1] == "dungeonlist":
+        await dungeonlist_rpg(ctx, message)
+    
+    if message.content.split(" ")[1] == "dungeon":
+        if message.content.split(" ")[2] == "Tutorial":
+            await tutorial_rpg(ctx, message)
+        else:
+            await message.channel.send("Sorry that dungeon is not one that is available.")
     # if message.content.split(" ")[1] == "exit":
 
 async def help_rpg(ctx, message):
     embed=discord.Embed(title="RPG Command List and Help\nUsage: !rpg <COMMAND>")
     embed.add_field(name="start", value="Starts a new game. Prompts user for class type and name of character", inline=False)
     embed.add_field(name="myinfo", value="Displays basic user info including character class, user ID, name", inline=False)
+    embed.add_field(name="dungeonlist", value="Displays a list of current available dungeons.", inline=False)
     await message.channel.send(embed=embed)
 
 async def myinfo_rpg(ctx, message, mycharacter):
@@ -328,3 +366,69 @@ async def buy_rpg(ctx, message, mycharacter):
         temp_str = item_name + " has been added to your inventory"
         embed=discord.Embed(title="Purchase success", description=temp_str)
         await message.channel.send(embed=embed)
+async def dungeonlist_rpg(ctx, message):
+    embed=discord.Embed(title="Dungeon List", description = "Tutorial")
+    await message.channel.send(embed=embed)
+async def tutorial_rpg(ctx, message):
+    #Introduction
+    await message.channel.send("Welcome " + playerlist[0].name + " to the RPG Tutorial!\n")
+    await message.channel.send("This is the tutorial dungeon. Each dungeon is divided into 3 floors in which players will fight monsters to earn gold and glory.\n")
+    await message.channel.send("The monster on the floors will increase in difficulty and strength as you progress. Once all 3 floors of the dungeon have been cleared you will have cleared the dungeon and can move on to other dungeons.\n")
+    await message.channel.send("Good luck!\n")
+    #For loop for each floor
+    for i in range(3):
+        #List of monsters on that floor
+        floormonsterlist = []
+        #First floor
+        if(i == 0):
+            #Randomize monster for the first floor (weaker, common monsters)
+            for i in range(3):
+                r = random.randint(0,3)
+                if(r == 0):
+                    enemy0 = enemy("Zombie")
+                    floormonsterlist.append(enemy0)
+                elif(r == 1):
+                    enemy1 = enemy("Skeleton")
+                    floormonsterlist.append(enemy1)
+                elif(r == 2):
+                    enemy2 = enemy("Goblin")
+                    floormonsterlist.append(enemy2)
+                elif(r == 3):
+                    enemy3 = enemy("Spiders")
+                    floormonsterlist.append(enemy3)
+            await message.channel.send("\nYou enter the dungeon and are approached by a " + floormonsterlist[0].name + ", " + floormonsterlist[1].name + ", and " + floormonsterlist[2].name + ".")
+            description = ""
+            for i in range(3):
+                description += "Monster Name: " + floormonsterlist[i].name + "\nHealth Points: " + str(floormonsterlist[i].hp) + "\nAttack Damage: " + str(floormonsterlist[i].ad) + "\nArmor: " + str(floormonsterlist[i].armor) + "\n"
+            embed=discord.Embed(title="Enemies", description=description)
+            await message.channel.send(embed=embed)
+        #while(len(floormonsterlist) > 0):
+            await combat_options(ctx, message)
+            def check(m):
+                messageval = ""
+                if (m.content == "!rpg combat Attack"):
+                    messageval = "!rpg combat Attack"
+                elif (m.content == "!rpg combat Defend"):
+                    messageval = "!rpg combat Defend"
+                elif (m.content == "!rpg combat Heal"):
+                    messageval = "!rpg combat UseItem"
+                elif (m.content == "!rpg combat UseItem"):
+                    messageval = "!rpg combat UseItem"
+                elif (m.content == "!rpg combat Flee"):
+                    messageval = "!rpg combat Flee"
+                return m.content == messageval and m.channel == message.channel
+            msg = await ctx.wait_for("message", check=check)
+            await combat_choice(ctx, msg, floormonsterlist)
+async def combat_options(ctx, message):
+    embed=discord.Embed(title="Combat Options")
+    embed.add_field(name="Attack", value="Deal " + str(playerlist[0].ad) + " to one monster.", inline=False)
+    embed.add_field(name="Defend", value="Increase your defense stats by 10 for one turn which would make your defense: " + str(playerlist[0].armor + 10) + ".", inline=False)
+    if (playerlist[0].character_class == "Enchanter"):
+        embed.add_field(name="Heal", value="Heal yourself for 100 Health", inline=False)
+    else:
+        embed.add_field(name="UseItem", value="Use an item from your inventory to grant you stats.", inline=False)
+    embed.add_field(name="Flee", value="Save your progress and leave the dungeon to return for another time")
+    embed.add_field(name="How to Use", value="In order to use these commands options please type: !rpg combat <OPTION>", inline=False)
+    await message.channel.send(embed=embed)
+async def combat_choice(ctx, message, floormonsterlist):
+    await message.channel.send("Work in progress")
