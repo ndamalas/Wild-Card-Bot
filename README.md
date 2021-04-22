@@ -14,6 +14,8 @@ pip3 install -U pandas
 pip3 install -U aiohttp
 pip3 install -U sympy
 pip3 install -U pokepy
+pip3 install -U xlrd
+pip3 install -U openpyxl
 ```
 
 You will also need to install ffmpeg from https://ffmpeg.org/download.html
