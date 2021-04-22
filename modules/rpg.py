@@ -33,8 +33,6 @@ class enemy:
         self.ad = temp['Attack Damage'].item()
         self.armor = temp['Armor'].item()
 
-
-
 commandList.append(Command("!rpg", "rpg", "rpg game\nUsage: !rpg help"))
 async def rpg(ctx, message):
     global playerlist
@@ -61,6 +59,9 @@ async def rpg(ctx, message):
 
     if message.content.split(" ")[1] == "inventory":
         await inventory_rpg(ctx, message, mycharacter)
+
+    if message.content.split(" ")[1] == "enemies":
+        await enemies_rpg(ctx, message)
 
     # if message.content.split(" ")[1] == "exit":
 
@@ -186,3 +187,113 @@ async def inventory_rpg(ctx, message, mycharacter):
         output += item + "\n"
     embed.add_field(name="Items", value=output)
     await message.channel.send(embed=embed)
+
+async def enemies_rpg(ctx, message):
+    title = "Enemies:"
+    embed=discord.Embed(title=title)
+    output = ""
+    zombie_string = ""
+    skeleton_string = ""
+    goblin_string = ""
+    spider_string = ""
+    golem_string = ""
+    hellhound_string = ""
+    ogre_string = ""
+    guardian_string = ""
+    dragon_string = ""
+    king_string = ""
+    Zombie = enemy("Zombie")
+    Skeleton = enemy("Skeleton")
+    Goblin = enemy("Goblin")
+    Spider = enemy("Spiders")
+    Golem = enemy("Golem")
+    Hellhound = enemy("Hellhounds")
+    Ogre = enemy("Ogre")
+    Guardian = enemy("Guardian")
+    Dragon = enemy("Dragon")
+    King = enemy("The Ruined King")
+    if len(message.content.split(" ")) == 2:
+        #print("Length is 2")
+        zombie_string += "Name: " + Zombie.name + "\nHealth Points: " + str(Zombie.hp) + "\nAttack Damage: " + str(Zombie.ad) + "\nArmor: " + str(Zombie.armor)
+        embed.add_field(name="Zombie", value=zombie_string, inline=False)
+        skeleton_string += "Name: " + Skeleton.name + "\nHealth Points: " + str(Skeleton.hp) + "\nAttack Damage: " + str(Skeleton.ad) + "\nArmor: " + str(Skeleton.armor)
+        embed.add_field(name="Skeleton", value=skeleton_string, inline=False)
+        goblin_string += "Name: " + Goblin.name + "\nHealth Points: " + str(Goblin.hp) + "\nAttack Damage: " + str(Goblin.ad) + "\nArmor: " + str(Goblin.armor)
+        embed.add_field(name="Goblin", value=goblin_string, inline=False)
+        spider_string += "Name: " + Spider.name + "\nHealth Points: " + str(Spider.hp) + "\nAttack Damage: " + str(Spider.ad) + "\nArmor: " + str(Spider.armor)
+        embed.add_field(name="Spider", value=spider_string, inline=False)
+        golem_string += "Name: " + Golem.name + "\nHealth Points: " + str(Golem.hp) + "\nAttack Damage: " + str(Golem.ad) + "\nArmor: " + str(Golem.armor)
+        embed.add_field(name="Golem", value=golem_string, inline=False)
+        hellhound_string += "Name: " + Hellhound.name + "\nHealth Points: " + str(Hellhound.hp) + "\nAttack Damage: " + str(Hellhound.ad) + "\nArmor: " + str(Hellhound.armor)
+        embed.add_field(name="Hellhound", value=hellhound_string, inline=False)
+        ogre_string += "Name: " + Ogre.name + "\nHealth Points: " + str(Ogre.hp) + "\nAttack Damage: " + str(Ogre.ad) + "\nArmor: " + str(Ogre.armor)
+        embed.add_field(name="Ogre", value=ogre_string, inline=False)
+        guardian_string += "Name: " + Guardian.name + "\nHealth Points: " + str(Guardian.hp) + "\nAttack Damage: " + str(Guardian.ad) + "\nArmor: " + str(Guardian.armor)
+        embed.add_field(name="Guardian", value=guardian_string, inline=False)
+        dragon_string += "Name: " + Dragon.name + "\nHealth Points: " + str(Dragon.hp) + "\nAttack Damage: " + str(Dragon.ad) + "\nArmor: " + str(Dragon.armor)
+        embed.add_field(name="Dragon", value=ogre_string, inline=False)
+        king_string += "Name: " + King.name + "\nHealth Points: " + str(King.hp) + "\nAttack Damage: " + str(King.ad) + "\nArmor: " + str(King.armor)
+        embed.add_field(name="The Ruined King", value=king_string, inline=False)       
+    elif len(message.content.split(" ")) == 3:
+        #("Length is 3")
+        if message.content.split(" ")[2] == "Zombie": 
+            zombie_string += "Name: " + Zombie.name + "\nHealth Points: " + str(Zombie.hp) + "\nAttack Damage: " + str(Zombie.ad) + "\nArmor: " + str(Zombie.armor)
+            embed.add_field(name="Zombie", value=zombie_string, inline=False)
+        elif message.content.split(" ")[2] == "Skeleton":
+            skeleton_string += "Name: " + Skeleton.name + "\nHealth Points: " + str(Skeleton.hp) + "\nAttack Damage: " + str(Skeleton.ad) + "\nArmor: " + str(Skeleton.armor)
+            embed.add_field(name="Skeleton", value=skeleton_string, inline=False)
+        elif message.content.split(" ")[2] == "Goblin":
+            goblin_string += "Name: " + Goblin.name + "\nHealth Points: " + str(Goblin.hp) + "\nAttack Damage: " + str(Goblin.ad) + "\nArmor: " + str(Goblin.armor)
+            embed.add_field(name="Goblin", value=goblin_string, inline=False)
+        elif message.content.split(" ")[2] == "Spider":
+            spider_string += "Name: " + Spider.name + "\nHealth Points: " + str(Spider.hp) + "\nAttack Damage: " + str(Spider.ad) + "\nArmor: " + str(Spider.armor)
+            embed.add_field(name="Spider", value=spider_string, inline=False)
+        elif message.content.split(" ")[2] == "Golem":
+            golem_string += "Name: " + Golem.name + "\nHealth Points: " + str(Golem.hp) + "\nAttack Damage: " + str(Golem.ad) + "\nArmor: " + str(Golem.armor)
+            embed.add_field(name="Golem", value=golem_string, inline=False)
+        elif message.content.split(" ")[2] == "Hellhound":
+            hellhound_string += "Name: " + Hellhound.name + "\nHealth Points: " + str(Hellhound.hp) + "\nAttack Damage: " + str(Hellhound.ad) + "\nArmor: " + str(Hellhound.armor)
+            embed.add_field(name="Hellhound", value=hellhound_string, inline=False)
+        elif message.content.split(" ")[2] == "Ogre":
+            ogre_string += "Name: " + Ogre.name + "\nHealth Points: " + str(Ogre.hp) + "\nAttack Damage: " + str(Ogre.ad) + "\nArmor: " + str(Ogre.armor)
+            embed.add_field(name="Ogre", value=ogre_string, inline=False)
+        elif message.content.split(" ")[2] == "Guardian":
+            guardian_string += "Name: " + Guardian.name + "\nHealth Points: " + str(Guardian.hp) + "\nAttack Damage: " + str(Guardian.ad) + "\nArmor: " + str(Guardian.armor)
+            embed.add_field(name="Guardian", value=guardian_string, inline=False)
+        elif message.content.split(" ")[2] == "Dragon":
+            dragon_string += "Name: " + Dragon.name + "\nHealth Points: " + str(Dragon.hp) + "\nAttack Damage: " + str(Dragon.ad) + "\nArmor: " + str(Dragon.armor)
+            embed.add_field(name="Dragon", value=dragon_string, inline=False)
+        elif message.content.split(" ")[2] == "TheRuinedKing":
+            king_string += "Name: " + King.name + "\nHealth Points: " + str(King.hp) + "\nAttack Damage: " + str(King.ad) + "\nArmor: " + str(King.armor)
+            embed.add_field(name="The Ruined King", value=king_string, inline=False)
+        elif message.content.split(" ")[2] == "Common":
+            zombie_string += "Name: " + Zombie.name + "\nHealth Points: " + str(Zombie.hp) + "\nAttack Damage: " + str(Zombie.ad) + "\nArmor: " + str(Zombie.armor)
+            embed.add_field(name="Zombie", value=zombie_string, inline=False)
+            skeleton_string += "Name: " + Skeleton.name + "\nHealth Points: " + str(Skeleton.hp) + "\nAttack Damage: " + str(Skeleton.ad) + "\nArmor: " + str(Skeleton.armor)
+            embed.add_field(name="Skeleton", value=skeleton_string, inline=False)
+            goblin_string += "Name: " + Goblin.name + "\nHealth Points: " + str(Goblin.hp) + "\nAttack Damage: " + str(Goblin.ad) + "\nArmor: " + str(Goblin.armor)
+            embed.add_field(name="Goblin", value=goblin_string, inline=False)
+            spider_string += "Name: " + Spider.name + "\nHealth Points: " + str(Spider.hp) + "\nAttack Damage: " + str(Spider.ad) + "\nArmor: " + str(Spider.armor)
+            embed.add_field(name="Spider", value=spider_string, inline=False)
+        elif message.content.split(" ")[2] == "Rare":
+            golem_string += "Name: " + Golem.name + "\nHealth Points: " + str(Golem.hp) + "\nAttack Damage: " + str(Golem.ad) + "\nArmor: " + str(Golem.armor)
+            embed.add_field(name="Golem", value=golem_string, inline=False)
+            hellhound_string += "Name: " + Hellhound.name + "\nHealth Points: " + str(Hellhound.hp) + "\nAttack Damage: " + str(Hellhound.ad) + "\nArmor: " + str(Hellhound.armor)
+            embed.add_field(name="Hellhound", value=hellhound_string, inline=False)
+            ogre_string += "Name: " + Ogre.name + "\nHealth Points: " + str(Ogre.hp) + "\nAttack Damage: " + str(Ogre.ad) + "\nArmor: " + str(Ogre.armor)
+            embed.add_field(name="Ogre", value=ogre_string, inline=False)
+        elif message.content.split(" ")[2] == "Epic":
+            guardian_string += "Name: " + Guardian.name + "\nHealth Points: " + str(Guardian.hp) + "\nAttack Damage: " + str(Guardian.ad) + "\nArmor: " + str(Guardian.armor)
+            embed.add_field(name="Guardian", value=guardian_string, inline=False)
+            dragon_string += "Name: " + Dragon.name + "\nHealth Points: " + str(Dragon.hp) + "\nAttack Damage: " + str(Dragon.ad) + "\nArmor: " + str(Dragon.armor)
+            embed.add_field(name="Dragon", value=dragon_string, inline=False)
+        elif message.content.split(" ")[2] == "Legendary":
+            king_string += "Name: " + King.name + "\nHealth Points: " + str(King.hp) + "\nAttack Damage: " + str(King.ad) + "\nArmor: " + str(King.armor)
+            embed.add_field(name="The Ruined King", value=king_string, inline=False)
+        else:
+            await message.channel.send(">>> Arguments invalid")
+            return
+    else:
+        await message.channel.send(">>> Arguments invalid")
+        return      
+    await message.channel.send(embed=embed) 
