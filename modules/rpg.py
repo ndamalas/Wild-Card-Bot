@@ -9,6 +9,7 @@ commandList = []
 playerlist = []
 classes = ["Enchanter", "Fighter", "Mage", "Marksman", "Assassin", "Tank"]
 monsterlist = []
+balance = 50
 enemiesdf = pd.read_excel('./CS307_RPG_Mobs.xlsx')
 itemDf = pd.read_csv('./modules/Items.csv')
 
@@ -20,8 +21,13 @@ class character:
         self.id = userID
         self.name = char_name
         self.character_class = classtype
-        self.balance = 0
-        self.inventory = ["abc", "def"]
+        balance = 50
+        self._balance = balance
+        self.inventory = []
+        self.primary = "None"
+        self.secondary = "None"
+    def subtract_balance(self, amount):
+        self._balance -= amount
 
 #Install this: pip install xlrd
 #Install this: pip install openpyxl
@@ -62,6 +68,8 @@ async def rpg(ctx, message):
     if message.content.split(" ")[1] == "inventory":
         await inventory_rpg(ctx, message, mycharacter)
 
+    if message.content.split(" ")[1] == "buy":
+        await buy_rpg(ctx, message, mycharacter)
     # if message.content.split(" ")[1] == "exit":
 
 async def help_rpg(ctx, message):
@@ -71,12 +79,14 @@ async def help_rpg(ctx, message):
     await message.channel.send(embed=embed)
 
 async def myinfo_rpg(ctx, message, mycharacter):
+    global balance
     embed=discord.Embed(title=message.author.display_name)
-    mystr = "**Name: **\t" + str(mycharacter.id) + "\n**Class: **\t" + str(mycharacter.character_class) + "\n**User ID: **\t" + str(mycharacter.name)
+    mystr = "**Name: **\t" + str(mycharacter.id) + "\n**Class: **\t" + str(mycharacter.character_class) + "\n**User ID: **\t" + str(mycharacter.name) + "\n**Balance: **\t" + str(balance)
     embed.add_field(name="**Info**", value=mystr, inline=False)
     await message.channel.send(embed=embed)
 
 async def start_rpg(ctx, message):
+    global balance
     await message.channel.send("Starting RPG game")
     embed=discord.Embed(title="Choose your class", color=0xFF99CC)
     embed.add_field(name=":knife: Assassin", value="Assassins specialize in infiltrating enemy lines with their unrivaled mobility to quickly dispatch high-priority targets. Due to their mostly melee nature, Assassins must put them themselves into dangerous positions in order to execute their targets. Luckily, they often have defensive tricks up their sleeves that, if used cleverly, allow them to effectively avoid incoming damage.", inline=False)
@@ -92,7 +102,7 @@ async def start_rpg(ctx, message):
     await msg.add_reaction(u"\U0001F9D9")
     await msg.add_reaction(u"\U0001F3F9")
     await msg.add_reaction(u"\U0001F6E1")
-    await asyncio.sleep(8)
+    await asyncio.sleep(4)
     for reaction in ctx.cached_messages[len(ctx.cached_messages) - 1].reactions:
         if reaction.count > 1:
             tempstr1 = "You have chosen the "
@@ -116,11 +126,12 @@ async def start_rpg(ctx, message):
                 await message.channel.send(tempstr1 + "Tank" + tempstr2)
                 character_class = "Tank"
     await message.channel.send("**Enter a name for your character:**")
-    await asyncio.sleep(8)
+    await asyncio.sleep(4)
     charname = ctx.cached_messages[len(ctx.cached_messages) - 1].content
     await message.channel.send("**Character name: **" + charname)
     userID = message.author.id
     new_character = character(userID, charname, character_class)
+    balance = 50
     playerlist.append(new_character)
 
 async def shop_rpg(ctx, message):
@@ -183,6 +194,27 @@ async def inventory_rpg(ctx, message, mycharacter):
     embed=discord.Embed(title=title)
     output = ""
     for item in mycharacter.inventory:
-        output += item + "\n"
+        output += str(item) + "\n"
     embed.add_field(name="Items", value=output)
     await message.channel.send(embed=embed)
+
+async def buy_rpg(ctx, message, mycharacter):
+    global balance
+    item = ""
+    for i in range(2, len(message.content.split(" "))):
+        item += message.content.split(" ")[i]
+    item_name = item.title()
+    cost = 0
+    for idx, item in itemDf.iterrows():
+        if item['Item'] == item_name:
+            cost = item['Cost']
+    if balance < cost:
+        embed=discord.Embed(title="Purchase fail", description="You do not have enough to buy this item")
+        await message.channel.send(embed=embed)
+    else:
+        playerlist[0].subtract_balance(cost)
+        balance -= cost
+        mycharacter.inventory.append(item_name)
+        temp_str = item_name + " has been added to your inventory"
+        embed=discord.Embed(title="Purchase success", description=temp_str)
+        await message.channel.send(embed=embed)
