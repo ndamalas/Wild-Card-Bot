@@ -50,7 +50,7 @@ class character:
         self.ad = attack
         self.armor = defense
         self.hp = hp
-        balance = 50
+        balance = 350
         self.balance = balance
         self.inventory = []
         self.primary = "None"
@@ -107,6 +107,13 @@ async def rpg(ctx, message):
 
     if message.content.split(" ")[1] == "sell":
         await sell_rpg(ctx, message, mycharacter)
+
+    if message.content.split(" ")[1] == "equip":
+        await equip_item(ctx, message, mycharacter)
+
+    if message.content.split(" ")[1] == "myequipment":
+        await myequipment(ctx, message, mycharacter)
+
     if message.content.split(" ")[1] == "dungeonlist":
         await dungeonlist_rpg(ctx, message)
 
@@ -418,6 +425,62 @@ async def sell_rpg(ctx, message, mycharacter):
         i += 1
     embed=discord.Embed(title="Cannot sell item", description="You don't own this item")
     await message.channel.send(embed=embed)
+
+async def equip_item(ctx, message, mycharacter):
+    if len(message.content.split(" ")) <= 2:
+        await message.channel.send(">>> Not enough arguments")
+        return
+    if mycharacter.primary != "None" and mycharacter.secondary != "None":
+        embed=discord.Embed(title="Cannot equip item", descriptions="You have no empty equipment slots")
+        await message.channel.send(embed=embed)
+        return
+    item = ""
+    for i in range(2, len(message.content.split(" "))):
+        item += message.content.split(" ")[i] + " "
+    item_name = item.strip()
+    if not mycharacter.inventory:
+        embed=discord.Embed(title="Cannot equip item", description="Your inventory is empty")
+        await message.channel.send(embed=embed)
+        return
+    for item in mycharacter.inventory:
+        if item_name == item:
+            await message.channel.send(">>> Equiping item")
+            if mycharacter.primary == "None":
+                mycharacter.primary = item_name
+                for idx, item in itemDf.iterrows():
+                    if item['Item'] == item_name:
+                        item_ad = item['AD']
+                        mycharacter.ad += item_ad
+                        item_ap = item['AP']
+                        mycharacter.ad += item_ap
+                        item_hp = item['HP']
+                        mycharacter.hp += item_hp
+                        item_armor = item['Armor']
+                        mycharacter.armor += item_armor  
+            elif mycharacter.secondary == "None":
+                mycharacter.secondary = item_name
+                for idx, item in itemDf.iterrows():
+                    if item['Item'] == item_name:
+                        item_ad = item['AD']
+                        mycharacter.ad += item_ad
+                        item_ap = item['AP']
+                        mycharacter.ad += item_ap
+                        item_hp = item['HP']
+                        mycharacter.hp += item_hp
+                        item_armor = item['Armor']
+                        mycharacter.armor += item_armor
+
+async def myequipment(ctx, message, mycharacter):
+    embed=discord.Embed(title="My Equipment")
+    embed.add_field(name="Primary", value=mycharacter.primary, inline=True)
+    embed.add_field(name="Secondary", value=mycharacter.secondary, inline=True)
+    await message.channel.send(embed=embed)
+
+
+
+
+            
+
 async def dungeonlist_rpg(ctx, message):
     embed=discord.Embed(title="Dungeon List", description = "Tutorial")
     await message.channel.send(embed=embed)
