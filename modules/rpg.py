@@ -77,8 +77,9 @@ async def rpg(ctx, message):
     else:
         mycharacter = "True"
 
-    if message.content.split(" ")[1] == "help":
+    if len(message.content.split(" ")) < 2 or message.content.split(" ")[1] == "help":
         await help_rpg(ctx, message)
+        return
 
     if message.content.split(" ")[1] == "start":
         await start_rpg(ctx, message)
@@ -456,7 +457,7 @@ async def equip_item(ctx, message, mycharacter):
                         item_hp = item['HP']
                         mycharacter.hp += item_hp
                         item_armor = item['Armor']
-                        mycharacter.armor += item_armor  
+                        mycharacter.armor += item_armor
             elif mycharacter.secondary == "None":
                 mycharacter.secondary = item_name
                 for idx, item in itemDf.iterrows():
@@ -479,7 +480,7 @@ async def myequipment(ctx, message, mycharacter):
 
 
 
-            
+
 
 async def dungeonlist_rpg(ctx, message):
     embed=discord.Embed(title="Dungeon List", description = "Tutorial")
@@ -564,7 +565,7 @@ async def tutorial_rpg(ctx, message):
             fled = False
             await message.channel.send("Welcome Back")
             await enemy_stats_rpg(ctx, message, floormonsterlist)
-            await player_stats_rpg(ctx, message) 
+            await player_stats_rpg(ctx, message)
         #This is for temporary defense
         choseDefense = False
         #While you are still fighting enemies
