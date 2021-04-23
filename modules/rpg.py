@@ -10,6 +10,9 @@ commandList = []
 playerlist = []
 classes = ["Enchanter", "Fighter", "Mage", "Marksman", "Assassin", "Tank"]
 monsterlist = []
+attack = 100
+defense = 50
+hp = 300
 balance = 50
 enemiesdf = pd.read_excel('./CS307_RPG_Mobs.xlsx')
 itemDf = pd.read_csv('./modules/Items.csv')
@@ -22,10 +25,7 @@ class character:
         self.id = userID
         self.name = char_name
         self.character_class = classtype
-        attack = 0
-        defense = 0
-        hp = 0
-        if(classtype == "Enchanter"):
+        '''if(classtype == "Enchanter"):
             attack = 35
             defense = 10
             hp = 300
@@ -44,12 +44,12 @@ class character:
         elif(classtype == "Tank"):
             attack = 30
             defense = 40
-            hp = 550
+            hp = 550'''
         self.ad = attack
         self.armor = defense
         self.hp = hp
         balance = 50
-        self._balance = balance
+        self.balance = balance
         self.inventory = []
         self.primary = "None"
         self.secondary = "None"
@@ -120,7 +120,7 @@ async def help_rpg(ctx, message):
 async def myinfo_rpg(ctx, message, mycharacter):
     global balance
     embed=discord.Embed(title=message.author.display_name)
-    mystr = "**Name: **\t" + str(mycharacter.id) + "\n**Class: **\t" + str(mycharacter.character_class) + "\n**User ID: **\t" + str(mycharacter.name) + "\n**Balance: **\t" + str(balance)
+    mystr = "**Name: **\t" + str(mycharacter.id) + "\n**Class: **\t" + str(mycharacter.character_class) + "\n**User ID: **\t" + str(mycharacter.name) + "\n**Health Points: **\t" + str(mycharacter.hp) + "\n**Attack Damage: **\t" + str(mycharacter.ad) + "\n**Armor: **\t" + str(mycharacter.armor) + "\n**Balance: **\t" + str(mycharacter.balance)
     embed.add_field(name="**Info**", value=mystr, inline=False)
     await message.channel.send(embed=embed)
 
@@ -379,31 +379,75 @@ async def tutorial_rpg(ctx, message):
     for i in range(3):
         #List of monsters on that floor
         floormonsterlist = []
-        #First floor
-        if(i == 0):
-            #Randomize monster for the first floor (weaker, common monsters)
-            for i in range(3):
-                r = random.randint(0,3)
-                if(r == 0):
+        if (i == 0):
+            #Randomize one monster for the first floor (weak, common monsters)
+            await message.channel.send("Floor 1")
+            r1 = random.randint(0,3)
+            if(r1 == 0):
+                enemy0 = enemy("Zombie")
+                floormonsterlist.append(enemy0)
+            elif(r1 == 1):
+                enemy1 = enemy("Skeleton")
+                floormonsterlist.append(enemy1)
+            elif(r1 == 2):
+                enemy2 = enemy("Goblin")
+                floormonsterlist.append(enemy2)
+            elif(r1 == 3):
+                enemy3 = enemy("Spiders")
+                floormonsterlist.append(enemy3)
+            #Dungeon message
+            await message.channel.send("\nYou enter the dungeon and are approached by a " + floormonsterlist[0].name + ".")
+            #Show enemy stats
+            await enemy_stats_rpg(ctx, message, floormonsterlist)
+            #Show your stats
+            await player_stats_rpg(ctx, message)
+        elif (i == 1):
+            #Randomize multiple monsters for the second floor (weaker, common monsters)
+            await message.channel.send("Floor 2")
+            for i in range(2):
+                r2 = random.randint(0,3)
+                if(r2 == 0):
                     enemy0 = enemy("Zombie")
                     floormonsterlist.append(enemy0)
-                elif(r == 1):
+                elif(r2 == 1):
                     enemy1 = enemy("Skeleton")
                     floormonsterlist.append(enemy1)
-                elif(r == 2):
+                elif(r2 == 2):
                     enemy2 = enemy("Goblin")
                     floormonsterlist.append(enemy2)
-                elif(r == 3):
+                elif(r2 == 3):
                     enemy3 = enemy("Spiders")
                     floormonsterlist.append(enemy3)
-            await message.channel.send("\nYou enter the dungeon and are approached by a " + floormonsterlist[0].name + ", " + floormonsterlist[1].name + ", and " + floormonsterlist[2].name + ".")
-            description = ""
-            for i in range(3):
-                description += "Monster Name: " + floormonsterlist[i].name + "\nHealth Points: " + str(floormonsterlist[i].hp) + "\nAttack Damage: " + str(floormonsterlist[i].ad) + "\nArmor: " + str(floormonsterlist[i].armor) + "\n"
-            embed=discord.Embed(title="Enemies", description=description)
-            await message.channel.send(embed=embed)
-        #while(len(floormonsterlist) > 0):
-            await combat_options(ctx, message)
+            await message.channel.send("\nOn the second floor of the dungeon you encounter a " + floormonsterlist[0].name + " and " + floormonsterlist[1].name + ".")
+            #Show enemy stats
+            await enemy_stats_rpg(ctx, message, floormonsterlist)
+            #Show your stats
+            await player_stats_rpg(ctx, message)
+        elif (i == 2):
+            #Randomize multiple monsters for the second floor (weaker, common monsters)
+            await message.channel.send("Floor 3: Boss Battle!")
+            r3 = random.randint(0,2)
+            if(r3 == 0):
+                enemy0 = enemy("Golem")
+                floormonsterlist.append(enemy0)
+            elif(r2 == 1):
+                enemy1 = enemy("Hellhounds")
+                floormonsterlist.append(enemy1)
+            elif(r2 == 2):
+                enemy2 = enemy("Ogre")
+                floormonsterlist.append(enemy2)
+            await message.channel.send("\nYou approach the final floor the boss battle is with a huge " + floormonsterlist[0].name + "!")
+            #Show enemy stats
+            await enemy_stats_rpg(ctx, message, floormonsterlist)
+            #Show your stats
+            await player_stats_rpg(ctx, message)
+        #This is for temporary defense
+        choseDefense = False
+        #While you are still fighting enemies
+        while(len(floormonsterlist) > 0):
+            #Shows the combat options
+            await combat_options_rpg(ctx, message)
+            #Waits for user to enter an option
             def check(m):
                 messageval = ""
                 if (m.content == "!rpg combat Attack"):
@@ -416,10 +460,54 @@ async def tutorial_rpg(ctx, message):
                     messageval = "!rpg combat UseItem"
                 elif (m.content == "!rpg combat Flee"):
                     messageval = "!rpg combat Flee"
+                else:
+                    messageval = "!rpg combat invalid"
                 return m.content == messageval and m.channel == message.channel
+            #Passes the option to the combat_choice option
             msg = await ctx.wait_for("message", check=check)
-            await combat_choice(ctx, msg, floormonsterlist)
-async def combat_options(ctx, message):
+            await combat_choice_rpg(ctx, msg, floormonsterlist, choseDefense)
+            if (len(floormonsterlist) > 0 and (playerlist[0].hp > 0)):
+                #Shows the embed of the monster's stats
+                await enemy_stats_rpg(ctx, message, floormonsterlist)
+                #Show embed of your stats
+                await player_stats_rpg(ctx, message)
+                #Monster attack phase
+                await monsterphase_rpg(ctx, message, floormonsterlist, choseDefense)
+                #Shows the embed of the monster's stats
+                await enemy_stats_rpg(ctx, message, floormonsterlist)
+                #Show embed of your stats
+                await player_stats_rpg(ctx, message)
+            elif (playerlist[0].hp == 0):
+                await message.channel.send("You have died trying to clear the first floor of the Tutorial.")
+                await message.channel.send("All of the gold earned on this floor will be lost, but your progress will be saved.")
+                await message.channel.send("Better luck next time.")
+                return
+        if (i == 0):
+            await message.channel.send("Congratulations you have cleared the first floor!") 
+        if (i == 1): 
+            await message.channel.send("Congratulations you have cleared the second floor!")
+        if (i == 2): 
+            await message.channel.send("Congratulations you have cleared the third floor and completed the tutorial!") 
+            await message.channel.send("Your character will return to full Hp and Armor upon leaving.")
+            playerlist[0].armor = defense
+            playerlist[0].hp = hp
+            await message.channel.send("Here are your rewards: +350 gold")
+            playerlist[0].balance += 350
+
+        
+async def enemy_stats_rpg(ctx, message, floormonsterlist):
+    #Shows the embed of the monster's stats
+    description = ""
+    for i in range(len(floormonsterlist)):
+        description += "Monster Name: " + floormonsterlist[i].name + "\nHealth Points: " + str(floormonsterlist[i].hp) + "\nAttack Damage: " + str(floormonsterlist[i].ad) + "\nArmor: " + str(floormonsterlist[i].armor) + "\n"
+    whileembed=discord.Embed(title="Enemies", description=description)
+    await message.channel.send(embed=whileembed)
+async def player_stats_rpg(ctx, message):
+    #Show your stats
+    player_description = "Player Name: " + playerlist[0].name + "\nHealth Points: " + str(playerlist[0].hp) + "\nAttack Damage: " + str(playerlist[0].ad) + "\nArmor: " + str(playerlist[0].armor) + "\n"
+    player_embed=discord.Embed(title="Your Stats", description=player_description)
+    await message.channel.send(embed=player_embed)
+async def combat_options_rpg(ctx, message):
     embed=discord.Embed(title="Combat Options")
     embed.add_field(name="Attack", value="Deal " + str(playerlist[0].ad) + " to one monster.", inline=False)
     embed.add_field(name="Defend", value="Increase your defense stats by 10 for one turn which would make your defense: " + str(playerlist[0].armor + 10) + ".", inline=False)
@@ -430,5 +518,59 @@ async def combat_options(ctx, message):
     embed.add_field(name="Flee", value="Save your progress and leave the dungeon to return for another time")
     embed.add_field(name="How to Use", value="In order to use these commands options please type: !rpg combat <OPTION>", inline=False)
     await message.channel.send(embed=embed)
-async def combat_choice(ctx, message, floormonsterlist):
-    await message.channel.send("Work in progress")
+async def combat_choice_rpg(ctx, message, floormonsterlist, choseDefense):
+    if(message.content.split(" ")[2] == "Attack"):
+        #Targets the first monster
+        await message.channel.send("You chose to attack.")
+        await message.channel.send("The player attacks " + floormonsterlist[0].name)
+        if(playerlist[0].ad >= floormonsterlist[0].armor):
+            difference = floormonsterlist[0].armor - playerlist[0].ad
+            if (floormonsterlist[0].armor != 0):
+                await message.channel.send(floormonsterlist[0].name + "'s armor has been reduced to 0!")
+            floormonsterlist[0].armor = 0
+            floormonsterlist[0].hp += difference
+            if (difference != 0):
+                await message.channel.send(floormonsterlist[0].name + " took " + str(-difference) + " damage!")
+
+        else:
+            floormonsterlist[0].armor -= playerlist[0].ad
+            await message.channel.send(floormonsterlist[0].name + "'s armor has been reduced by " + str(playerlist[0].ad) + "!")
+        
+        if(floormonsterlist[0].hp <= 0):
+            await message.channel.send("You killed: " + floormonsterlist[0].name)
+            floormonsterlist.remove(floormonsterlist[0])
+            await message.channel.send("Floormonsterlist length: " + (str(len(floormonsterlist))))
+    elif(message.content.split(" ")[2] == "Defend"):
+        #Raises your Armor by 10 for one turn
+        await message.channel.send("You choose to defend.")
+        playerlist[0].armor += 10
+        await message.channel.send("You take a defensive stance. Your armor is raised by 10. You now have " + str(playerlist[0].armor) + "armor.")
+        choseDefense = True
+    else:
+        await message.channel.send("Work in progress.")
+async def monsterphase_rpg(ctx, message, floormonsterlist, choseDefense):
+    #Right now all monsters do is attack the player 
+    #You could implement options to defend, heal, apply cc or like make it more complicated for the boss monster/s
+    for i in range(len(floormonsterlist)):
+        await message.channel.send(floormonsterlist[i].name + " chooses to attack the player!")
+        await message.channel.send(floormonsterlist[i].name + " does " + str(floormonsterlist[i].ad) + " to the player!")
+        if(floormonsterlist[i].ad >= playerlist[0].armor):
+            difference = playerlist[0].armor - floormonsterlist[i].ad 
+            if (floormonsterlist[0].armor != 0):
+                await message.channel.send(playerlist[0].name + "'s armor has been reduced to 0!")
+            playerlist[0].armor = 0
+            playerlist[0].hp += difference
+            if (difference != 0):
+                await message.channel.send(playerlist[0].name + " took " + str(-difference) + "damage!")
+            if (playerlist[0].hp <= 0):
+                await message.channel.send("You have been killed by: " + floormonsterlist[i])
+                playerlist[0].hp = 0
+
+        else:
+            playerlist[0].armor -= floormonsterlist[i].ad
+            if(choseDefense == True):
+                if (floormonsterlist[i].ad < 10):
+                    difference = 10 - floormonsterlist[i].ad
+                    playerlist[0].armor -= difference 
+                choseDefense = False
+            await message.channel.send(playerlist[0].name + "'s armor has been reduced by " + str(floormonsterlist[i].ad) + "!")
