@@ -348,8 +348,10 @@ async def steam_profile(ctx, message):
                 #game_type = gameidDf['type']
                 #print(game_type)
                 title = "Game Description"
+                header_image = gameidDf['header_image']
                 game_info = "Name: " + gameidDf['name'] + "\n" + "Game ID: " + str(gameidDf['steam_appid']) + "\n" +  "Type: " + gameidDf['type'] + "\n" +  "Free: "  + str(gameidDf['is_free']) + "\n"
-                embed=discord.Embed(title=title, description=game_info, color=0x2a475e, image="link")
+                embed=discord.Embed(title=title, description=game_info, color=0x2a475e)
+                embed.set_image(url=header_image)
                 await message.channel.send(embed=embed)
                 #for attribute in gameidDf:
                     #print(attribute)
