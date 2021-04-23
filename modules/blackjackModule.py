@@ -205,7 +205,11 @@ class Game:
             if len([p for p in self.players if p.userid == user.id]) == 0:
                 if user.id not in players:
                     players[user.id] = Player(user.id)
-                self.addPlayer(players[user.id])
+                if players[user.id].ingame == False:
+                    self.addPlayer(players[user.id])
+        # Clear reaction of all players
+        await self.gm.clear_reactions()
+        await self.gm.add_reaction(Game.addReaction)
     # Update the status of the game
     def updateStatus(self, title, status):
         status += "\nReact with " + Game.addReaction + " to join the next round."
@@ -462,7 +466,7 @@ async def runBlackjack(client, message):
             game.tc = message.channel.id
             await game.gm.delete()
             game.gm = await game.guild.get_channel(game.tc).send(embed=game.embed)
-            await game.gm.add_reaction(game.addReaction)
+            await game.gm.add_reaction(Game.addReaction)
         else:
             # Create the game
             game = Game(message.guild, message.channel.id)
@@ -475,7 +479,7 @@ async def runBlackjack(client, message):
             # Initialize the first round
             await game.initializeRound()
             game.gm = await game.guild.get_channel(game.tc).send(embed=game.embed)
-            await game.gm.add_reaction(game.addReaction)
+            await game.gm.add_reaction(Game.addReaction)
             # Wait 15 seconds for people to join
             await asyncio.sleep(15)
             # Check for new players and update game display
@@ -500,8 +504,14 @@ async def runRounds(client, game):
             await game.initializeRound()
             await game.gm.edit(embed=game.embed)
         # Send each player a chance to change bets
+        leavers = []
         for player in game.players:
-            await sendBetChanger(client, game, player)
+            leaver = await sendBetChanger(client, game, player)
+            if leaver != None:
+                leavers.append(leaver)
+        # Remove all players that want to leave
+        for leaver in leavers:
+            game.removePlayer(leaver)
         # Check if there are any players in the game
         if len(game.players) == 0:
             await game.end()
@@ -581,18 +591,18 @@ async def sendBetChanger(client, game, player):
                 break
         # Check if player reacted to exit the game
         if str(reaction.emoji) == Player.exitReaction:
-            game.removePlayer(player)
             await betMsg.delete()
             response = "You have left the game!\n"
             embed = discord.Embed(title="Left The Game", description=response, colour=discord.Colour.red())
             await playerObj.send(embed=embed)
-            return
+            return player
     await betMsg.delete()
     response = "Your bet amount: **$" + str(player.bet) + "**\n"
     embed = discord.Embed(title="Your Bet", description=response, colour=discord.Colour.blurple())
     await playerObj.send(embed=embed)
     # Notify player is done
     player.done = True
+    return None
 
 # Direct messages the player's hand
 async def sendHand(client, game, player):
