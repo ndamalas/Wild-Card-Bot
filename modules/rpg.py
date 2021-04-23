@@ -10,9 +10,12 @@ commandList = []
 playerlist = []
 classes = ["Enchanter", "Fighter", "Mage", "Marksman", "Assassin", "Tank"]
 monsterlist = []
+savedfloormonsterlist = []
 attack = 100
 defense = 50
 hp = 300
+fled = 0
+savedFloor = 0
 enemiesdf = pd.read_excel('./CS307_RPG_Mobs.xlsx')
 itemDf = pd.read_csv('./modules/Items.csv')
 
@@ -409,69 +412,78 @@ async def tutorial_rpg(ctx, message):
     #For loop for each floor
     for i in range(3):
         #List of monsters on that floor
-        floormonsterlist = []
-        if (i == 0):
-            #Randomize one monster for the first floor (weak, common monsters)
-            await message.channel.send("Floor 1")
-            r1 = random.randint(0,3)
-            if(r1 == 0):
-                enemy0 = enemy("Zombie")
-                floormonsterlist.append(enemy0)
-            elif(r1 == 1):
-                enemy1 = enemy("Skeleton")
-                floormonsterlist.append(enemy1)
-            elif(r1 == 2):
-                enemy2 = enemy("Goblin")
-                floormonsterlist.append(enemy2)
-            elif(r1 == 3):
-                enemy3 = enemy("Spiders")
-                floormonsterlist.append(enemy3)
-            #Dungeon message
-            await message.channel.send("\nYou enter the dungeon and are approached by a " + floormonsterlist[0].name + ".")
-            #Show enemy stats
-            await enemy_stats_rpg(ctx, message, floormonsterlist)
-            #Show your stats
-            await player_stats_rpg(ctx, message)
-        elif (i == 1):
-            #Randomize multiple monsters for the second floor (weaker, common monsters)
-            await message.channel.send("Floor 2")
-            for i in range(2):
-                r2 = random.randint(0,3)
-                if(r2 == 0):
+        global fled
+        if (fled != True):
+            floormonsterlist = []
+            if (i == 0):
+                #Randomize one monster for the first floor (weak, common monsters)
+                await message.channel.send("Floor 1")
+                r1 = random.randint(0,3)
+                if(r1 == 0):
                     enemy0 = enemy("Zombie")
                     floormonsterlist.append(enemy0)
-                elif(r2 == 1):
+                elif(r1 == 1):
                     enemy1 = enemy("Skeleton")
                     floormonsterlist.append(enemy1)
-                elif(r2 == 2):
+                elif(r1 == 2):
                     enemy2 = enemy("Goblin")
                     floormonsterlist.append(enemy2)
-                elif(r2 == 3):
+                elif(r1 == 3):
                     enemy3 = enemy("Spiders")
                     floormonsterlist.append(enemy3)
-            await message.channel.send("\nOn the second floor of the dungeon you encounter a " + floormonsterlist[0].name + " and " + floormonsterlist[1].name + ".")
-            #Show enemy stats
+                #Dungeon message
+                await message.channel.send("\nYou enter the dungeon and are approached by a " + floormonsterlist[0].name + ".")
+                #Show enemy stats
+                await enemy_stats_rpg(ctx, message, floormonsterlist)
+                #Show your stats
+                await player_stats_rpg(ctx, message)
+            elif (i == 1):
+                #Randomize multiple monsters for the second floor (weaker, common monsters)
+                await message.channel.send("Floor 2")
+                for i in range(2):
+                    r2 = random.randint(0,3)
+                    if(r2 == 0):
+                        enemy0 = enemy("Zombie")
+                        floormonsterlist.append(enemy0)
+                    elif(r2 == 1):
+                        enemy1 = enemy("Skeleton")
+                        floormonsterlist.append(enemy1)
+                    elif(r2 == 2):
+                        enemy2 = enemy("Goblin")
+                        floormonsterlist.append(enemy2)
+                    elif(r2 == 3):
+                        enemy3 = enemy("Spiders")
+                        floormonsterlist.append(enemy3)
+                await message.channel.send("\nOn the second floor of the dungeon you encounter a " + floormonsterlist[0].name + " and " + floormonsterlist[1].name + ".")
+                #Show enemy stats
+                await enemy_stats_rpg(ctx, message, floormonsterlist)
+                #Show your stats
+                await player_stats_rpg(ctx, message)
+            elif (i == 2):
+                #Randomize multiple monsters for the second floor (weaker, common monsters)
+                await message.channel.send("Floor 3: Boss Battle!")
+                r3 = random.randint(0,2)
+                if(r3 == 0):
+                    enemy0 = enemy("Golem")
+                    floormonsterlist.append(enemy0)
+                elif(r2 == 1):
+                    enemy1 = enemy("Hellhounds")
+                    floormonsterlist.append(enemy1)
+                elif(r2 == 2):
+                    enemy2 = enemy("Ogre")
+                    floormonsterlist.append(enemy2)
+                await message.channel.send("\nYou approach the final floor the boss battle is with a huge " + floormonsterlist[0].name + "!")
+                #Show enemy stats
+                await enemy_stats_rpg(ctx, message, floormonsterlist)
+                #Show your stats
+                await player_stats_rpg(ctx, message)
+        else:
+            i = savedFloor
+            floormonsterlist = savedfloormonsterlist
+            fled = False
+            await message.channel.send("Welcome Back")
             await enemy_stats_rpg(ctx, message, floormonsterlist)
-            #Show your stats
-            await player_stats_rpg(ctx, message)
-        elif (i == 2):
-            #Randomize multiple monsters for the second floor (weaker, common monsters)
-            await message.channel.send("Floor 3: Boss Battle!")
-            r3 = random.randint(0,2)
-            if(r3 == 0):
-                enemy0 = enemy("Golem")
-                floormonsterlist.append(enemy0)
-            elif(r2 == 1):
-                enemy1 = enemy("Hellhounds")
-                floormonsterlist.append(enemy1)
-            elif(r2 == 2):
-                enemy2 = enemy("Ogre")
-                floormonsterlist.append(enemy2)
-            await message.channel.send("\nYou approach the final floor the boss battle is with a huge " + floormonsterlist[0].name + "!")
-            #Show enemy stats
-            await enemy_stats_rpg(ctx, message, floormonsterlist)
-            #Show your stats
-            await player_stats_rpg(ctx, message)
+            await player_stats_rpg(ctx, message) 
         #This is for temporary defense
         choseDefense = False
         #While you are still fighting enemies
@@ -496,7 +508,9 @@ async def tutorial_rpg(ctx, message):
                 return m.content == messageval and m.channel == message.channel
             #Passes the option to the combat_choice option
             msg = await ctx.wait_for("message", check=check)
-            await combat_choice_rpg(ctx, msg, floormonsterlist, choseDefense)
+            await combat_choice_rpg(ctx, msg, floormonsterlist, choseDefense, i)
+            if(fled == True):
+                return
             if (len(floormonsterlist) > 0 and (playerlist[0].hp > 0)):
                 #Shows the embed of the monster's stats
                 await enemy_stats_rpg(ctx, message, floormonsterlist)
@@ -549,7 +563,8 @@ async def combat_options_rpg(ctx, message):
     embed.add_field(name="Flee", value="Save your progress and leave the dungeon to return for another time")
     embed.add_field(name="How to Use", value="In order to use these commands options please type: !rpg combat <OPTION>", inline=False)
     await message.channel.send(embed=embed)
-async def combat_choice_rpg(ctx, message, floormonsterlist, choseDefense):
+async def combat_choice_rpg(ctx, message, floormonsterlist, choseDefense, savedFloorNumber):
+    global fled
     if(message.content.split(" ")[2] == "Attack"):
         #Targets the first monster
         await message.channel.send("You chose to attack.")
@@ -577,6 +592,17 @@ async def combat_choice_rpg(ctx, message, floormonsterlist, choseDefense):
         playerlist[0].armor += 10
         await message.channel.send("You take a defensive stance. Your armor is raised by 10. You now have " + str(playerlist[0].armor) + "armor.")
         choseDefense = True
+    elif(message.content.split(" ")[2] == "Flee"):
+        #Flees the dungeon saves progress
+        await message.channel.send("You choose to flee.")
+        await message.channel.send("You have fled from the dungeon. Your progress is saved and your health and armor will be replenished.")
+        await message.channel.send("Come back when you feel ready!")
+        playerlist[0].hp = hp
+        playerlist[0].armor = defense
+        fled = True
+        for i in range(len(floormonsterlist)):
+            savedfloormonsterlist.append(floormonsterlist[i])
+        savedFloor = savedFloorNumber
     else:
         await message.channel.send("Work in progress.")
 async def monsterphase_rpg(ctx, message, floormonsterlist, choseDefense):
