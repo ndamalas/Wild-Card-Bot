@@ -84,6 +84,9 @@ async def rpg(ctx, message):
     if message.content.split(" ")[1] == "myinfo":
         await myinfo_rpg(ctx, message, mycharacter)
 
+    if message.content.split(" ")[1] == "stats":
+        await stats_rpg(ctx, message, mycharacter)
+
     if message.content.split(" ")[1] == "shop":
         await shop_rpg(ctx, message)
 
@@ -116,13 +119,28 @@ async def help_rpg(ctx, message):
     embed.add_field(name="start", value="Starts a new game. Prompts user for class type and name of character", inline=False)
     embed.add_field(name="myinfo", value="Displays basic user info including character class, user ID, name", inline=False)
     embed.add_field(name="dungeonlist", value="Displays a list of current available dungeons.", inline=False)
+    embed.add_field(name="stats", value="Displays stats of character", inline=False)
+    embed.add_field(name="shop", value="Displays shop of all items", inline=False)
+    embed.add_field(name="item", value="Displays an item and its stats", inline=False)
+    embed.add_field(name="inventory", value="Displays Character inventory", inline=False)
+    embed.add_field(name="buy", value="Executes buying items", inline=False)
+    embed.add_field(name="sell", value="Executes selling items", inline=False)
+
     await message.channel.send(embed=embed)
 
 async def myinfo_rpg(ctx, message, mycharacter):
     embed=discord.Embed(title=message.author.display_name)
-    mystr = "**Name: **\t" + str(mycharacter.name) + "\n**Class: **\t" + str(mycharacter.character_class) + "\n**User ID: **\t" + str(mycharacter.id) + "\n**Health Points: **\t" + str(mycharacter.hp) + "\n**Attack Damage: **\t" + str(mycharacter.ad) + "\n**Armor: **\t" + str(mycharacter.armor) + "\n**Balance: **\t" + str(mycharacter.balance)
+    mystr = "**Name: **\t" + str(mycharacter.name) + "\n**Class: **\t" + str(mycharacter.character_class) + "\n**User ID: **\t" + str(mycharacter.id) + "\n**Balance: **\t" + str(mycharacter.balance)
     embed.add_field(name="**Info**", value=mystr, inline=False)
     await message.channel.send(embed=embed)
+
+async def stats_rpg(ctx, message, mycharacter):
+    title=mycharacter.name + "\'s current stats"
+    embed=discord.Embed(title=title)
+    mystr = "**Health Points: **\t" + str(mycharacter.hp) + "\n**Attack Damage: **\t" + str(mycharacter.ad) + "\n**Armor: **\t" + str(mycharacter.armor)
+    embed.add_field(name="**Info**", value=mystr, inline=False)
+    await message.channel.send(embed=embed)
+
 
 async def start_rpg(ctx, message):
     await message.channel.send("Starting RPG game")
