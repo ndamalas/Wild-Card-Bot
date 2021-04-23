@@ -13,7 +13,6 @@ monsterlist = []
 attack = 100
 defense = 50
 hp = 300
-balance = 50
 enemiesdf = pd.read_excel('./CS307_RPG_Mobs.xlsx')
 itemDf = pd.read_csv('./modules/Items.csv')
 
@@ -54,7 +53,7 @@ class character:
         self.primary = "None"
         self.secondary = "None"
     def subtract_balance(self, amount):
-        self._balance -= amount
+        self.balance -= amount
 
 #Install this: pip install xlrd
 #Install this: pip install openpyxl
@@ -99,10 +98,12 @@ async def rpg(ctx, message):
 
     if message.content.split(" ")[1] == "buy":
         await buy_rpg(ctx, message, mycharacter)
-    
+
+    if message.content.split(" ")[1] == "sell":
+        await sell_rpg(ctx, message, mycharacter)
     if message.content.split(" ")[1] == "dungeonlist":
         await dungeonlist_rpg(ctx, message)
-    
+
     if message.content.split(" ")[1] == "dungeon":
         if message.content.split(" ")[2] == "Tutorial":
             await tutorial_rpg(ctx, message)
@@ -118,14 +119,12 @@ async def help_rpg(ctx, message):
     await message.channel.send(embed=embed)
 
 async def myinfo_rpg(ctx, message, mycharacter):
-    global balance
     embed=discord.Embed(title=message.author.display_name)
-    mystr = "**Name: **\t" + str(mycharacter.id) + "\n**Class: **\t" + str(mycharacter.character_class) + "\n**User ID: **\t" + str(mycharacter.name) + "\n**Health Points: **\t" + str(mycharacter.hp) + "\n**Attack Damage: **\t" + str(mycharacter.ad) + "\n**Armor: **\t" + str(mycharacter.armor) + "\n**Balance: **\t" + str(mycharacter.balance)
+    mystr = "**Name: **\t" + str(mycharacter.name) + "\n**Class: **\t" + str(mycharacter.character_class) + "\n**User ID: **\t" + str(mycharacter.id) + "\n**Health Points: **\t" + str(mycharacter.hp) + "\n**Attack Damage: **\t" + str(mycharacter.ad) + "\n**Armor: **\t" + str(mycharacter.armor) + "\n**Balance: **\t" + str(mycharacter.balance)
     embed.add_field(name="**Info**", value=mystr, inline=False)
     await message.channel.send(embed=embed)
 
 async def start_rpg(ctx, message):
-    global balance
     await message.channel.send("Starting RPG game")
     embed=discord.Embed(title="Choose your class", color=0xFF99CC)
     embed.add_field(name=":knife: Assassin", value="Assassins specialize in infiltrating enemy lines with their unrivaled mobility to quickly dispatch high-priority targets. Due to their mostly melee nature, Assassins must put them themselves into dangerous positions in order to execute their targets. Luckily, they often have defensive tricks up their sleeves that, if used cleverly, allow them to effectively avoid incoming damage.", inline=False)
@@ -170,7 +169,6 @@ async def start_rpg(ctx, message):
     await message.channel.send("**Character name: **" + charname)
     userID = message.author.id
     new_character = character(userID, charname, character_class)
-    balance = 50
     playerlist.append(new_character)
 
 async def shop_rpg(ctx, message):
@@ -202,8 +200,8 @@ async def item_rpg(ctx, message):
         await message.channel.send("Enter a valid item name\nUsage: !rpg item <NAME>")
     else:
         for i in range(2, len(message.content.split(" "))):
-            name += message.content.split(" ")[i]
-        name = name.title()
+            name += message.content.split(" ")[i] + " "
+        name = name.strip()
         description = ""
         temp_col = ""
         temp_val = ""
@@ -230,10 +228,15 @@ async def item_rpg(ctx, message):
 
 async def inventory_rpg(ctx, message, mycharacter):
     title = str(mycharacter.name) + "\'s Inventory"
-    embed=discord.Embed(title=title)
     output = ""
-    for item in mycharacter.inventory:
-        output += str(item) + "\n"
+    if not mycharacter.inventory:
+        embed=discord.Embed(title=title, description="Empty")
+        await message.channel.send(embed=embed)
+        return
+    else:
+        for item in mycharacter.inventory:
+            output += str(item) + "\n"
+    embed=discord.Embed(title=title)
     embed.add_field(name="Items", value=output)
     await message.channel.send(embed=embed)
 
@@ -282,10 +285,10 @@ async def enemies_rpg(ctx, message):
         dragon_string += "Name: " + Dragon.name + "\nHealth Points: " + str(Dragon.hp) + "\nAttack Damage: " + str(Dragon.ad) + "\nArmor: " + str(Dragon.armor)
         embed.add_field(name="Dragon", value=ogre_string, inline=False)
         king_string += "Name: " + King.name + "\nHealth Points: " + str(King.hp) + "\nAttack Damage: " + str(King.ad) + "\nArmor: " + str(King.armor)
-        embed.add_field(name="The Ruined King", value=king_string, inline=False)       
+        embed.add_field(name="The Ruined King", value=king_string, inline=False)
     elif len(message.content.split(" ")) == 3:
         #("Length is 3")
-        if message.content.split(" ")[2] == "Zombie": 
+        if message.content.split(" ")[2] == "Zombie":
             zombie_string += "Name: " + Zombie.name + "\nHealth Points: " + str(Zombie.hp) + "\nAttack Damage: " + str(Zombie.ad) + "\nArmor: " + str(Zombie.armor)
             embed.add_field(name="Zombie", value=zombie_string, inline=False)
         elif message.content.split(" ")[2] == "Skeleton":
@@ -344,28 +347,56 @@ async def enemies_rpg(ctx, message):
             return
     else:
         await message.channel.send(">>> Arguments invalid")
-        return      
-    await message.channel.send(embed=embed) 
+        return
+    await message.channel.send(embed=embed)
 async def buy_rpg(ctx, message, mycharacter):
-    global balance
     item = ""
     for i in range(2, len(message.content.split(" "))):
-        item += message.content.split(" ")[i]
-    item_name = item.title()
+        item += message.content.split(" ")[i] + " "
+    item_name = item.strip()
     cost = 0
     for idx, item in itemDf.iterrows():
         if item['Item'] == item_name:
             cost = item['Cost']
-    if balance < cost:
+    if playerlist[0].balance < cost:
         embed=discord.Embed(title="Purchase fail", description="You do not have enough to buy this item")
         await message.channel.send(embed=embed)
     else:
         playerlist[0].subtract_balance(cost)
-        balance -= cost
         mycharacter.inventory.append(item_name)
         temp_str = item_name + " has been added to your inventory"
         embed=discord.Embed(title="Purchase success", description=temp_str)
         await message.channel.send(embed=embed)
+async def sell_rpg(ctx, message, mycharacter):
+    item = ""
+    for i in range(2, len(message.content.split(" "))):
+        item += message.content.split(" ")[i] + " "
+    item_name = item.strip()
+    if not mycharacter.inventory:
+        embed=discord.Embed(title="Cannot sell item", description="Your inventory is empty")
+        await message.channel.send(embed=embed)
+        return
+    i = 0
+    for item in mycharacter.inventory:
+        if item == item_name:
+            cost = 0
+            for idx, item in itemDf.iterrows():
+                if item['Item'] == item_name:
+                    cost = item['Cost']
+            title = "Sold " + item_name
+            mycharacter.balance += cost
+            del mycharacter.inventory[i]
+            #try:
+            #    mycharacter.inventory.remove(item)
+            #except ValueError as e:
+            #    pass
+            description = str(cost) + " has been added to your balance"
+            embed=discord.Embed(title=title, description=description)
+            await message.channel.send(embed=embed)
+            return
+        i += 1
+    embed=discord.Embed(title="Cannot sell item", description="You don't own this item")
+    await message.channel.send(embed=embed)
 async def dungeonlist_rpg(ctx, message):
     embed=discord.Embed(title="Dungeon List", description = "Tutorial")
     await message.channel.send(embed=embed)
@@ -483,18 +514,18 @@ async def tutorial_rpg(ctx, message):
                 await message.channel.send("Better luck next time.")
                 return
         if (i == 0):
-            await message.channel.send("Congratulations you have cleared the first floor!") 
-        if (i == 1): 
+            await message.channel.send("Congratulations you have cleared the first floor!")
+        if (i == 1):
             await message.channel.send("Congratulations you have cleared the second floor!")
-        if (i == 2): 
-            await message.channel.send("Congratulations you have cleared the third floor and completed the tutorial!") 
+        if (i == 2):
+            await message.channel.send("Congratulations you have cleared the third floor and completed the tutorial!")
             await message.channel.send("Your character will return to full Hp and Armor upon leaving.")
             playerlist[0].armor = defense
             playerlist[0].hp = hp
             await message.channel.send("Here are your rewards: +350 gold")
             playerlist[0].balance += 350
 
-        
+
 async def enemy_stats_rpg(ctx, message, floormonsterlist):
     #Shows the embed of the monster's stats
     description = ""
@@ -535,7 +566,7 @@ async def combat_choice_rpg(ctx, message, floormonsterlist, choseDefense):
         else:
             floormonsterlist[0].armor -= playerlist[0].ad
             await message.channel.send(floormonsterlist[0].name + "'s armor has been reduced by " + str(playerlist[0].ad) + "!")
-        
+
         if(floormonsterlist[0].hp <= 0):
             await message.channel.send("You killed: " + floormonsterlist[0].name)
             floormonsterlist.remove(floormonsterlist[0])
@@ -549,13 +580,13 @@ async def combat_choice_rpg(ctx, message, floormonsterlist, choseDefense):
     else:
         await message.channel.send("Work in progress.")
 async def monsterphase_rpg(ctx, message, floormonsterlist, choseDefense):
-    #Right now all monsters do is attack the player 
+    #Right now all monsters do is attack the player
     #You could implement options to defend, heal, apply cc or like make it more complicated for the boss monster/s
     for i in range(len(floormonsterlist)):
         await message.channel.send(floormonsterlist[i].name + " chooses to attack the player!")
         await message.channel.send(floormonsterlist[i].name + " does " + str(floormonsterlist[i].ad) + " to the player!")
         if(floormonsterlist[i].ad >= playerlist[0].armor):
-            difference = playerlist[0].armor - floormonsterlist[i].ad 
+            difference = playerlist[0].armor - floormonsterlist[i].ad
             if (floormonsterlist[0].armor != 0):
                 await message.channel.send(playerlist[0].name + "'s armor has been reduced to 0!")
             playerlist[0].armor = 0
@@ -571,6 +602,6 @@ async def monsterphase_rpg(ctx, message, floormonsterlist, choseDefense):
             if(choseDefense == True):
                 if (floormonsterlist[i].ad < 10):
                     difference = 10 - floormonsterlist[i].ad
-                    playerlist[0].armor -= difference 
+                    playerlist[0].armor -= difference
                 choseDefense = False
             await message.channel.send(playerlist[0].name + "'s armor has been reduced by " + str(floormonsterlist[i].ad) + "!")
